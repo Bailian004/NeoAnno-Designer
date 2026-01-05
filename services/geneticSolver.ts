@@ -5,14 +5,10 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 export type SolverMode = 'city' | 'industry';
 
 /**
- * TITAN ARCHITECT V37 - THE "JIT" SPINE
- * * Fixes: "Nothing generated" (Self-Collision with pre-built road).
- * * Strategy: Just-In-Time (JIT) Construction.
- * * LOGIC:
- * 1. REMOVED PRE-DRAW: Init() no longer draws the main road.
- * 2. SPINE FORCE: If the central row (v=0) has no buildings to place, 
- * it forces the construction of a "Connector Road" to maintain the artery.
- * 3. DENSITY CHECK: Outer blocks are rejected if too sparse, but Spine blocks are always accepted (as roads).
+ * TITAN ARCHITECT V42 - CIRCLE INTERSECTION LOGIC
+ * * Fixes: Service Spam (Redundant buildings).
+ * * Logic: Implements accurate Circle Intersection Area calculation.
+ * * Rule: A new service is REJECTED if it overlaps more than 20% with an existing neighbor.
  */
 export class GeneticSolver {
   private params: SolverParams;
@@ -36,6 +32,9 @@ export class GeneticSolver {
   private readonly BLOCK_W = 15; 
   private readonly BLOCK_H = 9; 
   private readonly MAX_GEN = 500;
+  
+  // MAX ALLOWED OVERLAP (0.2 = 20%)
+  private readonly MAX_OVERLAP_RATIO = 0.20;
 
   constructor(params: SolverParams, definitions: BuildingDefinition[], mode: SolverMode = 'city') {
     this.params = params;
@@ -94,7 +93,6 @@ export class GeneticSolver {
     houses.sort((a, b) => {
        const dA = this.definitions.find(d => d.id === a)!;
        const dB = this.definitions.find(d => d.id === b)!;
-       // High tier first
        const tierA = dA.name.includes('Worker') || dA.name.includes('Citizen') ? 2 : 1;
        const tierB = dB.name.includes('Worker') || dB.name.includes('Citizen') ? 2 : 1;
        return tierB - tierA;
@@ -103,21 +101,14 @@ export class GeneticSolver {
     this.spineQueue = spine;
     this.localQueue = local;
     this.houseQueue = houses;
-
-    // FIX: DO NOT PRE-BUILD ROAD. It causes self-collision.
   }
 
   public step() {
     if (this.finished) return;
 
-    if (this.spineQueue.length === 0 && this.houseQueue.length === 0 && this.localQueue.length === 0) {
-        this.finished = true;
-        return;
-    }
-
     let placed = false;
     let attempts = 0;
-    while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts < 50) {
+    while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts < 150) {
         const coord = this.spiralGrid[this.currentSpiralIndex];
         placed = this.processChunk(coord.u, coord.v);
         this.currentSpiralIndex++;
@@ -133,7 +124,6 @@ export class GeneticSolver {
       const x = this.center.x + (u * this.BLOCK_W);
       let y = 0;
       
-      // Calculate Y Logic
       if (v === 0) {
           y = this.center.y - Math.floor(this.BLOCK_H / 2);
       } else if (v > 0) {
@@ -145,25 +135,31 @@ export class GeneticSolver {
       if (!this.isInBounds(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
       if (this.isOccupied(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
 
-      // 1. Try Spine Placement (Monument)
+      // 1. Try Spine Placement
       if (v === 0 && this.spineQueue.length > 0) {
           const placedSpine = this.processSpineBlock(x, y);
-          if (placedSpine) return true;
+          if (placedSpine) {
+             const centerY = y + 4;
+             for(let k=0; k<this.BLOCK_W; k++) this.ensureRoad(x+k, centerY);
+             return true;
+          }
       }
 
       // 2. Try City Block
       const placedCity = this.processCityBlock(x, y, u, v);
-      if (placedCity) return true;
-
-      // 3. FORCE SPINE CONNECTOR (JIT Road)
-      // If v=0 and we failed to place Monument OR City Block (e.g. empty queue),
-      // we MUST still build the road to keep the artery alive.
+      
       if (v === 0) {
-          this.buildRoadRect(x, y); // Build perimeter
-          // Build Highway through center
           const centerY = y + 4;
           for(let k=0; k<this.BLOCK_W; k++) this.ensureRoad(x+k, centerY);
-          return true; // We "placed" a road segment
+          if (placedCity) return true;
+      } else if (placedCity) {
+          return true;
+      }
+
+      // 3. Force Spine Road
+      if (v === 0) {
+          this.buildRoadRect(x, y);
+          return true;
       }
 
       return false;
@@ -186,7 +182,6 @@ export class GeneticSolver {
   }
 
   private processCityBlock(x: number, y: number, u: number, v: number): boolean {
-      // --- TRANSACTION ---
       const pendingBuildings: {id: string, x: number, y: number}[] = [];
       const pendingRoads: {x: number, y: number}[] = [];
       const localOccupied = new Set<string>();
@@ -220,14 +215,13 @@ export class GeneticSolver {
 
       // 2. FILL LOGIC
       const dist = Math.max(Math.abs(u), Math.abs(v));
-      const targetTier = dist < 3 ? 'Tier2' : 'Tier1'; // Generic Tier concept
+      const targetTier = dist < 3 ? 'Tier2' : 'Tier1';
 
       const rows = [y + 1, y + 5];
       const zones = [{min: x+1, max: x+6}, {min: x+8, max: x+13}];
 
       const usedLocalIndices: number[] = [];
       let housesUsed = 0;
-      let buildingsPlacedCount = 0;
 
       for (const zone of zones) {
           for (const rY of rows) {
@@ -237,20 +231,24 @@ export class GeneticSolver {
 
                   let placed = false;
                   
-                  // A. SERVICE
-                  const neededService = this.auditServiceNeeds(currX+1, rY+1, targetTier, pendingBuildings);
-                  if (neededService) {
-                      let sId = neededService;
-                      const sIdx = this.localQueue.findIndex((id, idx) => id === neededService && !usedLocalIndices.includes(idx));
-                      if (sIdx !== -1) sId = this.localQueue[sIdx];
-
-                      const sDef = this.definitions.find(d => d.id === sId || d.id === neededService)!;
-                      if (currX + sDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, sDef.width, sDef.height, localOccupied)) {
-                          stageBuilding(sId, currX, rY);
-                          if (sIdx !== -1) usedLocalIndices.push(sIdx);
-                          currX += sDef.width;
-                          placed = true;
-                          buildingsPlacedCount++;
+                  // A. SERVICE CHECK (With Overlap Limit)
+                  const neededServiceDefId = this.auditServiceNeeds(currX+1, rY+1, targetTier, pendingBuildings);
+                  
+                  if (neededServiceDefId) {
+                      // Check for Overlap spam
+                      if (!this.isRedundant(currX, rY, neededServiceDefId, pendingBuildings)) {
+                          
+                          let sId = neededServiceDefId;
+                          const sIdx = this.localQueue.findIndex((id, idx) => id === neededServiceDefId && !usedLocalIndices.includes(idx));
+                          if (sIdx !== -1) sId = this.localQueue[sIdx];
+                          
+                          const sDef = this.definitions.find(d => d.id === sId)!;
+                          if (currX + sDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, sDef.width, sDef.height, localOccupied)) {
+                              stageBuilding(sId, currX, rY);
+                              if (sIdx !== -1) usedLocalIndices.push(sIdx);
+                              currX += sDef.width;
+                              placed = true;
+                          }
                       }
                   }
 
@@ -266,7 +264,6 @@ export class GeneticSolver {
                               housesUsed++;
                               currX += hDef.width;
                               placed = true;
-                              buildingsPlacedCount++;
                           }
                       }
                   }
@@ -275,13 +272,6 @@ export class GeneticSolver {
           }
       }
 
-      // 3. DENSITY CHECK (Prevents sprawled, empty grids at the edge)
-      const totalLeft = this.houseQueue.length - housesUsed;
-      if (buildingsPlacedCount < 3 && totalLeft > 5) {
-          return false; 
-      }
-
-      // 4. COMMIT
       if (hasContent) {
           pendingBuildings.forEach(b => this.place(b.id, b.x, b.y));
           pendingRoads.forEach(r => this.ensureRoad(r.x, r.y));
@@ -293,7 +283,51 @@ export class GeneticSolver {
       return false;
   }
 
-  // --- UTILS ---
+  // --- MATH UTILS ---
+
+  // Calculates Circle Intersection Area (r = radius, d = distance)
+  // Formula: A = r^2 * acos(d/2r) - (d/2) * sqrt(r^2 - (d/2)^2) * 2 (Symmetric lens)
+  private getCircleOverlapArea(r: number, d: number): number {
+     if (d >= 2 * r) return 0; // No overlap
+     if (d <= 0) return Math.PI * r * r; // Complete overlap
+     
+     // Area of circular segment
+     const angle = 2 * Math.acos(d / (2 * r));
+     const segmentArea = 0.5 * r * r * (angle - Math.sin(angle));
+     
+     return 2 * segmentArea; // Two segments make the lens
+  }
+
+  private isRedundant(x: number, y: number, defId: string, pending: {id:string, x:number, y:number}[]): boolean {
+      const targetDef = this.definitions.find(d => d.id === defId);
+      if (!targetDef || !targetDef.influenceRadius) return false;
+
+      const r = targetDef.influenceRadius;
+      const targetArea = Math.PI * r * r;
+      
+      const checkList = (items: {id: string, x: number, y: number}[]) => {
+          for (const b of items) {
+              const bDef = this.definitions.find(d => d.id === b.id || d.id === (b as any).definitionId);
+              
+              // Only check against SAME type
+              if (bDef && (bDef.id === defId || (targetDef.name && bDef.name === targetDef.name))) {
+                   const dist = Math.sqrt((b.x - x)**2 + (b.y - y)**2);
+                   
+                   // Optimization: If distance > 2*r, area is 0. Skip complicated math.
+                   if (dist < 2 * r) {
+                       const overlapArea = this.getCircleOverlapArea(r, dist);
+                       const overlapRatio = overlapArea / targetArea;
+                       
+                       // REJECT if overlap is greater than 20%
+                       if (overlapRatio > this.MAX_OVERLAP_RATIO) return true;
+                   }
+              }
+          }
+          return false;
+      };
+
+      return checkList(this.currentGenome.map(b => ({id: b.definitionId, x: b.x, y: b.y}))) || checkList(pending);
+  }
 
   private buildRoadRect(x: number, y: number) {
       for(let i=0; i<this.BLOCK_W; i++) { this.ensureRoad(x+i, y); this.ensureRoad(x+i, y+this.BLOCK_H-1); }
@@ -311,7 +345,6 @@ export class GeneticSolver {
   }
 
   private auditServiceNeeds(x: number, y: number, tier: string, pending: any[]): string | null {
-      // Expanded keyword list to match Anno 1800/1404/2070 building names
       let required: string[] = ['marketplace', 'pub', 'chapel', 'fire station']; 
       if (tier === 'Tier2') required = ['marketplace', 'pub', 'school', 'church', 'fire station', 'tavern', 'police'];
       
@@ -320,22 +353,19 @@ export class GeneticSolver {
       
       for (const type of checkList) {
           if (!this.isCovered(x, y, type, 22, pending)) {
-              // Match either ID or Name from the new data structure
               const def = this.definitions.find(d => 
                   d.name.toLowerCase().includes(type) || 
                   d.id.toLowerCase().includes(type.replace(' ', ''))
               );
-              return def ? def.id : null;
+              if (def) return def.id;
           }
       }
       return null;
   }
 
   private checkAllServicesCovered(x: number, y: number, tier: string, pending: any[]): boolean {
-      // Basic connectivity check
       const critical = ['marketplace'];
       for (const type of critical) {
-          // Relaxed check: if no marketplace exists in the definition list, skip the check
           const exists = this.definitions.some(d => d.name.toLowerCase().includes(type));
           if (exists && !this.isCovered(x, y, type, 30, pending)) return false;
       }
@@ -352,20 +382,6 @@ export class GeneticSolver {
                   const dx = (b.x + def.width/2) - x;
                   const dy = (b.y + def.height/2) - y;
                   if (Math.sqrt(dx*dx + dy*dy) <= (def.influenceRadius || radius)) return true;
-              }
-          }
-          return false;
-      };
-      return checkList(this.currentGenome.map(b => ({id: b.definitionId, x: b.x, y: b.y}))) || checkList(pending);
-  }
-
-  private isTooClose(x: number, y: number, id: string, radius: number, pending: {id:string, x:number, y:number}[]): boolean {
-      const minDist = radius * 1.5;
-      const checkList = (items: {id: string, x: number, y: number}[]) => {
-          for (const b of items) {
-              if (b.id === id) {
-                  const dist = Math.sqrt((b.x - x)**2 + (b.y - y)**2);
-                  if (dist < minDist) return true;
               }
           }
           return false;
@@ -427,9 +443,9 @@ export class GeneticSolver {
   public getBest() { return { genome: this.currentGenome, fitness: this.currentGenome.length }; }
   
   public getGeneration() { 
-     if (this.finished) return this.MAX_GEN;
-     const total = this.houseQueue.length + this.localQueue.length + this.currentGenome.length;
-     const prog = (this.currentGenome.length / (total || 1));
-     return Math.min(Math.floor(prog * this.MAX_GEN), this.MAX_GEN - 1);
+      if (this.finished) return this.MAX_GEN;
+      const total = this.houseQueue.length + this.localQueue.length + this.currentGenome.length;
+      const prog = (this.currentGenome.length / (total || 1));
+      return Math.min(Math.floor(prog * this.MAX_GEN), this.MAX_GEN - 1);
   }
 }
