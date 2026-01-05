@@ -1,4 +1,3 @@
-
 import { BuildingDefinition, GameConfig, ResourceRate } from "../types";
 
 export interface PopulationGoal {
@@ -6,20 +5,25 @@ export interface PopulationGoal {
   count: number;
 }
 
+/**
+ * PRODUCTION CALCULATOR V2
+ * Strictly recursive: Calculates supporting tiers (T-1) needed for requested tier (T).
+ * Respects "Regional Purity" by only using buildings available in the current config.
+ */
 export const calculateBuildingsForPopulation = (
   initialGoals: PopulationGoal[],
   config: GameConfig
 ): Record<string, number> => {
   
-  // Clone goals to avoid mutating the original prop during our iterative solving
+  // Clone goals to iterate
   const currentGoals = initialGoals.map(g => ({ ...g }));
 
   let counts: Record<string, number> = {};
   let totalResourceDemand: Record<string, number> = {};
   
-  // Safety: Limit iterations to prevent infinite loops if data is malformed
+  // Recursive Solver: Runs multiple passes to ensure workforce for production is also housed
   let iterations = 0;
-  const MAX_ITERATIONS = 10;
+  const MAX_ITERATIONS = 8;
   
   while(iterations < MAX_ITERATIONS) {
       iterations++;
@@ -29,7 +33,7 @@ export const calculateBuildingsForPopulation = (
       const workforceSupply: Record<string, number> = {};
       const workforceDemand: Record<string, number> = {};
 
-      // 1. Calculate Residences & Direct Consumption based on CURRENT goals
+      // 1. Calculate Houses & Public Services for current goals
       currentGoals.forEach(goal => {
         const resDef = config.buildings.find(b => 
           b.category === 'Residence' && b.residence?.populationType === goal.tierId
@@ -40,33 +44,35 @@ export const calculateBuildingsForPopulation = (
         const houseCount = Math.ceil(goal.count / resDef.residence.maxPopulation);
         counts[resDef.id] = (counts[resDef.id] || 0) + houseCount;
         
-        // Track Workforce Supply
-        // We assume full occupancy for calculation to be safe
+        // Track Workforce Supply from these houses
         workforceSupply[goal.tierId] = (workforceSupply[goal.tierId] || 0) + (houseCount * resDef.residence.maxPopulation);
 
-        // --- SERVICES ---
-        const PACKING_EFFICIENCY = 0.45; 
+        // --- SERVICES (Updated for Anno Designer Data compatibility) ---
+        // A single service building supports a batch of houses within its radius
+        const PACKING_EFFICIENCY = 0.5; 
         const houseArea = resDef.width * resDef.height;
 
         const requiredServices: string[] = [];
-        if (goal.tierId === 'Farmer') requiredServices.push('mkt', 'pub', 'fire');
-        if (goal.tierId === 'Worker') requiredServices.push('mkt', 'pub', 'school', 'church', 'fire', 'police');
+        if (goal.tierId === 'Farmer' || goal.tierId === 'Peasant') requiredServices.push('marketplace', 'pub', 'chapel', 'fire station');
+        if (goal.tierId === 'Worker' || goal.tierId === 'Citizen') requiredServices.push('marketplace', 'pub', 'tavern', 'school', 'church', 'fire station', 'police');
+        if (goal.tierId === 'Artisan' || goal.tierId === 'Patrician') requiredServices.push('marketplace', 'school', 'church', 'university', 'hospital', 'fire station', 'police');
+        if (goal.tierId === 'Engineer' || goal.tierId === 'Nobleman') requiredServices.push('university', 'bank', 'theatre', 'hospital');
         if (goal.tierId === 'Plebeian') requiredServices.push('forum', 'bath');
 
         requiredServices.forEach(serviceType => {
-            const serviceDef = config.buildings.find(b => b.id.includes(serviceType) || b.name.toLowerCase().includes(serviceType));
-            if (serviceDef && serviceDef.category === 'Public') {
-                let coverageCapacity = 50;
+            const serviceDef = config.buildings.find(b => 
+              (b.name.toLowerCase().includes(serviceType) || b.id.toLowerCase().includes(serviceType.replace(' ', ''))) && 
+              b.category === 'Public'
+            );
+            if (serviceDef) {
+                let coverageCapacity = 40; // Default fallback
                 if (serviceDef.influenceRadius) {
                     const radius = serviceDef.influenceRadius;
                     const circleArea = Math.PI * radius * radius;
                     coverageCapacity = Math.floor((circleArea * PACKING_EFFICIENCY) / houseArea);
                 }
-                const neededForThisBatch = Math.ceil(houseCount / coverageCapacity);
-                // Use simple accumulation for now. 
-                // A better approach would be to track total houses per tier and recalc, 
-                // but this is consistent with the original implementation.
-                counts[serviceDef.id] = (counts[serviceDef.id] || 0) + neededForThisBatch;
+                const neededCount = Math.ceil(houseCount / Math.max(1, coverageCapacity));
+                counts[serviceDef.id] = (counts[serviceDef.id] || 0) + neededCount;
             }
         });
 
@@ -79,17 +85,16 @@ export const calculateBuildingsForPopulation = (
         }
       });
 
-      // 2. Calculate Production Buildings (Recursive Chain)
+      // 2. Production Chain Solver
       let demandChanged = true;
-      // Inner loop for resource chains
       while (demandChanged) {
         demandChanged = false;
 
         Object.keys(totalResourceDemand).forEach(resId => {
           const demand = totalResourceDemand[resId];
-          if (demand <= 0) return;
+          if (demand <= 0.001) return;
 
-          // Find producer
+          // Find producer in this region
           const producer = config.buildings.find(b => 
             b.production?.outputs?.some(out => out.resourceId === resId)
           );
@@ -100,11 +105,12 @@ export const calculateBuildingsForPopulation = (
             const currentProduction = currentCount * outputRate;
 
             if (currentProduction < demand) {
-              const needed = Math.ceil((demand - currentProduction) / outputRate);
+              const deficit = demand - currentProduction;
+              const needed = Math.ceil(deficit / outputRate);
               if (needed > 0) {
                 counts[producer.id] = currentCount + needed;
                 
-                // Add Inputs to demand
+                // Propagate demand to inputs
                 if (producer.production.inputs) {
                   producer.production.inputs.forEach(input => {
                     const inputNeeded = input.amount * needed;
@@ -118,7 +124,7 @@ export const calculateBuildingsForPopulation = (
         });
       }
 
-      // 3. Calculate Workforce Demand from Production
+      // 3. Workforce Demand Analysis
       Object.entries(counts).forEach(([bId, count]) => {
           const def = config.buildings.find(b => b.id === bId);
           if (def && def.production && def.production.workforce) {
@@ -127,35 +133,35 @@ export const calculateBuildingsForPopulation = (
           }
       });
 
-      // 4. Check for Deficits
+      // 4. Balance: If demand > supply, add more lower tier residences
       let needsRetry = false;
-      
-      // Iterate over demanded workforce types
       Object.entries(workforceDemand).forEach(([tier, demand]) => {
           const supply = workforceSupply[tier] || 0;
           if (demand > supply) {
-              const deficit = demand - supply;
-              // Find the goal entry for this tier
+              const deficitCount = Math.ceil((demand - supply) / 10); // Heuristic: avg 10 people per house
               const goalIdx = currentGoals.findIndex(g => g.tierId === tier);
               
               if (goalIdx >= 0) {
-                  currentGoals[goalIdx].count += deficit;
+                  currentGoals[goalIdx].count += deficitCount * 10;
               } else {
-                  // Add new goal for this tier
-                  currentGoals.push({ tierId: tier, count: deficit });
+                  currentGoals.push({ tierId: tier, count: deficitCount * 10 });
               }
               needsRetry = true;
           }
       });
 
-      if (!needsRetry) {
-          break; // Optimization complete
-      }
+      if (!needsRetry) break;
   }
 
-  // 5. Finalize Roads
-  const roadId = config.buildings.find(b => b.name.includes('Road'))?.id || 'road';
+  // 5. Infrastructure: Roads
+  // Look for new road identifier logic
+  const roadId = config.buildings.find(b => 
+    b.name.toLowerCase().includes('road') || 
+    b.id.toLowerCase().includes('street')
+  )?.id || 'Street_1x1';
+  
   if (roadId) {
+      // Genetic Solver will handle road density, we just ensure it's in the manifest
       counts[roadId] = 0; 
   }
 

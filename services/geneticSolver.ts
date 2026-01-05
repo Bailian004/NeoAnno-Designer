@@ -2,553 +2,434 @@ import { BuildingDefinition, PlacedBuilding, SolverParams } from "../types";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-interface Individual {
-  genome: PlacedBuilding[]; 
-  fitness: number;
-}
-
 export type SolverMode = 'city' | 'industry';
 
+/**
+ * TITAN ARCHITECT V37 - THE "JIT" SPINE
+ * * Fixes: "Nothing generated" (Self-Collision with pre-built road).
+ * * Strategy: Just-In-Time (JIT) Construction.
+ * * LOGIC:
+ * 1. REMOVED PRE-DRAW: Init() no longer draws the main road.
+ * 2. SPINE FORCE: If the central row (v=0) has no buildings to place, 
+ * it forces the construction of a "Connector Road" to maintain the artery.
+ * 3. DENSITY CHECK: Outer blocks are rejected if too sparse, but Spine blocks are always accepted (as roads).
+ */
 export class GeneticSolver {
   private params: SolverParams;
   private definitions: BuildingDefinition[];
-  private population: Individual[] = [];
-  private bestSolution: Individual | null = null;
-  private generationCount: number = 0;
+  private currentGenome: PlacedBuilding[] = [];
+  
+  private spineQueue: string[] = [];
+  private localQueue: string[] = [];
+  private houseQueue: string[] = [];
+  
+  private occupied: Set<string> = new Set();
+  
+  private center: { x: number, y: number };
   private roadDefId: string;
-  private mode: SolverMode;
+  
+  private spiralGrid: {u: number, v: number}[] = [];
+  private currentSpiralIndex = 0;
+  private finished: boolean = false;
+  
+  // GEOMETRY: 15x9
+  private readonly BLOCK_W = 15; 
+  private readonly BLOCK_H = 9; 
+  private readonly MAX_GEN = 500;
 
   constructor(params: SolverParams, definitions: BuildingDefinition[], mode: SolverMode = 'city') {
     this.params = params;
     this.definitions = definitions;
-    this.mode = mode;
-    
-    // Identify Road ID
-    const roadDef = definitions.find(d => d.name.toLowerCase().includes('road') || (d.width === 1 && d.height === 1 && d.category === 'Decoration'));
-    this.roadDefId = roadDef ? roadDef.id : 'road';
-  }
+    this.center = { x: Math.floor(params.areaWidth / 2), y: Math.floor(params.areaHeight / 2) };
 
-  // --- Helpers ---
-  private isCollision(b1: {x: number, y: number, w: number, h: number}, b2: {x: number, y: number, w: number, h: number}) {
-      return b1.x < b2.x + b2.w && b1.x + b1.w > b2.x &&
-             b1.y < b2.y + b2.h && b1.y + b1.h > b2.y;
-  }
-
-  // --- Fitness Function ---
-  private calculateFitness(genome: PlacedBuilding[]): Individual {
-    let fitness = 0;
-    let coveredHouses = 0;
-    let totalResidences = 0;
-
-    const services = genome.filter(b => {
-        const def = this.definitions.find(d => d.id === b.definitionId);
-        return def && def.category === 'Public' && def.influenceRadius;
-    });
-
-    for (const b of genome) {
-        const def = this.definitions.find(d => d.id === b.definitionId);
-        if (!def || def.category !== 'Residence') continue;
-        
-        totalResidences++;
-        
-        const bCx = b.x + (b.rotation % 180 === 0 ? def.width : def.height) / 2;
-        const bCy = b.y + (b.rotation % 180 === 0 ? def.height : def.width) / 2;
-
-        let isCovered = false;
-        if (services.length === 0) {
-            isCovered = true; 
-        } else {
-            for (const s of services) {
-                const sDef = this.definitions.find(d => d.id === s.definitionId)!;
-                const sCx = s.x + (s.rotation % 180 === 0 ? sDef.width : sDef.height) / 2;
-                const sCy = s.y + (s.rotation % 180 === 0 ? sDef.height : sDef.width) / 2;
-                
-                const dist = Math.sqrt((bCx - sCx)**2 + (bCy - sCy)**2);
-                if (dist <= (sDef.influenceRadius || 0)) {
-                    isCovered = true;
-                    break;
-                }
-            }
-        }
-        if (isCovered) coveredHouses++;
-    }
-
-    // 1. Coverage Score (High value)
-    fitness += (coveredHouses * 50);
-    
-    // 2. Population Density Score (Encourage keeping houses on the map)
-    fitness += (totalResidences * 5);
-
-    return {
-        genome: genome,
-        fitness: fitness
-    };
-  }
-
-  // --- SEED GENERATOR ---
-  private createOptimizedCityIndividual(): Individual {
-      const genome: PlacedBuilding[] = [];
-      const { areaWidth, areaHeight } = this.params;
-      const mapCenter = { x: Math.floor(areaWidth / 2), y: Math.floor(areaHeight / 2) };
-      
-      const counts = { ...this.params.targetCounts };
-      const usedCounts: Record<string, number> = {};
-      const roadSet = new Set<string>(); 
-      const occupiedSet = new Set<string>(); 
-
-      const markOccupied = (x: number, y: number, w: number, h: number) => {
-          for(let i=0; i<w; i++) {
-              for(let j=0; j<h; j++) {
-                  occupiedSet.add(`${x+i},${y+j}`);
-              }
-          }
-      };
-
-      const isAreaFree = (x: number, y: number, w: number, h: number) => {
-          if (x < 0 || y < 0 || x + w > areaWidth || y + h > areaHeight) return false;
-          for(let i=0; i<w; i++) {
-              for(let j=0; j<h; j++) {
-                  const key = `${x+i},${y+j}`;
-                  if (occupiedSet.has(key)) return false;
-                  if (this.params.blockedCells.has(key)) return false;
-              }
-          }
-          return true;
-      };
-
-      const placeRoad = (x: number, y: number) => {
-          if (x < 0 || y < 0 || x >= areaWidth || y >= areaHeight) return;
-          const key = `${x},${y}`;
-          if (occupiedSet.has(key) && !roadSet.has(key)) return;
-          if (roadSet.has(key)) return;
-          
-          if (!this.params.blockedCells.has(key)) {
-              genome.push({
-                  uid: generateId(),
-                  definitionId: this.roadDefId,
-                  x,
-                  y,
-                  rotation: 0
-              });
-              roadSet.add(key);
-              occupiedSet.add(key);
-          }
-      };
-
-      const getRemaining = (id: string) => (counts[id] || 0) - (usedCounts[id] || 0);
-
-      // --- 1. THE SPINE ---
-      for(let y=0; y<areaHeight; y++) placeRoad(mapCenter.x, y);
-      for(let x=0; x<areaWidth; x++) placeRoad(x, mapCenter.y);
-
-      // --- 2. SERVICE PLACEMENT (Symmetrical Expansion with Search) ---
-      const services = Object.keys(counts).filter(id => {
-          const def = this.definitions.find(d => d.id === id);
-          return def && def.category === 'Public';
-      }).sort((a, b) => {
-          // Place largest services first
-          const da = this.definitions.find(d => d.id === a)!;
-          const db = this.definitions.find(d => d.id === b)!;
-          return (db.width * db.height) - (da.width * da.height); 
-      });
-
-      const serviceQueue: string[] = [];
-      services.forEach(id => {
-          const remain = getRemaining(id);
-          for(let i=0; i<remain; i++) serviceQueue.push(id);
-      });
-
-      // Directions: N, S, E, W
-      const directions = ['N', 'S', 'E', 'W'];
-      let dirIdx = 0;
-
-      for (const sId of serviceQueue) {
-          const def = this.definitions.find(d => d.id === sId)!;
-          let placed = false;
-          
-          // Try all 4 directions starting from current dirIdx
-          for(let i=0; i<4; i++) {
-              if (placed) break;
-              const dir = directions[(dirIdx + i) % 4];
-              
-              // Scan outwards from center
-              // Limit scan to avoid infinite loops, but large enough to cover map
-              for(let step = 2; step < Math.max(areaWidth, areaHeight) / 2; step++) {
-                  let bx = 0, by = 0;
-                  let rot: 0 | 90 | 180 | 270 = 0;
-                  let w = def.width;
-                  let h = def.height;
-
-                  // Rotate building if it fits better along the axis?
-                  // For E/W axis, if height > width (like Church), rotate 90 to align long side with road
-                  if ((dir === 'E' || dir === 'W') && def.height > def.width) {
-                      rot = 90;
-                      w = def.height;
-                      h = def.width;
-                  }
-
-                  // Alternating sides (Left/Right of axis)
-                  const sideOffset = (step % 2 === 0) ? 1 : 0; 
-                  // Actually, just checking both sides at this step is safer
-                  
-                  // Define potential spots at this 'step' distance
-                  const spots: {x: number, y: number}[] = [];
-                  
-                  if (dir === 'N') {
-                      const y = mapCenter.y - step - h;
-                      spots.push({ x: mapCenter.x - w, y }); // Left of road
-                      spots.push({ x: mapCenter.x + 1, y }); // Right of road
-                  } else if (dir === 'S') {
-                      const y = mapCenter.y + step;
-                      spots.push({ x: mapCenter.x - w, y });
-                      spots.push({ x: mapCenter.x + 1, y });
-                  } else if (dir === 'E') {
-                      const x = mapCenter.x + step;
-                      spots.push({ x, y: mapCenter.y - h }); // Top of road
-                      spots.push({ x, y: mapCenter.y + 1 }); // Bottom of road
-                  } else if (dir === 'W') {
-                      const x = mapCenter.x - step - w;
-                      spots.push({ x, y: mapCenter.y - h });
-                      spots.push({ x, y: mapCenter.y + 1 });
-                  }
-
-                  // Check spots
-                  for(const spot of spots) {
-                      if (isAreaFree(spot.x, spot.y, w, h)) {
-                          genome.push({ uid: generateId(), definitionId: sId, x: spot.x, y: spot.y, rotation: rot });
-                          markOccupied(spot.x, spot.y, w, h);
-                          usedCounts[sId] = (usedCounts[sId] || 0) + 1;
-                          placed = true;
-
-                          // Ring Roads
-                          for(let rx=spot.x-1; rx<=spot.x+w; rx++) { placeRoad(rx, spot.y-1); placeRoad(rx, spot.y+h); }
-                          for(let ry=spot.y-1; ry<=spot.y+h; ry++) { placeRoad(spot.x-1, ry); placeRoad(spot.x+w, ry); }
-                          
-                          break; 
-                      }
-                  }
-                  if (placed) break;
-              }
-          }
-          
-          // Rotate start direction for next building to maintain symmetry
-          dirIdx = (dirIdx + 1) % 4;
-      }
-
-      // --- 3. RESIDENTIAL GRID ---
-      const residences = Object.keys(counts).filter(id => {
-          const def = this.definitions.find(d => d.id === id);
-          return def && def.category === 'Residence';
-      });
-
-      if (residences.length > 0) {
-          const residenceQueue: string[] = [];
-          for (const rId of residences) {
-             const count = getRemaining(rId);
-             for(let i=0; i<count; i++) residenceQueue.push(rId);
-          }
-          // Sort by population capacity to place high-tier houses centrally
-          residenceQueue.sort((a, b) => {
-              const defA = this.definitions.find(d => d.id === a);
-              const defB = this.definitions.find(d => d.id === b);
-              return (defB?.residence?.maxPopulation || 0) - (defA?.residence?.maxPopulation || 0);
-          });
-
-          // Standard block size
-          const gridRefDef = this.definitions.find(d => d.id === residences[0])!;
-          const hW = gridRefDef.width;
-          const hH = gridRefDef.height;
-          const stripHeight = (hH * 2) + 1; 
-          const blockWidth = 14;
-
-          interface Slot { x: number; y: number; dist: number; requiresTopRoad: boolean; requiresBotRoad: boolean; }
-          const candidateSlots: Slot[] = [];
-          
-          const startYOffset = (mapCenter.y % stripHeight);
-          const startXOffset = (mapCenter.x % blockWidth);
-
-          for (let y = startYOffset - stripHeight; y < areaHeight; y += stripHeight) {
-              const topRowY = y - hH;
-              const botRowY = y + 1;
-
-              for (let x = 0; x < areaWidth - hW; x++) {
-                   // Calculate distance from center for radial filling
-                   const cx = x + hW/2;
-                   
-                   // Check Top Slot
-                   if (topRowY >= 0) {
-                       const cy = topRowY + hH/2;
-                       const dist = Math.sqrt((cx - mapCenter.x)**2 + (cy - mapCenter.y)**2);
-                       candidateSlots.push({ x, y: topRowY, dist, requiresTopRoad: false, requiresBotRoad: true });
-                   }
-                   // Check Bottom Slot
-                   if (botRowY + hH <= areaHeight) {
-                       const cy = botRowY + hH/2;
-                       const dist = Math.sqrt((cx - mapCenter.x)**2 + (cy - mapCenter.y)**2);
-                       candidateSlots.push({ x, y: botRowY, dist, requiresTopRoad: true, requiresBotRoad: false });
-                   }
-              }
-          }
-
-          // Sort by distance to create a circle
-          candidateSlots.sort((a, b) => a.dist - b.dist);
-
-          let qIdx = 0;
-          for (const slot of candidateSlots) {
-              if (qIdx >= residenceQueue.length) break;
-              
-              if (isAreaFree(slot.x, slot.y, hW, hH)) {
-                  const currentResId = residenceQueue[qIdx];
-                  genome.push({ uid: generateId(), definitionId: currentResId, x: slot.x, y: slot.y, rotation: 0 });
-                  markOccupied(slot.x, slot.y, hW, hH);
-                  usedCounts[currentResId] = (usedCounts[currentResId] || 0) + 1;
-                  qIdx++;
-
-                  // Roads
-                  if (slot.requiresBotRoad) { for(let rx=slot.x; rx<slot.x+hW; rx++) placeRoad(rx, slot.y + hH); }
-                  if (slot.requiresTopRoad) { for(let rx=slot.x; rx<slot.x+hW; rx++) placeRoad(rx, slot.y - 1); }
-                  
-                  // Block Feeders
-                  const relX = (slot.x - startXOffset) % blockWidth;
-                  if (Math.abs(relX) <= 1 || relX >= blockWidth - hW - 1) {
-                       for(let ry=slot.y; ry<slot.y+hH; ry++) placeRoad(Math.abs(relX) <= 1 ? slot.x-1 : slot.x+hW, ry);
-                  }
-              }
-          }
-      }
-
-      // --- 4. INDUSTRY (SPIRAL SEARCH) ---
-      // Replaces linear scan to prevent bottom-heavy layout
-      const industry = Object.keys(counts).filter(id => {
-          const def = this.definitions.find(d => d.id === id);
-          return def && def.category === 'Production';
-      });
-
-      if (industry.length > 0) {
-           for(const indId of industry) {
-               const def = this.definitions.find(d => d.id === indId)!;
-               let count = getRemaining(indId);
-               
-               // Spiral Search Variables
-               let r = 5; // Start radius
-               let theta = 0;
-               let dr = 1; // Radius increment
-               let dTheta = 0.5; // Angle increment
-               
-               let fails = 0;
-               // Limit iterations to prevent infinite loop
-               while(count > 0 && fails < 1000) {
-                   const ix = Math.floor(mapCenter.x + r * Math.cos(theta));
-                   const iy = Math.floor(mapCenter.y + r * Math.sin(theta));
-                   
-                   if (isAreaFree(ix, iy, def.width, def.height)) {
-                        genome.push({ uid: generateId(), definitionId: indId, x: ix, y: iy, rotation: 0 });
-                        markOccupied(ix, iy, def.width, def.height);
-                        // Add basic road access
-                        for(let rx=ix-1; rx<=ix+def.width; rx++) placeRoad(rx, iy+def.height);
-                        for(let ry=iy; ry<iy+def.height; ry++) placeRoad(ix-1, ry);
-
-                        usedCounts[indId] = (usedCounts[indId] || 0) + 1;
-                        count--;
-                        fails = 0; // Reset fails on success
-                   } else {
-                       fails++;
-                   }
-
-                   // Advance Spiral
-                   theta += dTheta;
-                   if (theta > Math.PI * 2) {
-                       theta -= Math.PI * 2;
-                       r += dr;
-                       // Reduce angle step as radius grows to maintain resolution
-                       dTheta = Math.max(0.1, 1 / r); 
-                   }
-               }
-           }
-      }
-
-      return this.calculateFitness(genome);
-  }
-
-  // --- MUTATION: Destructive Move (Bulldoze) ---
-  private destructiveMutate(individual: Individual): Individual {
-      const genome = [...individual.genome];
-      
-      // 1. Pick a Service Building
-      const serviceIndices = genome.map((b, i) => {
-          const def = this.definitions.find(d => d.id === b.definitionId);
-          return (def && def.category === 'Public') ? i : -1;
-      }).filter(i => i !== -1);
-
-      if (serviceIndices.length === 0) return individual;
-      const idxToMove = serviceIndices[Math.floor(Math.random() * serviceIndices.length)];
-      const service = genome[idxToMove];
-      const sDef = this.definitions.find(d => d.id === service.definitionId)!;
-
-      // 2. Pick a random existing Residence to center on
-      const residences = genome.filter(b => {
-          const d = this.definitions.find(x => x.id === b.definitionId);
-          return d && d.category === 'Residence';
-      });
-      
-      let bestCandidate = individual;
-
-      // Try a few times to find a better spot
-      for(let attempt=0; attempt<3; attempt++) {
-          let tx = 0, ty = 0;
-          
-          if (residences.length > 0 && Math.random() > 0.3) {
-             const targetRes = residences[Math.floor(Math.random() * residences.length)];
-             // Add random offset
-             tx = Math.floor(targetRes.x + (Math.random() * 10 - 5));
-             ty = Math.floor(targetRes.y + (Math.random() * 10 - 5));
-          } else {
-             // Random map spot
-             tx = Math.floor(Math.random() * (this.params.areaWidth - sDef.width));
-             ty = Math.floor(Math.random() * (this.params.areaHeight - sDef.height));
-          }
-
-          // Bounds check
-          if (tx < 0 || ty < 0 || tx + sDef.width > this.params.areaWidth || ty + sDef.height > this.params.areaHeight) continue;
-
-          // 3. Check for HARD Collisions (Other Services, Industry, Blocked Terrain)
-          // We ALLOW collision with Residences (Bulldoze)
-          let hardCollision = false;
-          const conflictingIndices: number[] = [];
-
-          // Terrain
-          for(let bx=0; bx<sDef.width; bx++){
-              for(let by=0; by<sDef.height; by++){
-                  if (this.params.blockedCells.has(`${tx+bx},${ty+by}`)) { hardCollision = true; break; }
-              }
-              if(hardCollision) break;
-          }
-          if (hardCollision) continue;
-
-          // Building Collision
-          for (let k=0; k<genome.length; k++) {
-              if (k === idxToMove) continue;
-              const other = genome[k];
-              const oDef = this.definitions.find(d => d.id === other.definitionId)!;
-              
-              if (tx < other.x + oDef.width && tx + sDef.width > other.x &&
-                  ty < other.y + oDef.height && ty + sDef.height > other.y) {
-                  
-                  if (oDef.category === 'Residence') {
-                      conflictingIndices.push(k);
-                  } else {
-                      // Hitting another service or industry or road is illegal
-                      hardCollision = true;
-                      break;
-                  }
-              }
-          }
-          if (hardCollision) continue;
-
-          // 4. EXECUTE BULLDOZE
-          const newGenome = [...genome];
-          // Remove conflicting residences (indices need to be handled carefully, sort desc)
-          conflictingIndices.sort((a, b) => b - a);
-          const displacedHouses: PlacedBuilding[] = [];
-          conflictingIndices.forEach(idx => {
-               displacedHouses.push(newGenome[idx]);
-               newGenome.splice(idx, 1);
-          });
-          
-          // Re-find service index in newGenome
-          const serviceIdx = newGenome.findIndex(b => b.uid === service.uid);
-          if (serviceIdx !== -1) {
-              newGenome[serviceIdx] = { ...newGenome[serviceIdx], x: tx, y: ty };
-          }
-
-          // 5. REBUILD DISPLACED HOUSES
-          // Try to place them in the OLD service location or nearby free spots
-          const oldX = service.x;
-          const oldY = service.y;
-          
-          // Helper to find free spot in a genome
-          const findSpot = (w: number, h: number, nearX: number, nearY: number): {x: number, y: number} | null => {
-              // Spiral out from nearX, nearY
-              let r = 0;
-              while(r < 15) { // Search radius
-                 for(let theta=0; theta < Math.PI*2; theta+=0.5) {
-                     const cx = Math.floor(nearX + r * Math.cos(theta));
-                     const cy = Math.floor(nearY + r * Math.sin(theta));
-                     if (cx < 0 || cy < 0 || cx+w > this.params.areaWidth || cy+h > this.params.areaHeight) continue;
-                     
-                     // Check collision against newGenome
-                     let coll = false;
-                     // Terrain
-                     for(let bx=0; bx<w; bx++){
-                         for(let by=0; by<h; by++){
-                             if (this.params.blockedCells.has(`${cx+bx},${cy+by}`)) { coll = true; break; }
-                         }
-                         if(coll) break;
-                     }
-                     if(!coll) {
-                         // Buildings
-                         for(const b of newGenome) {
-                             const bd = this.definitions.find(d => d.id === b.definitionId)!;
-                             if (cx < b.x + bd.width && cx + w > b.x && cy < b.y + bd.height && cy + h > b.y) {
-                                 coll = true; break;
-                             }
-                         }
-                     }
-                     if(!coll) return {x: cx, y: cy};
-                 }
-                 r++;
-              }
-              return null;
-          };
-
-          displacedHouses.forEach(h => {
-              const hDef = this.definitions.find(d => d.id === h.definitionId)!;
-              // Try old service spot first
-              const spot = findSpot(hDef.width, hDef.height, oldX, oldY);
-              if (spot) {
-                  newGenome.push({ ...h, x: spot.x, y: spot.y });
-              }
-          });
-
-          // 6. CHECK FITNESS
-          const newInd = this.calculateFitness(newGenome);
-          if (newInd.fitness > bestCandidate.fitness) {
-              bestCandidate = newInd;
-          }
-      }
-
-      return bestCandidate;
+    const roadDef = definitions.find(d => 
+      d.name.toLowerCase().includes('road') || 
+      d.id.toLowerCase().includes('street') ||
+      (d.width === 1 && d.height === 1 && d.category === 'Decoration')
+    );
+    this.roadDefId = roadDef ? roadDef.id : 'Street_1x1';
   }
 
   public init() {
-      this.population = [];
-      const seed = this.createOptimizedCityIndividual();
-      this.population.push(seed);
-      this.bestSolution = seed;
-      this.generationCount = 0;
+    this.currentGenome = [];
+    this.occupied.clear();
+    this.finished = false;
+    this.currentSpiralIndex = 0;
+
+    this.params.blockedCells.forEach(cell => this.occupied.add(cell));
+    this.spiralGrid = this.generateSpiral(Math.ceil(this.params.areaWidth / this.BLOCK_W) + 6);
+
+    // Queue & Sort
+    const spine: string[] = [];
+    const local: string[] = [];
+    const houses: string[] = [];
+
+    const allRequests: {id: string}[] = [];
+    Object.entries(this.params.targetCounts).forEach(([id, count]) => {
+      const def = this.definitions.find(d => d.id === id);
+      if (!def) return;
+      for (let i = 0; i < count; i++) allRequests.push({id});
+    });
+
+    allRequests.forEach(({id}) => {
+        const def = this.definitions.find(d => d.id === id)!;
+        if (def.category === 'Public') {
+            const r = def.influenceRadius || 0;
+            const area = def.width * def.height;
+            if (r > 28 || area > 24) spine.push(id);
+            else local.push(id);
+        } else if (def.category === 'Residence') {
+            houses.push(id);
+        } else {
+            local.push(id);
+        }
+    });
+
+    spine.sort((a, b) => {
+        const dA = this.definitions.find(d => d.id === a)!;
+        const dB = this.definitions.find(d => d.id === b)!;
+        return (dB.influenceRadius || 0) - (dA.influenceRadius || 0);
+    });
+
+    houses.sort((a, b) => {
+       const dA = this.definitions.find(d => d.id === a)!;
+       const dB = this.definitions.find(d => d.id === b)!;
+       // High tier first
+       const tierA = dA.name.includes('Worker') || dA.name.includes('Citizen') ? 2 : 1;
+       const tierB = dB.name.includes('Worker') || dB.name.includes('Citizen') ? 2 : 1;
+       return tierB - tierA;
+    });
+
+    this.spineQueue = spine;
+    this.localQueue = local;
+    this.houseQueue = houses;
+
+    // FIX: DO NOT PRE-BUILD ROAD. It causes self-collision.
   }
 
   public step() {
-      this.generationCount++;
-      if (this.bestSolution) {
-          // Perform multiple mutation attempts per frame to speed up evolution
-          let currentBest = this.bestSolution;
-          
-          for(let i=0; i<3; i++) {
-              const mutated = this.destructiveMutate(currentBest);
-              if (mutated.fitness > currentBest.fitness) {
-                  currentBest = mutated;
+    if (this.finished) return;
+
+    if (this.spineQueue.length === 0 && this.houseQueue.length === 0 && this.localQueue.length === 0) {
+        this.finished = true;
+        return;
+    }
+
+    let placed = false;
+    let attempts = 0;
+    while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts < 50) {
+        const coord = this.spiralGrid[this.currentSpiralIndex];
+        placed = this.processChunk(coord.u, coord.v);
+        this.currentSpiralIndex++;
+        attempts++;
+    }
+
+    if (this.currentSpiralIndex >= this.spiralGrid.length) {
+        this.finished = true;
+    }
+  }
+
+  private processChunk(u: number, v: number): boolean {
+      const x = this.center.x + (u * this.BLOCK_W);
+      let y = 0;
+      
+      // Calculate Y Logic
+      if (v === 0) {
+          y = this.center.y - Math.floor(this.BLOCK_H / 2);
+      } else if (v > 0) {
+          y = (this.center.y - Math.floor(this.BLOCK_H/2)) + (v * this.BLOCK_H);
+      } else {
+          y = (this.center.y - Math.floor(this.BLOCK_H/2)) - (Math.abs(v) * this.BLOCK_H);
+      }
+
+      if (!this.isInBounds(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
+      if (this.isOccupied(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
+
+      // 1. Try Spine Placement (Monument)
+      if (v === 0 && this.spineQueue.length > 0) {
+          const placedSpine = this.processSpineBlock(x, y);
+          if (placedSpine) return true;
+      }
+
+      // 2. Try City Block
+      const placedCity = this.processCityBlock(x, y, u, v);
+      if (placedCity) return true;
+
+      // 3. FORCE SPINE CONNECTOR (JIT Road)
+      // If v=0 and we failed to place Monument OR City Block (e.g. empty queue),
+      // we MUST still build the road to keep the artery alive.
+      if (v === 0) {
+          this.buildRoadRect(x, y); // Build perimeter
+          // Build Highway through center
+          const centerY = y + 4;
+          for(let k=0; k<this.BLOCK_W; k++) this.ensureRoad(x+k, centerY);
+          return true; // We "placed" a road segment
+      }
+
+      return false;
+  }
+
+  private processSpineBlock(x: number, y: number): boolean {
+      const id = this.spineQueue[0]; 
+      const def = this.definitions.find(d => d.id === id)!;
+      
+      const placeX = x + Math.floor((this.BLOCK_W - def.width) / 2);
+      const placeY = y + 1;
+
+      if (this.canPlace(placeX, placeY, def.width, def.height)) {
+          this.place(id, placeX, placeY);
+          this.spineQueue.shift(); 
+          this.buildRoadRect(x, y);
+          return true;
+      }
+      return false; 
+  }
+
+  private processCityBlock(x: number, y: number, u: number, v: number): boolean {
+      // --- TRANSACTION ---
+      const pendingBuildings: {id: string, x: number, y: number}[] = [];
+      const pendingRoads: {x: number, y: number}[] = [];
+      const localOccupied = new Set<string>();
+      let hasContent = false;
+
+      const stageBuilding = (id: string, bx: number, by: number) => {
+          const def = this.definitions.find(d => d.id === id)!;
+          pendingBuildings.push({ id, x: bx, y: by });
+          for(let i=0; i<def.width; i++) {
+              for(let j=0; j<def.height; j++) localOccupied.add(`${bx+i},${by+j}`);
+          }
+          hasContent = true;
+      };
+      
+      const stageRoad = (rx: number, ry: number) => {
+          if (!this.occupied.has(`${rx},${ry}`) && !localOccupied.has(`${rx},${ry}`)) {
+              pendingRoads.push({ x: rx, y: ry });
+              localOccupied.add(`${rx},${ry}`);
+          }
+      };
+
+      // 1. ROADS
+      for(let i=0; i<this.BLOCK_W; i++) { stageRoad(x+i, y); stageRoad(x+i, y+this.BLOCK_H-1); }
+      for(let j=0; j<this.BLOCK_H; j++) { stageRoad(x, y+j); stageRoad(x+this.BLOCK_W-1, y+j); }
+      const centerX = x + 7;
+      for(let j=0; j<this.BLOCK_H; j++) stageRoad(centerX, y+j);
+      
+      const midX = x + 7;
+      if (v > 0) { for(let ky = y; ky >= this.center.y; ky--) stageRoad(midX, ky); } 
+      else if (v < 0) { for(let ky = y + this.BLOCK_H; ky <= this.center.y; ky++) stageRoad(midX, ky); }
+
+      // 2. FILL LOGIC
+      const dist = Math.max(Math.abs(u), Math.abs(v));
+      const targetTier = dist < 3 ? 'Tier2' : 'Tier1'; // Generic Tier concept
+
+      const rows = [y + 1, y + 5];
+      const zones = [{min: x+1, max: x+6}, {min: x+8, max: x+13}];
+
+      const usedLocalIndices: number[] = [];
+      let housesUsed = 0;
+      let buildingsPlacedCount = 0;
+
+      for (const zone of zones) {
+          for (const rY of rows) {
+              let currX = zone.min;
+              while (currX <= zone.max) {
+                  if (localOccupied.has(`${currX},${rY}`)) { currX++; continue; }
+
+                  let placed = false;
+                  
+                  // A. SERVICE
+                  const neededService = this.auditServiceNeeds(currX+1, rY+1, targetTier, pendingBuildings);
+                  if (neededService) {
+                      let sId = neededService;
+                      const sIdx = this.localQueue.findIndex((id, idx) => id === neededService && !usedLocalIndices.includes(idx));
+                      if (sIdx !== -1) sId = this.localQueue[sIdx];
+
+                      const sDef = this.definitions.find(d => d.id === sId || d.id === neededService)!;
+                      if (currX + sDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, sDef.width, sDef.height, localOccupied)) {
+                          stageBuilding(sId, currX, rY);
+                          if (sIdx !== -1) usedLocalIndices.push(sIdx);
+                          currX += sDef.width;
+                          placed = true;
+                          buildingsPlacedCount++;
+                      }
+                  }
+
+                  // B. HOUSE
+                  if (!placed && this.houseQueue.length > housesUsed) {
+                      const hId = this.houseQueue[housesUsed];
+                      const hDef = this.definitions.find(d => d.id === hId)!;
+                      if (currX + hDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, hDef.width, hDef.height, localOccupied)) {
+                          const hCx = currX + hDef.width/2;
+                          const hCy = rY + hDef.height/2;
+                          if (this.checkAllServicesCovered(hCx, hCy, targetTier, pendingBuildings)) {
+                              stageBuilding(hId, currX, rY);
+                              housesUsed++;
+                              currX += hDef.width;
+                              placed = true;
+                              buildingsPlacedCount++;
+                          }
+                      }
+                  }
+                  if (!placed) currX++;
               }
           }
-          this.bestSolution = currentBest;
+      }
+
+      // 3. DENSITY CHECK (Prevents sprawled, empty grids at the edge)
+      const totalLeft = this.houseQueue.length - housesUsed;
+      if (buildingsPlacedCount < 3 && totalLeft > 5) {
+          return false; 
+      }
+
+      // 4. COMMIT
+      if (hasContent) {
+          pendingBuildings.forEach(b => this.place(b.id, b.x, b.y));
+          pendingRoads.forEach(r => this.ensureRoad(r.x, r.y));
+          for(let k=0; k<housesUsed; k++) this.houseQueue.shift();
+          [...new Set(usedLocalIndices)].sort((a,b) => b - a).forEach(idx => this.localQueue.splice(idx, 1));
+          return true;
+      }
+
+      return false;
+  }
+
+  // --- UTILS ---
+
+  private buildRoadRect(x: number, y: number) {
+      for(let i=0; i<this.BLOCK_W; i++) { this.ensureRoad(x+i, y); this.ensureRoad(x+i, y+this.BLOCK_H-1); }
+      for(let j=0; j<this.BLOCK_H; j++) { this.ensureRoad(x, y+j); this.ensureRoad(x+this.BLOCK_W-1, y+j); }
+  }
+
+  private isLocallyFree(x: number, y: number, w: number, h: number, localMask: Set<string>): boolean {
+      if (!this.isInBounds(x, y, w, h)) return false;
+      for(let i=0; i<w; i++) {
+          for(let j=0; j<h; j++) {
+              if (this.occupied.has(`${x+i},${y+j}`) || localMask.has(`${x+i},${y+j}`)) return false;
+          }
+      }
+      return true;
+  }
+
+  private auditServiceNeeds(x: number, y: number, tier: string, pending: any[]): string | null {
+      // Expanded keyword list to match Anno 1800/1404/2070 building names
+      let required: string[] = ['marketplace', 'pub', 'chapel', 'fire station']; 
+      if (tier === 'Tier2') required = ['marketplace', 'pub', 'school', 'church', 'fire station', 'tavern', 'police'];
+      
+      const priority = ['church', 'school', 'fire station', 'marketplace', 'pub', 'tavern', 'chapel', 'police'];
+      const checkList = priority.filter(p => required.includes(p));
+      
+      for (const type of checkList) {
+          if (!this.isCovered(x, y, type, 22, pending)) {
+              // Match either ID or Name from the new data structure
+              const def = this.definitions.find(d => 
+                  d.name.toLowerCase().includes(type) || 
+                  d.id.toLowerCase().includes(type.replace(' ', ''))
+              );
+              return def ? def.id : null;
+          }
+      }
+      return null;
+  }
+
+  private checkAllServicesCovered(x: number, y: number, tier: string, pending: any[]): boolean {
+      // Basic connectivity check
+      const critical = ['marketplace'];
+      for (const type of critical) {
+          // Relaxed check: if no marketplace exists in the definition list, skip the check
+          const exists = this.definitions.some(d => d.name.toLowerCase().includes(type));
+          if (exists && !this.isCovered(x, y, type, 30, pending)) return false;
+      }
+      return true;
+  }
+
+  private isCovered(x: number, y: number, typeStr: string, radius: number, pending: {id:string, x:number, y:number}[]): boolean {
+      const checkList = (items: {id: string, x: number, y: number}[]) => {
+          for (const b of items) {
+              const def = this.definitions.find(d => d.id === b.id || d.id === (b as any).definitionId)!;
+              const isMatch = def.name.toLowerCase().includes(typeStr) || 
+                              def.id.toLowerCase().includes(typeStr.replace(' ', ''));
+              if (isMatch) {
+                  const dx = (b.x + def.width/2) - x;
+                  const dy = (b.y + def.height/2) - y;
+                  if (Math.sqrt(dx*dx + dy*dy) <= (def.influenceRadius || radius)) return true;
+              }
+          }
+          return false;
+      };
+      return checkList(this.currentGenome.map(b => ({id: b.definitionId, x: b.x, y: b.y}))) || checkList(pending);
+  }
+
+  private isTooClose(x: number, y: number, id: string, radius: number, pending: {id:string, x:number, y:number}[]): boolean {
+      const minDist = radius * 1.5;
+      const checkList = (items: {id: string, x: number, y: number}[]) => {
+          for (const b of items) {
+              if (b.id === id) {
+                  const dist = Math.sqrt((b.x - x)**2 + (b.y - y)**2);
+                  if (dist < minDist) return true;
+              }
+          }
+          return false;
+      };
+      return checkList(this.currentGenome.map(b => ({id: b.definitionId, x: b.x, y: b.y}))) || checkList(pending);
+  }
+
+  private generateSpiral(rings: number): {u: number, v: number}[] {
+      const coords: {u: number, v: number}[] = [];
+      let x = 0, y = 0;
+      let dx = 0, dy = -1;
+      for (let i = 0; i < rings * rings * 4; i++) {
+          if (Math.abs(x) <= rings && Math.abs(y) <= rings) coords.push({u: x, v: y});
+          if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) {
+              const temp = dx; dx = -dy; dy = temp;
+          }
+          x += dx; y += dy;
+      }
+      return coords;
+  }
+
+  private place(defId: string, x: number, y: number) {
+      const def = this.definitions.find(d => d.id === defId);
+      if (!def) return;
+      this.currentGenome.push({ uid: generateId(), definitionId: defId, x, y, rotation: 0 });
+      for(let i=0; i<def.width; i++) {
+          for(let j=0; j<def.height; j++) this.occupied.add(`${x+i},${y+j}`);
       }
   }
 
-  public getBest(): Individual | null {
-      return this.bestSolution;
+  private ensureRoad(x: number, y: number) {
+      if (!this.occupied.has(`${x},${y}`)) {
+          this.place(this.roadDefId, x, y);
+      }
   }
 
-  public getGeneration(): number {
-      return this.generationCount;
+  private isOccupied(x: number, y: number, w: number, h: number): boolean {
+      const points = [
+          {x, y}, {x: x+w-1, y}, {x, y: y+h-1}, {x: x+w-1, y: y+h-1},
+          {x: x+Math.floor(w/2), y: y+Math.floor(h/2)}
+      ];
+      return points.some(p => this.occupied.has(`${p.x},${p.y}`));
+  }
+
+  private canPlace(x: number, y: number, w: number, h: number): boolean {
+      if (!this.isInBounds(x, y, w, h)) return false;
+      for(let i=0; i<w; i++) {
+          for(let j=0; j<h; j++) {
+              if (this.occupied.has(`${x+i},${y+j}`)) return false;
+          }
+      }
+      return true;
+  }
+
+  private isInBounds(x: number, y: number, w: number, h: number): boolean {
+       return x >= 0 && y >= 0 && x + w <= this.params.areaWidth && y + h <= this.params.areaHeight;
+  }
+
+  public getBest() { return { genome: this.currentGenome, fitness: this.currentGenome.length }; }
+  
+  public getGeneration() { 
+     if (this.finished) return this.MAX_GEN;
+     const total = this.houseQueue.length + this.localQueue.length + this.currentGenome.length;
+     const prog = (this.currentGenome.length / (total || 1));
+     return Math.min(Math.floor(prog * this.MAX_GEN), this.MAX_GEN - 1);
   }
 }
