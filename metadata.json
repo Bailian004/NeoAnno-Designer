@@ -1,0 +1,5 @@
+{
+  "name": "NeoAnno Designer",
+  "description": "A modern, web-based successor to Anno Designer featuring a multi-title selection hub, a grid-based city layout editor, and a client-side Genetic Algorithm solver for optimal layout generation without generative AI.",
+  "requestFramePermissions": []
+}
