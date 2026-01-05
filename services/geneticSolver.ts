@@ -1,20 +1,24 @@
-import { BuildingDefinition, PlacedBuilding, SolverParams } from "../types";
+import { BuildingDefinition, PlacedBuilding, SolverParams, CityGenome, BlockGene } from "../types";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export type SolverMode = 'city' | 'industry';
 
 /**
- * TITAN ARCHITECT V42 - CIRCLE INTERSECTION LOGIC
- * * Fixes: Service Spam (Redundant buildings).
- * * Logic: Implements accurate Circle Intersection Area calculation.
- * * Rule: A new service is REJECTED if it overlaps more than 20% with an existing neighbor.
+ * TITAN ARCHITECT V50 - GENETIC BUILDER
+ * * Role: Deterministic Builder.
+ * * Change: Now accepts a 'CityGenome' in init().
+ * * Logic: Builds chunks based on the Genome's instructions (RES_T1, SVC_HUB, etc.)
+ * * Pruning: Still performs 'Build & Prune' to ensure no ghost services.
  */
 export class GeneticSolver {
   private params: SolverParams;
   private definitions: BuildingDefinition[];
   private currentGenome: PlacedBuilding[] = [];
   
+  // Genome (The Plan)
+  private blueprint: CityGenome | null = null;
+
   private spineQueue: string[] = [];
   private localQueue: string[] = [];
   private houseQueue: string[] = [];
@@ -26,14 +30,11 @@ export class GeneticSolver {
   
   private spiralGrid: {u: number, v: number}[] = [];
   private currentSpiralIndex = 0;
-  private finished: boolean = false;
+  public isFinished: boolean = false;
   
   // GEOMETRY: 15x9
   private readonly BLOCK_W = 15; 
   private readonly BLOCK_H = 9; 
-  private readonly MAX_GEN = 500;
-  
-  // MAX ALLOWED OVERLAP (0.2 = 20%)
   private readonly MAX_OVERLAP_RATIO = 0.20;
 
   constructor(params: SolverParams, definitions: BuildingDefinition[], mode: SolverMode = 'city') {
@@ -49,11 +50,12 @@ export class GeneticSolver {
     this.roadDefId = roadDef ? roadDef.id : 'Street_1x1';
   }
 
-  public init() {
+  public init(genome?: CityGenome) {
     this.currentGenome = [];
     this.occupied.clear();
-    this.finished = false;
+    this.isFinished = false;
     this.currentSpiralIndex = 0;
+    this.blueprint = genome || null;
 
     this.params.blockedCells.forEach(cell => this.occupied.add(cell));
     this.spiralGrid = this.generateSpiral(Math.ceil(this.params.areaWidth / this.BLOCK_W) + 6);
@@ -103,11 +105,20 @@ export class GeneticSolver {
     this.houseQueue = houses;
   }
 
+  // Runs the entire build process synchronously (Used by PopulationManager)
+  public buildSync() {
+      while (!this.isFinished) {
+          this.step();
+      }
+  }
+
   public step() {
-    if (this.finished) return;
+    if (this.isFinished) return;
 
     let placed = false;
     let attempts = 0;
+    
+    // BUILD PHASE
     while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts < 150) {
         const coord = this.spiralGrid[this.currentSpiralIndex];
         placed = this.processChunk(coord.u, coord.v);
@@ -115,12 +126,64 @@ export class GeneticSolver {
         attempts++;
     }
 
-    if (this.currentSpiralIndex >= this.spiralGrid.length) {
-        this.finished = true;
+    // FINISH & PRUNE
+    if (this.currentSpiralIndex >= this.spiralGrid.length || (this.houseQueue.length === 0 && !placed)) {
+        this.isFinished = true;
+        this.prune(); 
     }
   }
 
+  private prune() {
+    const houses = this.currentGenome.filter(b => {
+        const def = this.definitions.find(d => d.id === b.definitionId);
+        return def && def.category === 'Residence';
+    });
+
+    const usefulServiceIds = new Set<string>();
+    const services = this.currentGenome.filter(b => {
+        const def = this.definitions.find(d => d.id === b.definitionId);
+        return def && def.category === 'Public';
+    });
+
+    services.forEach(svc => {
+        const def = this.definitions.find(d => d.id === svc.definitionId)!;
+        const hasCustomer = houses.some(h => {
+             const hDef = this.definitions.find(d => d.id === h.definitionId)!;
+             const sCx = svc.x + def.width/2;
+             const sCy = svc.y + def.height/2;
+             const hCx = h.x + hDef.width/2;
+             const hCy = h.y + hDef.height/2;
+             const dist = Math.sqrt((sCx - hCx)**2 + (sCy - hCy)**2);
+             return dist <= (def.influenceRadius || 0);
+        });
+
+        if (hasCustomer) {
+            usefulServiceIds.add(svc.uid);
+        }
+    });
+
+    this.currentGenome = this.currentGenome.filter(b => {
+        const def = this.definitions.find(d => d.id === b.definitionId);
+        if (!def) return false;
+        if (def.category === 'Public') {
+            return usefulServiceIds.has(b.uid);
+        }
+        return true; 
+    });
+    
+    this.occupied.clear();
+    this.params.blockedCells.forEach(cell => this.occupied.add(cell));
+    this.currentGenome.forEach(b => {
+        const def = this.definitions.find(d => d.id === b.definitionId)!;
+        for(let i=0; i<def.width; i++) {
+            for(let j=0; j<def.height; j++) this.occupied.add(`${b.x+i},${b.y+j}`);
+        }
+    });
+  }
+
   private processChunk(u: number, v: number): boolean {
+      if (this.houseQueue.length === 0) return false;
+
       const x = this.center.x + (u * this.BLOCK_W);
       let y = 0;
       
@@ -135,6 +198,38 @@ export class GeneticSolver {
       if (!this.isInBounds(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
       if (this.isOccupied(x, y, this.BLOCK_W, this.BLOCK_H)) return false;
 
+      // --- GENE LOOKUP ---
+      // Determine what to build based on Genome
+      let targetTier = 'Tier1';
+      let forceServices = false;
+      let forcePark = false;
+      let isEmpty = false;
+
+      if (this.blueprint) {
+          // Map world coords (x,y) to genome grid coords
+          const gx = Math.floor(x / this.BLOCK_W); // Simplified mapping
+          const gy = Math.floor(y / this.BLOCK_H); 
+          
+          if (gx >= 0 && gx < this.blueprint.width && gy >= 0 && gy < this.blueprint.height) {
+              const gene = this.blueprint.grid[gx][gy];
+              if (gene === BlockGene.RESIDENTIAL_TIER2) targetTier = 'Tier2';
+              if (gene === BlockGene.SERVICE_HUB) { targetTier = 'Tier2'; forceServices = true; }
+              if (gene === BlockGene.PARK_RESERVE) forcePark = true;
+              if (gene === BlockGene.EMPTY) isEmpty = true;
+          }
+      } else {
+          // Fallback logic for legacy mode
+          const dist = Math.max(Math.abs(u), Math.abs(v));
+          targetTier = dist < 3 ? 'Tier2' : 'Tier1';
+      }
+
+      if (isEmpty) return false; 
+      if (forcePark) {
+          // Just build roads and exit
+          this.buildRoadRect(x, y);
+          return true;
+      }
+
       // 1. Try Spine Placement
       if (v === 0 && this.spineQueue.length > 0) {
           const placedSpine = this.processSpineBlock(x, y);
@@ -146,7 +241,8 @@ export class GeneticSolver {
       }
 
       // 2. Try City Block
-      const placedCity = this.processCityBlock(x, y, u, v);
+      // Pass the genetic instruction (targetTier) to the builder
+      const placedCity = this.processCityBlock(x, y, targetTier, forceServices);
       
       if (v === 0) {
           const centerY = y + 4;
@@ -167,8 +263,12 @@ export class GeneticSolver {
 
   private processSpineBlock(x: number, y: number): boolean {
       const id = this.spineQueue[0]; 
-      const def = this.definitions.find(d => d.id === id)!;
       
+      if (this.isRedundant(x + this.BLOCK_W/2, y + this.BLOCK_H/2, id, [])) {
+          return false; 
+      }
+      
+      const def = this.definitions.find(d => d.id === id)!;
       const placeX = x + Math.floor((this.BLOCK_W - def.width) / 2);
       const placeY = y + 1;
 
@@ -181,19 +281,19 @@ export class GeneticSolver {
       return false; 
   }
 
-  private processCityBlock(x: number, y: number, u: number, v: number): boolean {
+  private processCityBlock(x: number, y: number, targetTier: string, forceServices: boolean): boolean {
+      if (this.houseQueue.length === 0) return false;
+
       const pendingBuildings: {id: string, x: number, y: number}[] = [];
       const pendingRoads: {x: number, y: number}[] = [];
       const localOccupied = new Set<string>();
-      let hasContent = false;
-
+      
       const stageBuilding = (id: string, bx: number, by: number) => {
           const def = this.definitions.find(d => d.id === id)!;
           pendingBuildings.push({ id, x: bx, y: by });
           for(let i=0; i<def.width; i++) {
               for(let j=0; j<def.height; j++) localOccupied.add(`${bx+i},${by+j}`);
           }
-          hasContent = true;
       };
       
       const stageRoad = (rx: number, ry: number) => {
@@ -209,93 +309,120 @@ export class GeneticSolver {
       const centerX = x + 7;
       for(let j=0; j<this.BLOCK_H; j++) stageRoad(centerX, y+j);
       
-      const midX = x + 7;
-      if (v > 0) { for(let ky = y; ky >= this.center.y; ky--) stageRoad(midX, ky); } 
-      else if (v < 0) { for(let ky = y + this.BLOCK_H; ky <= this.center.y; ky++) stageRoad(midX, ky); }
-
-      // 2. FILL LOGIC
-      const dist = Math.max(Math.abs(u), Math.abs(v));
-      const targetTier = dist < 3 ? 'Tier2' : 'Tier1';
-
-      const rows = [y + 1, y + 5];
-      const zones = [{min: x+1, max: x+6}, {min: x+8, max: x+13}];
+      // 2. IDENTIFY MISSING SERVICES (Predictive Demand)
+      const blockCenter = { x: x + this.BLOCK_W/2, y: y + this.BLOCK_H/2 };
+      const neededServiceIds = this.getRequiredServices(blockCenter.x, blockCenter.y, targetTier, pendingBuildings);
+      
+      neededServiceIds.sort((a, b) => {
+          const defA = this.definitions.find(d => d.id === a)!;
+          const defB = this.definitions.find(d => d.id === b)!;
+          return (defB.width * defB.height) - (defA.width * defA.height);
+      });
 
       const usedLocalIndices: number[] = [];
-      let housesUsed = 0;
 
-      for (const zone of zones) {
-          for (const rY of rows) {
-              let currX = zone.min;
-              while (currX <= zone.max) {
-                  if (localOccupied.has(`${currX},${rY}`)) { currX++; continue; }
-
-                  let placed = false;
-                  
-                  // A. SERVICE CHECK (With Overlap Limit)
-                  const neededServiceDefId = this.auditServiceNeeds(currX+1, rY+1, targetTier, pendingBuildings);
-                  
-                  if (neededServiceDefId) {
-                      // Check for Overlap spam
-                      if (!this.isRedundant(currX, rY, neededServiceDefId, pendingBuildings)) {
-                          
-                          let sId = neededServiceDefId;
-                          const sIdx = this.localQueue.findIndex((id, idx) => id === neededServiceDefId && !usedLocalIndices.includes(idx));
-                          if (sIdx !== -1) sId = this.localQueue[sIdx];
-                          
-                          const sDef = this.definitions.find(d => d.id === sId)!;
-                          if (currX + sDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, sDef.width, sDef.height, localOccupied)) {
-                              stageBuilding(sId, currX, rY);
-                              if (sIdx !== -1) usedLocalIndices.push(sIdx);
-                              currX += sDef.width;
-                              placed = true;
-                          }
-                      }
-                  }
-
-                  // B. HOUSE
-                  if (!placed && this.houseQueue.length > housesUsed) {
-                      const hId = this.houseQueue[housesUsed];
-                      const hDef = this.definitions.find(d => d.id === hId)!;
-                      if (currX + hDef.width - 1 <= zone.max && this.isLocallyFree(currX, rY, hDef.width, hDef.height, localOccupied)) {
-                          const hCx = currX + hDef.width/2;
-                          const hCy = rY + hDef.height/2;
-                          if (this.checkAllServicesCovered(hCx, hCy, targetTier, pendingBuildings)) {
-                              stageBuilding(hId, currX, rY);
-                              housesUsed++;
-                              currX += hDef.width;
-                              placed = true;
-                          }
-                      }
-                  }
-                  if (!placed) currX++;
+      // 3. PLACE SERVICES FIRST
+      for (const sId of neededServiceIds) {
+          const sDef = this.definitions.find(d => d.id === sId)!;
+          const spot = this.findBestSpot(x, y, sDef.width, sDef.height, localOccupied);
+          
+          if (spot) {
+              stageBuilding(sId, spot.x, spot.y);
+              const idx = this.localQueue.indexOf(sId);
+              if (idx !== -1 && !usedLocalIndices.includes(idx)) {
+                  usedLocalIndices.push(idx);
               }
           }
       }
 
-      if (hasContent) {
+      // 4. FILL WITH HOUSES
+      let housesUsed = 0;
+      const zones = [{min: x+1, max: x+6}, {min: x+8, max: x+13}];
+      
+      if (this.houseQueue.length > 0) {
+        const hDef = this.definitions.find(d => d.id === this.houseQueue[0])!;
+        for (const zone of zones) {
+            for (let rY = y+1; rY < y + this.BLOCK_H - 1; rY++) {
+                let currX = zone.min;
+                while (currX <= zone.max) {
+                    if (housesUsed >= this.houseQueue.length) break;
+
+                    const hId = this.houseQueue[housesUsed];
+                    if (this.isLocallyFree(currX, rY, hDef.width, hDef.height, localOccupied)) {
+                         const hCx = currX + hDef.width/2;
+                         const hCy = rY + hDef.height/2;
+                         if (this.checkAllServicesCovered(hCx, hCy, targetTier, pendingBuildings)) {
+                             stageBuilding(hId, currX, rY);
+                             housesUsed++;
+                             currX += hDef.width;
+                             continue;
+                         }
+                    }
+                    currX++; 
+                }
+            }
+        }
+      }
+
+      // 5. COMMIT
+      if (pendingBuildings.length > 0 || pendingRoads.length > 0) {
           pendingBuildings.forEach(b => this.place(b.id, b.x, b.y));
           pendingRoads.forEach(r => this.ensureRoad(r.x, r.y));
+          
           for(let k=0; k<housesUsed; k++) this.houseQueue.shift();
           [...new Set(usedLocalIndices)].sort((a,b) => b - a).forEach(idx => this.localQueue.splice(idx, 1));
+          
           return true;
       }
 
       return false;
   }
 
-  // --- MATH UTILS ---
+  // --- UTILS ---
+  
+  private findBestSpot(x: number, y: number, w: number, h: number, localMask: Set<string>): {x: number, y: number} | null {
+      const zones = [{min: x+1, max: x+6}, {min: x+8, max: x+13}];
+      for (const zone of zones) {
+          for (let py = y + 1; py <= y + this.BLOCK_H - 1 - h; py++) {
+              for (let px = zone.min; px <= zone.max - w + 1; px++) {
+                  if (this.isLocallyFree(px, py, w, h, localMask)) {
+                      return { x: px, y: py };
+                  }
+              }
+          }
+      }
+      return null;
+  }
 
-  // Calculates Circle Intersection Area (r = radius, d = distance)
-  // Formula: A = r^2 * acos(d/2r) - (d/2) * sqrt(r^2 - (d/2)^2) * 2 (Symmetric lens)
+  private getRequiredServices(x: number, y: number, tier: string, pending: any[]): string[] {
+      let required: string[] = ['marketplace', 'pub', 'chapel', 'fire station', 'police']; 
+      if (tier === 'Tier2') required = ['marketplace', 'pub', 'school', 'church', 'fire station', 'tavern', 'police'];
+      
+      const missing: string[] = [];
+
+      for (const type of required) {
+          if (!this.isCovered(x, y, type, 22, pending)) {
+              const def = this.definitions.find(d => 
+                  d.name.toLowerCase().includes(type) || 
+                  d.id.toLowerCase().includes(type.replace(' ', ''))
+              );
+              
+              if (def) {
+                  if (!this.isRedundant(x, y, def.id, pending)) {
+                      missing.push(def.id);
+                  }
+              }
+          }
+      }
+      return missing;
+  }
+
   private getCircleOverlapArea(r: number, d: number): number {
-     if (d >= 2 * r) return 0; // No overlap
-     if (d <= 0) return Math.PI * r * r; // Complete overlap
-     
-     // Area of circular segment
+     if (d >= 2 * r) return 0; 
+     if (d <= 0) return Math.PI * r * r; 
      const angle = 2 * Math.acos(d / (2 * r));
      const segmentArea = 0.5 * r * r * (angle - Math.sin(angle));
-     
-     return 2 * segmentArea; // Two segments make the lens
+     return 2 * segmentArea; 
   }
 
   private isRedundant(x: number, y: number, defId: string, pending: {id:string, x:number, y:number}[]): boolean {
@@ -308,24 +435,16 @@ export class GeneticSolver {
       const checkList = (items: {id: string, x: number, y: number}[]) => {
           for (const b of items) {
               const bDef = this.definitions.find(d => d.id === b.id || d.id === (b as any).definitionId);
-              
-              // Only check against SAME type
               if (bDef && (bDef.id === defId || (targetDef.name && bDef.name === targetDef.name))) {
                    const dist = Math.sqrt((b.x - x)**2 + (b.y - y)**2);
-                   
-                   // Optimization: If distance > 2*r, area is 0. Skip complicated math.
                    if (dist < 2 * r) {
                        const overlapArea = this.getCircleOverlapArea(r, dist);
-                       const overlapRatio = overlapArea / targetArea;
-                       
-                       // REJECT if overlap is greater than 20%
-                       if (overlapRatio > this.MAX_OVERLAP_RATIO) return true;
+                       if ((overlapArea / targetArea) > this.MAX_OVERLAP_RATIO) return true;
                    }
               }
           }
           return false;
       };
-
       return checkList(this.currentGenome.map(b => ({id: b.definitionId, x: b.x, y: b.y}))) || checkList(pending);
   }
 
@@ -342,25 +461,6 @@ export class GeneticSolver {
           }
       }
       return true;
-  }
-
-  private auditServiceNeeds(x: number, y: number, tier: string, pending: any[]): string | null {
-      let required: string[] = ['marketplace', 'pub', 'chapel', 'fire station']; 
-      if (tier === 'Tier2') required = ['marketplace', 'pub', 'school', 'church', 'fire station', 'tavern', 'police'];
-      
-      const priority = ['church', 'school', 'fire station', 'marketplace', 'pub', 'tavern', 'chapel', 'police'];
-      const checkList = priority.filter(p => required.includes(p));
-      
-      for (const type of checkList) {
-          if (!this.isCovered(x, y, type, 22, pending)) {
-              const def = this.definitions.find(d => 
-                  d.name.toLowerCase().includes(type) || 
-                  d.id.toLowerCase().includes(type.replace(' ', ''))
-              );
-              if (def) return def.id;
-          }
-      }
-      return null;
   }
 
   private checkAllServicesCovered(x: number, y: number, tier: string, pending: any[]): boolean {
@@ -443,7 +543,7 @@ export class GeneticSolver {
   public getBest() { return { genome: this.currentGenome, fitness: this.currentGenome.length }; }
   
   public getGeneration() { 
-      if (this.finished) return this.MAX_GEN;
+      if (this.isFinished) return this.MAX_GEN;
       const total = this.houseQueue.length + this.localQueue.length + this.currentGenome.length;
       const prog = (this.currentGenome.length / (total || 1));
       return Math.min(Math.floor(prog * this.MAX_GEN), this.MAX_GEN - 1);

@@ -1,10 +1,25 @@
-
 export enum AnnoTitle {
   ANNO_1800 = 'Anno 1800',
   ANNO_1404 = 'Anno 1404',
   ANNO_2070 = 'Anno 2070',
   ANNO_2205 = 'Anno 2205',
   ANNO_117 = 'Anno 117: Pax Romana'
+}
+
+// --- GENETIC ALGORITHM TYPES ---
+export enum BlockGene {
+  RESIDENTIAL_TIER1 = 'RES_T1', // Farmers/Workers (Basic Services)
+  RESIDENTIAL_TIER2 = 'RES_T2', // Artisans+ (Advanced Services)
+  SERVICE_HUB = 'SVC_HUB',      // Force extra services
+  PARK_RESERVE = 'PARK',        // Decoration only
+  EMPTY = 'EMPTY'               // Do not build
+}
+
+export interface CityGenome {
+  id: string;
+  grid: BlockGene[][];
+  width: number;
+  height: number;
 }
 
 export interface ResourceRate {

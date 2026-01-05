@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AnnoTitle, Layout, PlacedBuilding } from '../types';
 import { ANNO_GAMES } from '../data/annoData';
 import { GridCanvas } from './GridCanvas';
-import { GeneticSolver, SolverMode } from '../services/geneticSolver';
+import { PopulationManager, GenerationResult } from '../services/PopulationManager';
+import { SolverMode } from '../services/geneticSolver';
 import { ResourcePanel } from './ResourcePanel';
 import { calculateBuildingsForPopulation, PopulationGoal } from '../utils/productionCalculator';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
-const MAX_STEPS = 500; 
+const MAX_GENERATIONS = 40; 
 
 interface DesignerProps {
   gameTitle: AnnoTitle;
@@ -83,11 +84,54 @@ const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ 
   return <div className="w-5 h-5 rounded-sm flex-shrink-0 shadow-sm ring-1 ring-white/20" style={{ backgroundColor: color }}></div>;
 };
 
+// --- PROGRESS OVERLAY ---
+const ProgressOverlay: React.FC<{
+    progress: number; 
+    generation: number; 
+    eta: number; 
+    onCancel: () => void;
+}> = ({ progress, generation, eta, onCancel }) => (
+    <div className="absolute inset-0 z-50 bg-[#0b0f19]/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
+        <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 mb-6 relative">
+                <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center font-black text-amber-500 text-sm">
+                    {Math.round(progress)}%
+                </div>
+            </div>
+            
+            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">DESIGNING LAYOUT</h2>
+            <p className="text-slate-400 text-sm mb-8">Evolving generation {generation} of {MAX_GENERATIONS}...</p>
+            
+            {/* Progress Bar */}
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
+                <div 
+                    className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                />
+            </div>
+            
+            <div className="flex justify-between w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-8">
+                <span>Optimization Phase</span>
+                <span>~{eta > 0 ? eta.toFixed(0) : '...'}s Remaining</span>
+            </div>
+            
+            <button 
+                onClick={onCancel}
+                className="px-6 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
+            >
+                Cancel Generation
+            </button>
+        </div>
+    </div>
+);
+
 // --- MAIN DESIGNER ---
 
 export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const config = ANNO_GAMES[gameTitle];
-  const [layout, setLayout] = useState<Layout>({ width: 100, height: 100, buildings: [], blockedCells: [] });
+  const [layout, setLayout] = useState<Layout>({ width: 120, height: 120, buildings: [], blockedCells: [] });
   
   // Tools & Modes
   const [activeTool, setActiveTool] = useState<string | null>(null); 
@@ -95,6 +139,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const [terrainMode, setTerrainMode] = useState(false);
   const [solverMode, setSolverMode] = useState<SolverMode>('city');
   const [activeCategory, setActiveCategory] = useState('Residence');
+  const [activeLeftTab, setActiveLeftTab] = useState<'specs' | 'results'>('specs');
 
   // Selection
   const [selectedBuildingUid, setSelectedBuildingUid] = useState<string | null>(null);
@@ -103,9 +148,13 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const [solverCounts, setSolverCounts] = useState<Record<string, number>>({});
   const [isSolving, setIsSolving] = useState(false);
   const [solverProgress, setSolverProgress] = useState(0);
-  const [currentFitness, setCurrentFitness] = useState(0);
+  const [currentGeneration, setCurrentGeneration] = useState(0);
+  const [startTime, setStartTime] = useState<number>(0);
+  const [eta, setEta] = useState<number>(0);
+  const [lastResult, setLastResult] = useState<GenerationResult | null>(null);
   
-  const solverRef = useRef<GeneticSolver | null>(null);
+  // Use the Population Manager
+  const managerRef = useRef<PopulationManager | null>(null);
   const solverInterval = useRef<number | null>(null);
 
   // UI State
@@ -232,38 +281,70 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           setIsSolving(false);
           return;
       }
-      setLayout(l => ({ ...l, buildings: [] }));
-
-      const solver = new GeneticSolver({
+      
+      const manager = new PopulationManager({
           areaWidth: layout.width,
           areaHeight: layout.height,
-          populationSize: 1, 
-          generations: MAX_STEPS,
+          populationSize: 40, 
+          generations: MAX_GENERATIONS,
           targetCounts: solverCounts,
           blockedCells: new Set(layout.blockedCells)
       }, config.buildings, solverMode);
       
-      solver.init();
-      solverRef.current = solver;
+      manager.initPopulation();
+      managerRef.current = manager;
+      
       setIsSolving(true);
       setSolverProgress(0);
+      setCurrentGeneration(0);
+      setStartTime(Date.now());
+      setLastResult(null);
 
+      // Evolution Loop
       solverInterval.current = window.setInterval(() => {
-          if (!solverRef.current) return;
-          solverRef.current.step();
-          const best = solverRef.current.getBest();
-          const gen = solverRef.current.getGeneration();
-          if (best) {
-              setLayout(prev => ({ ...prev, buildings: best.genome }));
-              setCurrentFitness(Math.floor(best.fitness));
+          if (!managerRef.current) return;
+          
+          managerRef.current.stepGeneration();
+          
+          const bestIndividual = managerRef.current.getBest();
+          const gen = managerRef.current.generationCount;
+          
+          // Estimate Time
+          const elapsed = (Date.now() - startTime) / 1000;
+          const gensPerSec = gen / elapsed;
+          const remainingGens = MAX_GENERATIONS - gen;
+          setEta(remainingGens / (gensPerSec || 1));
+
+          // Visualize (Throttle visualization to every 5 gens for performance, or last gen)
+          if (gen % 5 === 0 || gen >= MAX_GENERATIONS) {
+              if (bestIndividual && bestIndividual.layout) {
+                  setLayout(prev => ({ ...prev, buildings: bestIndividual.layout }));
+                  setCurrentFitness(Math.floor(bestIndividual.fitness));
+              }
           }
-          const prog = Math.min((gen / MAX_STEPS) * 100, 100);
+          
+          const prog = Math.min((gen / MAX_GENERATIONS) * 100, 100);
           setSolverProgress(prog);
-          if (gen >= MAX_STEPS || (solverRef as any).current.isFinished) {
+          setCurrentGeneration(gen);
+
+          if (gen >= MAX_GENERATIONS) {
               setIsSolving(false);
               if (solverInterval.current) clearInterval(solverInterval.current);
+              
+              // Save final result for analysis
+              if (bestIndividual) {
+                  setLastResult({
+                      fitness: bestIndividual.fitness,
+                      metrics: bestIndividual.metrics,
+                      counts: bestIndividual.layout.reduce((acc, b) => {
+                          acc[b.definitionId] = (acc[b.definitionId] || 0) + 1;
+                          return acc;
+                      }, {} as Record<string, number>)
+                  });
+                  setActiveLeftTab('results'); // Switch to results tab
+              }
           }
-      }, 30);
+      }, 50); // Fast cycle
   };
 
   return (
@@ -281,10 +362,22 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
          />
       </div>
 
+      {/* Progress Overlay */}
+      {isSolving && (
+          <ProgressOverlay 
+            progress={solverProgress} 
+            generation={currentGeneration} 
+            eta={eta} 
+            onCancel={() => {
+                setIsSolving(false);
+                if (solverInterval.current) clearInterval(solverInterval.current);
+            }} 
+          />
+      )}
+
       {/* 2. Top Navigation Bar */}
       <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none p-4 flex justify-center">
         <Panel className="pointer-events-auto w-full flex-row items-center justify-between px-4 py-3 gap-6 shadow-2xl bg-[#0f172a]/95">
-            {/* Left */}
             <div className="flex items-center gap-5">
                 <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors group">
                    <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -292,21 +385,8 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                 <div className="h-8 w-px bg-white/10"></div>
                 <div>
                    <h1 className="font-black text-amber-500 tracking-[0.2em] uppercase text-sm">{config.title}</h1>
-                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V2.0</div>
+                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.1</div>
                 </div>
-            </div>
-
-            {/* Right Status */}
-            <div className="flex items-center gap-4">
-                {isSolving && (
-                    <div className="hidden md:flex flex-row items-center px-4 py-1.5 gap-3 rounded-md border border-emerald-500/30 bg-emerald-950/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        <div className="text-xs font-bold text-emerald-400 whitespace-nowrap tracking-wider">GENERATING {Math.round(solverProgress)}%</div>
-                    </div>
-                )}
             </div>
         </Panel>
       </div>
@@ -329,100 +409,155 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
          </Panel>
       </div>
 
-      {/* 3. Left Panel: Blueprint Specs */}
+      {/* 3. Left Panel: Specs & Results */}
       <div className={`absolute left-4 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
          <Panel className="flex-1 p-0 gap-0">
-             {/* Header */}
-             <div className="p-4 border-b border-white/10 bg-black/20 flex justify-between items-center">
-                 <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    Blueprint Specs
-                 </h2>
-                 <div className="flex bg-slate-900/50 rounded p-1 ring-1 ring-white/5">
-                    <button onClick={() => setSolverMode('city')} className={`px-3 py-1 text-[9px] font-bold rounded uppercase tracking-wider transition-all ${solverMode === 'city' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>City</button>
-                    <button onClick={() => setSolverMode('industry')} className={`px-3 py-1 text-[9px] font-bold rounded uppercase tracking-wider transition-all ${solverMode === 'industry' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>Ind</button>
-                 </div>
-             </div>
-
-             {/* Add Target Form */}
-             <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
-                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Add Requirement</label>
-                 <div className="flex gap-2">
-                    <select 
-                        className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none cursor-pointer" 
-                        value={newGoalTier} 
-                        onChange={e => setNewGoalTier(e.target.value)}
-                    >
-                       {config.buildings.filter(b => b.category === 'Residence').map(b => (
-                          <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>
-                       ))}
-                    </select>
-                    <input 
-                        type="number" 
-                        className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500" 
-                        value={newGoalCount} 
-                        onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} 
-                    />
-                 </div>
+             {/* Header Tabs */}
+             <div className="flex border-b border-white/10 bg-black/20">
                  <button 
-                    onClick={handleUpdatePopGoal} 
-                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 hover:border-amber-500/50 text-xs font-bold rounded-md transition-all text-amber-500 uppercase tracking-widest shadow-sm"
+                    onClick={() => setActiveLeftTab('specs')}
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'specs' ? 'text-amber-500 bg-white/5' : 'text-slate-500 hover:text-slate-300'}`}
                  >
-                    + Add To Manifest
+                    Specifications
+                 </button>
+                 <button 
+                    onClick={() => setActiveLeftTab('results')}
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'results' ? 'text-emerald-500 bg-white/5' : 'text-slate-500 hover:text-slate-300'}`}
+                 >
+                    Results
                  </button>
              </div>
 
-             {/* Goal List */}
-             <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                 {popGoals.length === 0 && (
-                     <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl p-6">
-                         <svg className="w-8 h-8 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                         <p className="text-[10px] font-bold uppercase tracking-wide">Manifest Empty</p>
+             {activeLeftTab === 'specs' ? (
+                 <>
+                     {/* Add Target Form */}
+                     <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
+                         <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Add Requirement</label>
+                         <div className="flex gap-2">
+                            <select 
+                                className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" 
+                                value={newGoalTier} 
+                                onChange={e => setNewGoalTier(e.target.value)}
+                            >
+                               {config.buildings.filter(b => b.category === 'Residence').map(b => (
+                                  <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>
+                               ))}
+                            </select>
+                            <input 
+                                type="number" 
+                                className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" 
+                                value={newGoalCount} 
+                                onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} 
+                            />
+                         </div>
+                         <button onClick={handleUpdatePopGoal} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-md text-amber-500 uppercase tracking-widest shadow-sm border border-white/10 hover:border-amber-500/50 transition-all">
+                            + Add To Manifest
+                         </button>
                      </div>
-                 )}
-                 {popGoals.map(goal => (
-                    <div key={goal.tierId} className="flex items-center justify-between bg-slate-800/40 p-3 rounded-lg border border-white/5 group hover:border-white/10 transition-colors">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">
-                             {goal.tierId.charAt(0)}
-                          </div>
-                          <div>
-                              <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
-                              <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
-                          </div>
-                       </div>
-                       <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-900/20 rounded transition-all">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                       </button>
-                    </div>
-                 ))}
-             </div>
 
-             {/* Action Button */}
-             <div className="p-4 bg-black/20 border-t border-white/10">
-                 <button 
-                    onClick={runSolver} 
-                    disabled={popGoals.length === 0}
-                    className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
-                        isSolving 
-                        ? 'bg-red-500 hover:bg-red-400 text-white shadow-red-900/20' 
-                        : popGoals.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
-                    }`}
-                 >
-                    {isSolving ? (
-                        <><span className="animate-spin text-lg">⟳</span> Halt Printer</>
-                    ) : (
-                        <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg> Generate Layout</>
-                    )}
-                 </button>
-             </div>
+                     {/* Goal List */}
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                         {popGoals.length === 0 && (
+                             <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl p-6">
+                                 <p className="text-[10px] font-bold uppercase tracking-wide">Manifest Empty</p>
+                             </div>
+                         )}
+                         {popGoals.map(goal => (
+                            <div key={goal.tierId} className="flex items-center justify-between bg-slate-800/40 p-3 rounded-lg border border-white/5">
+                               <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">
+                                     {goal.tierId.charAt(0)}
+                                  </div>
+                                  <div>
+                                      <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
+                                      <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
+                                  </div>
+                               </div>
+                               <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                               </button>
+                            </div>
+                         ))}
+                     </div>
+
+                     {/* Action Button */}
+                     <div className="p-4 bg-black/20 border-t border-white/10">
+                         <div className="flex gap-2 mb-3">
+                            <button onClick={() => setSolverMode('city')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent ${solverMode === 'city' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>City Mode</button>
+                            <button onClick={() => setSolverMode('industry')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent ${solverMode === 'industry' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>Industry</button>
+                         </div>
+                         <button 
+                            onClick={runSolver} 
+                            disabled={popGoals.length === 0}
+                            className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${popGoals.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}
+                         >
+                            Generate Layout
+                         </button>
+                     </div>
+                 </>
+             ) : (
+                 // --- RESULTS TAB ---
+                 <div className="flex-1 flex flex-col overflow-hidden">
+                     {!lastResult ? (
+                         <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">
+                             No analysis available.<br/>Run generation first.
+                         </div>
+                     ) : (
+                         <div className="flex-1 overflow-y-auto custom-scrollbar">
+                             {/* Score Card */}
+                             <div className="p-4 bg-emerald-900/10 border-b border-emerald-500/20">
+                                 <div className="flex justify-between items-end mb-2">
+                                     <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Fitness Score</span>
+                                     <span className="text-3xl font-black text-white leading-none">{Math.floor(lastResult.fitness)}</span>
+                                 </div>
+                                 
+                                 <div className="space-y-2 mt-4">
+                                     <div className="flex justify-between text-xs">
+                                         <span className="text-slate-400">Space Efficiency</span>
+                                         <span className="font-mono text-white">{(lastResult.metrics.efficiency * 100).toFixed(1)}%</span>
+                                     </div>
+                                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                                         <div className="h-full bg-emerald-500" style={{width: `${lastResult.metrics.efficiency * 100}%`}}></div>
+                                     </div>
+                                     
+                                     <div className="flex justify-between text-xs pt-1">
+                                         <span className="text-slate-400">Wasted Space</span>
+                                         <span className={`font-mono ${lastResult.metrics.wastedSpace > 0.3 ? 'text-red-400' : 'text-slate-200'}`}>{(lastResult.metrics.wastedSpace * 100).toFixed(1)}%</span>
+                                     </div>
+                                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                                         <div className="h-full bg-red-500" style={{width: `${lastResult.metrics.wastedSpace * 100}%`}}></div>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             {/* Building Manifest Breakdown */}
+                             <div className="p-4 space-y-4">
+                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10 pb-2">Building Breakdown</h3>
+                                 
+                                 {Object.entries(lastResult.counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
+                                     const def = config.buildings.find(d => d.id === id);
+                                     if (!def || def.category === 'Decoration') return null;
+                                     return (
+                                         <div key={id} className="flex items-center justify-between text-xs">
+                                             <div className="flex items-center gap-2">
+                                                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: def.color}}></div>
+                                                 <span className="text-slate-300">{def.name}</span>
+                                             </div>
+                                             <span className="font-mono font-bold text-white">{count}</span>
+                                         </div>
+                                     );
+                                 })}
+                             </div>
+                         </div>
+                     )}
+                 </div>
+             )}
          </Panel>
       </div>
 
-      {/* 4. Right Panel: Asset Browser (Tabbed) */}
+      {/* 4. Right Panel: Asset Browser */}
       <div className={`absolute right-4 top-40 bottom-20 w-72 z-10 transition-transform duration-300 flex flex-col ${rightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'}`}>
          <Panel className="flex-1">
-             {/* Tabs */}
             <div className="flex border-b border-white/10 bg-black/20">
                {['Residence', 'Public', 'Production', 'Decoration'].map(cat => (
                    <CategoryTab 
@@ -434,7 +569,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                ))}
             </div>
             
-            {/* Grid */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
                <div className="grid grid-cols-4 gap-2">
                    {config.buildings
@@ -454,20 +588,16 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                        </button>
                    ))}
                </div>
-               {config.buildings.filter(b => b.category === activeCategory).length === 0 && (
-                   <div className="text-center mt-10 text-slate-600 text-[10px] uppercase font-bold tracking-widest">No Assets Found</div>
-               )}
             </div>
          </Panel>
       </div>
 
-      {/* 5. Bottom Control Dock (Draggable) */}
+      {/* 5. Bottom Control Dock */}
       <div 
         style={{ left: dockPos.x, top: dockPos.y }}
         className="fixed z-50 flex gap-2"
       >
           <Panel onMouseDown={handleDockMouseDown} className="flex-row p-1.5 gap-1 select-none cursor-move items-stretch">
-             {/* Drag Handle */}
              <div className="flex flex-col items-center justify-center px-1.5 gap-0.5 border-r border-white/5 bg-black/10 text-slate-600 cursor-move">
                <div className="w-1 h-1 rounded-full bg-slate-600"></div>
                <div className="w-1 h-1 rounded-full bg-slate-600"></div>
