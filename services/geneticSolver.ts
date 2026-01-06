@@ -11,9 +11,9 @@ export class GeneticSolver {
   private blueprint: CityGenome | null = null;
   private mode: SolverMode;
 
-  private spineQueue: string[] = []; 
-  private localQueue: string[] = []; 
-  private houseQueue: string[] = []; 
+  private spineQueue: string[] = []; // Monuments / Warehouses / Major Services (Church)
+  private localQueue: string[] = []; // Minor Services / Production (Pub, Fire)
+  private houseQueue: string[] = []; // Residences / Farms
   
   private occupied: Set<string> = new Set();
   private center: { x: number, y: number };
@@ -24,6 +24,10 @@ export class GeneticSolver {
   private currentSpiralIndex = 0;
   public isFinished: boolean = false;
   
+  // Tracking
+  private lastPlacedPos: { x: number, y: number } | null = null;
+  public errors: string[] = [];
+
   private readonly BLOCK_W = 15; 
   private readonly BLOCK_H = 9; 
 
@@ -43,12 +47,14 @@ export class GeneticSolver {
   public init(genome?: CityGenome) {
       this.currentGenome = [];
       this.occupied.clear();
+      this.errors = [];
       this.isFinished = false;
       this.currentSpiralIndex = 0;
       this.blueprint = genome || null;
+      this.lastPlacedPos = null;
 
       this.params.blockedCells.forEach(cell => this.occupied.add(cell));
-      this.spiralGrid = this.generateSpiral(Math.ceil(this.params.areaWidth / this.BLOCK_W) + 12);
+      this.spiralGrid = this.generateSpiral(Math.max(50, Math.ceil(this.params.areaWidth / 2)));
 
       const spine: string[] = [];
       const local: string[] = [];
@@ -58,7 +64,11 @@ export class GeneticSolver {
       Object.entries(this.params.targetCounts).forEach(([id, count]) => {
         let def = this.definitions.find(d => d.id === id);
         if (!def) def = this.definitions.find(d => d.name.toLowerCase() === id.toLowerCase() || d.name.toLowerCase().includes(id.toLowerCase()));
-        if (!def) return;
+        if (!def) {
+            // Ignore module definitions in request list, they are implicit
+            if (!id.startsWith('Module_')) this.errors.push(`Unknown Building ID: ${id}`);
+            return;
+        }
         for (let i = 0; i < count; i++) allRequests.push({id: def.id});
       });
 
@@ -67,16 +77,21 @@ export class GeneticSolver {
           if (this.mode === 'industry') {
               if (def.name.toLowerCase().includes('warehouse')) spine.push(id);
               else if (def.category === 'Production') {
-                  // Sort farms to local queue too, we want them mixed in tightly
-                  local.push(id);
+                  local.push(id); 
               } else local.push(id);
           } else {
+               // CITY MODE SORTING
                if (def.category === 'Public') {
+                  // Major services (Church, School, Bank) -> Spine
+                  // Minor services (Pub, Fire, Police) -> Local
                   const r = def.influenceRadius || def.influenceRange || 0;
-                  if (r > 28) spine.push(id);
+                  if (r > 35) spine.push(id); // Increased threshold slightly
                   else local.push(id);
-              } else if (def.category === 'Residence') houses.push(id);
-              else local.push(id);
+              } else if (def.category === 'Residence') {
+                  houses.push(id);
+              } else {
+                  local.push(id);
+              }
           }
       });
 
@@ -91,104 +106,103 @@ export class GeneticSolver {
       this.houseQueue = houses.sort(sizeSort);
   }
 
-  public buildSync() { let safety = 0; while(!this.isFinished && safety++ < 5000) this.step(); if(safety>=5000) this.isFinished=true; }
+  public buildSync() { 
+      let safety = 0; 
+      while(!this.isFinished && safety++ < 3000) {
+          this.step(); 
+      }
+      if(safety >= 3000) this.isFinished = true; 
+  }
   
   public step() { 
-      let placed = false; let attempts = 0; 
+      let placed = false; 
       
-      // INDUSTRY MODE: Use continuous packing logic
+      // --- INDUSTRY MODE ---
       if (this.mode === 'industry') {
-          // Process one building at a time from queues
-          if (this.spineQueue.length > 0) {
-              placed = this.placeNextIndustryBuilding(this.spineQueue);
-          } else if (this.localQueue.length > 0) {
-              placed = this.placeNextIndustryBuilding(this.localQueue);
-          } else if (this.houseQueue.length > 0) {
-              placed = this.placeNextIndustryBuilding(this.houseQueue);
-          } else {
-              this.isFinished = true;
-              return;
-          }
+          if (this.spineQueue.length > 0) placed = this.placeIndustryBuilding(this.spineQueue, true);
+          else if (this.localQueue.length > 0) placed = this.placeIndustryBuilding(this.localQueue, false);
+          else if (this.houseQueue.length > 0) placed = this.placeIndustryBuilding(this.houseQueue, false);
+          else { this.isFinished = true; return; }
           
-          if (!placed) {
-              // If we fail to place, discard the building to prevent infinite loop
-              // In a real GA we might retry elsewhere, but for this deterministic pass we skip
-              if (this.spineQueue.length > 0) this.spineQueue.shift();
-              else if (this.localQueue.length > 0) this.localQueue.shift();
-              else if (this.houseQueue.length > 0) this.houseQueue.shift();
-          }
+          if (!placed) this.skipFailedItem();
           return;
       }
 
-      // CITY MODE: Legacy Chunk Logic
-      while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts++ < 150) { 
+      // --- CITY MODE ---
+      let attempts = 0;
+      // Increased attempts to find spots for tricky services
+      while(!placed && this.currentSpiralIndex < this.spiralGrid.length && attempts++ < 100) { 
           placed = this.processChunk(this.spiralGrid[this.currentSpiralIndex].u, this.spiralGrid[this.currentSpiralIndex].v); 
           this.currentSpiralIndex++; 
       } 
-      if(this.currentSpiralIndex >= this.spiralGrid.length) this.isFinished = true; 
+      
+      if(this.currentSpiralIndex >= this.spiralGrid.length) {
+          // If grid exhausted but items remain, try one last brute force pass or finish
+          this.isFinished = true;
+      }
   }
 
-  // --- INDUSTRY: ORGANIC PLACEMENT ---
-  private placeNextIndustryBuilding(queue: string[]): boolean {
+  private skipFailedItem() {
+      const q = this.spineQueue.length > 0 ? this.spineQueue : this.localQueue.length > 0 ? this.localQueue : this.houseQueue;
+      if(q.length > 0) {
+          const id = q.shift()!;
+          const name = this.definitions.find(d => d.id === id)?.name || id;
+          this.errors.push(`Could not place: ${name}`);
+      }
+  }
+
+  // --- INDUSTRY LOGIC ---
+  private placeIndustryBuilding(queue: string[], isWarehouse: boolean): boolean {
       if (queue.length === 0) return false;
       const id = queue[0];
       const def = this.definitions.find(d => d.id === id)!;
       
-      // 1. Find a spot using the Spiral Grid (Continuous Canvas Search)
-      // We search for a valid spot that is FREE and (optionally) NEAR A ROAD/WAREHOUSE
-      // Ideally, we want to cluster around existing buildings.
+      const searchRadius = Math.min(this.params.areaWidth, 150); 
+      const step = 1; 
       
-      // Heuristic: Start searching from center or last placed building
-      // For now, reuse the spiral grid as a general search pattern across the whole map
-      // but scaled to cell coordinates, not chunks.
-      
-      // Re-initialize spiral search for this building if needed, or just iterate a global cursor?
-      // A global spiral is better for "growing" the city outwards.
-      
-      // Optimization: We scan a localized area around the center.
-      const searchRadius = 150; // Cells
-      const step = 2; // Performance skip
-      
+      if (isWarehouse && this.currentGenome.length === 0) {
+          const startX = 5; const startY = 5;
+          if (this.isAreaFree(startX, startY, def.width, def.height)) {
+              const parentId = generateId();
+              this.placeExplicit(id, startX, startY, parentId, false);
+              this.createMainArtery(startX + def.width, startY + Math.floor(def.height/2));
+              this.lastPlacedPos = {x: startX, y: startY};
+              queue.shift();
+              return true;
+          }
+      }
+
+      const searchCenter = this.lastPlacedPos || this.center;
       for (let r = 0; r < searchRadius; r += step) {
-          // Generate a ring of points
-          const ring = this.generateSpiral(r / step); // reuse spiral logic but treat u/v as small steps
-          
+          const ring = this.generateSpiral(r / step); 
           for (const point of ring) {
-              const x = this.center.x + (point.u * step);
-              const y = this.center.y + (point.v * step);
+              const x = searchCenter.x + (point.u * step);
+              const y = searchCenter.y + (point.v * step);
               
               if (!this.isInBounds(x, y, def.width, def.height)) continue;
               
               if (this.isAreaFree(x, y, def.width, def.height)) {
-                  // Found a spot for Parent!
-                  
-                  // CONNECTIVITY CHECK: Is it near a road or can we build a road to it?
-                  // Simple check: Allow placement if we can place a road next to it
-                  // For organic growth, we just place it and force a road connection.
-                  
-                  const parentId = generateId();
-                  this.placeExplicit(id, x, y, parentId, false);
-                  
-                  // Ensure Road Access (Place a single road tile at bottom center)
-                  this.ensureRoad(x + Math.floor(def.width/2), y + def.height);
-                  
-                  // --- MODULE LOGIC (ORGANIC GROW) ---
-                  if (def.farmConfig) {
-                      this.placeOrganicModules(x, y, def, parentId);
+                  if (this.isTouchingRoad(x, y, def.width, def.height)) {
+                      const parentId = generateId();
+                      this.placeExplicit(id, x, y, parentId, false);
+                      if (def.farmConfig) this.placeOrganicModules(x, y, def, parentId);
+                      this.lastPlacedPos = {x, y};
+                      queue.shift();
+                      return true;
                   }
-                  
-                  queue.shift();
-                  return true;
               }
           }
       }
       return false;
   }
 
+  private createMainArtery(startX: number, startY: number) {
+      for (let x = startX; x < this.params.areaWidth - 2; x++) this.ensureRoad(x, startY);
+      for (let y = startY; y < Math.min(startY + 20, this.params.areaHeight); y++) this.ensureRoad(startX, y);
+  }
+
   private placeOrganicModules(parentX: number, parentY: number, parentDef: BuildingDefinition, parentId: string) {
       const { moduleCount, moduleSize, moduleType } = parentDef.farmConfig!;
-      
-      // Resolve Module ID
       let modDefId = 'Module_Field_1x1';
       if (moduleType === 'Pasture') {
           if (moduleSize.x === 3 && moduleSize.y === 3) modDefId = 'Module_Pasture_3x3';
@@ -197,76 +211,37 @@ export class GeneticSolver {
           else if (moduleSize.x === 4 && moduleSize.y === 4) modDefId = 'Module_Pasture_4x4';
       }
 
+      let modDef = this.definitions.find(d => d.id === modDefId);
+      if (!modDef) {
+          modDef = { id: modDefId, name: moduleType, width: moduleSize.x, height: moduleSize.y, category: 'Production', color: '#789c4a' };
+          this.definitions.push(modDef);
+      }
+
       let modulesPlaced = 0;
-      
-      // FLOOD FILL / ORGANIC GROWTH
-      // We start with a list of "candidate seeds" (tiles adjacent to parent/existing modules)
-      // and try to pick valid ones.
-      
       const candidates: {x: number, y: number}[] = [];
       const visited = new Set<string>();
       
-      // Initial seeds: Perimeter of Parent
       this.addPerimeterCandidates(parentX, parentY, parentDef.width, parentDef.height, candidates, visited);
-      
-      // Randomize candidates for organic look
       this.shuffle(candidates);
       
-      while (modulesPlaced < moduleCount && candidates.length > 0) {
-          // Pick a candidate
-          // Re-sort candidates by distance to parent to keep it somewhat tight? 
-          // Or strictly random for "sprawl"? Let's try random first.
-          
+      let safety = 0;
+      while (modulesPlaced < moduleCount && candidates.length > 0 && safety < 1500) {
+          safety++;
           const cand = candidates.shift()!;
-          
-          // STRICT CHECK: Can we place the module here?
           if (this.isAreaFree(cand.x, cand.y, moduleSize.x, moduleSize.y)) {
               this.placeExplicit(modDefId, cand.x, cand.y, generateId(), true, parentId);
               modulesPlaced++;
-              
-              // Add NEW seeds around this module
               this.addPerimeterCandidates(cand.x, cand.y, moduleSize.x, moduleSize.y, candidates, visited);
-              
-              // Re-shuffle to maintain organic randomness
-              if (candidates.length > 20) this.shuffle(candidates); 
+              if (candidates.length > 15 && safety % 10 === 0) this.shuffle(candidates); 
           }
       }
-  }
-
-  private addPerimeterCandidates(x: number, y: number, w: number, h: number, list: {x:number, y:number}[], visited: Set<string>) {
-      // Add adjacent tiles (Up, Down, Left, Right) relative to the rectangle
-      // We scan the perimeter.
-      const step = 1; // Assuming 1x1 placement grid for seeds
       
-      // Top & Bottom Edges
-      for (let i = 0; i < w; i++) {
-          this.tryAddCandidate(x + i, y - 1, list, visited); // Top
-          this.tryAddCandidate(x + i, y + h, list, visited); // Bottom
-      }
-      
-      // Left & Right Edges
-      for (let j = 0; j < h; j++) {
-          this.tryAddCandidate(x - 1, y + j, list, visited); // Left
-          this.tryAddCandidate(x + w, y + j, list, visited); // Right
+      if (modulesPlaced < moduleCount) {
+          this.errors.push(`Incomplete Farm: ${parentDef.name} (${modulesPlaced}/${moduleCount} modules)`);
       }
   }
 
-  private tryAddCandidate(x: number, y: number, list: {x:number, y:number}[], visited: Set<string>) {
-      const key = `${x},${y}`;
-      if (!visited.has(key)) {
-          visited.add(key);
-          list.push({x, y});
-      }
-  }
-
-  private shuffle(array: any[]) {
-      for (let i = array.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [array[i], array[j]] = [array[j], array[i]];
-      }
-  }
-
-  // --- CITY LOGIC (Legacy Chunks) ---
+  // --- CITY LOGIC (RESTORED) ---
   private processChunk(u: number, v: number): boolean {
       if (this.houseQueue.length === 0 && this.localQueue.length === 0 && this.spineQueue.length === 0) return false;
 
@@ -289,33 +264,99 @@ export class GeneticSolver {
       }
       if (gene === BlockGene.EMPTY) return false;
 
-      // CITY MODE FALLBACK
-      return this.processCityBlockLegacy(x, y, u, v);
-  }
+      // 1. Service Hub (Spine Queue) - Major Public Buildings
+      if (gene === BlockGene.SERVICE_HUB || gene === BlockGene.RESIDENTIAL_TIER2) {
+          this.buildRoadRect(x, y);
+          // Try to place a major service from Spine
+          if (this.spineQueue.length > 0) {
+              const svcId = this.spineQueue[0];
+              const svcDef = this.definitions.find(d => d.id === svcId)!;
+              
+              // Try Center placement
+              const cx = x + Math.floor((this.BLOCK_W - svcDef.width)/2);
+              const cy = y + Math.floor((this.BLOCK_H - svcDef.height)/2);
+              
+              if (this.canPlace(cx, cy, svcDef.width, svcDef.height)) {
+                  this.place(svcId, cx, cy);
+                  this.spineQueue.shift();
+                  
+                  // Fill remaining space with houses
+                  this.fillCityBlock(x, y, this.houseQueue);
+                  return true;
+              }
+          }
+      }
 
-  private processCityBlockLegacy(x: number, y: number, u: number, v: number): boolean { 
+      // 2. Standard Residential (Fill with Houses + Minor Services)
+      // Try to slip a Local Service (Pub, etc.) in first
       this.buildRoadRect(x, y);
+      
+      if (this.localQueue.length > 0) {
+          const svcId = this.localQueue[0];
+          const svcDef = this.definitions.find(d => d.id === svcId)!;
+          // Try corner placement for small services
+          if (this.canPlace(x+1, y+1, svcDef.width, svcDef.height)) {
+              this.place(svcId, x+1, y+1);
+              this.localQueue.shift();
+          }
+      }
+      
+      // Fill rest with houses
       if (this.houseQueue.length > 0) {
-           for (let py = y + 1; py < y + this.BLOCK_H - 1; py++) {
-              let px = x + 1;
-               while (px <= x + 13) {
-                   if (this.houseQueue.length === 0) return true;
-                   const id = this.houseQueue[0];
-                   const def = this.definitions.find(d => d.id === id)!;
-                   if (this.canPlace(px, py, def.width, def.height)) {
-                       this.place(id, px, py);
-                       this.houseQueue.shift();
-                       px += def.width;
-                   } else px++;
-               }
-           }
+          this.fillCityBlock(x, y, this.houseQueue);
           return true;
       }
-      return false; 
+
+      return false;
+  }
+
+  // Restored City Filler
+  private fillCityBlock(x: number, y: number, queue: string[]) {
+      const minX = x + 1;
+      const maxX = x + 13;
+      const minY = y + 1;
+      const maxY = y + this.BLOCK_H - 1;
+
+      for (let py = minY; py < maxY; py++) {
+          let px = minX;
+          while (px <= maxX) {
+              if (queue.length === 0) return;
+              const id = queue[0];
+              const def = this.definitions.find(d => d.id === id)!;
+              if (this.canPlace(px, py, def.width, def.height)) {
+                  this.place(id, px, py);
+                  queue.shift();
+                  px += def.width;
+              } else {
+                  px++;
+              }
+          }
+      }
   }
 
   // --- UTILS ---
-  // Helper: Checks every single cell for occupancy (Strict Mode)
+  private addPerimeterCandidates(x: number, y: number, w: number, h: number, list: {x:number, y:number}[], visited: Set<string>) {
+      for (let i = 0; i < w; i++) { this.tryAdd(x + i, y - 1, list, visited); this.tryAdd(x + i, y + h, list, visited); }
+      for (let j = 0; j < h; j++) { this.tryAdd(x - 1, y + j, list, visited); this.tryAdd(x + w, y + j, list, visited); }
+  }
+  private tryAdd(x: number, y: number, list: {x:number, y:number}[], visited: Set<string>) {
+      const key = `${x},${y}`;
+      if (!visited.has(key)) { visited.add(key); list.push({x, y}); }
+  }
+  private shuffle(array: any[]) {
+      for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+      }
+  }
+  private isTouchingRoad(x: number, y: number, w: number, h: number): boolean {
+      for(let i=0; i<w; i++) { if (this.isRoadAt(x+i, y-1)) return true; if (this.isRoadAt(x+i, y+h)) return true; }
+      for(let j=0; j<h; j++) { if (this.isRoadAt(x-1, y+j)) return true; if (this.isRoadAt(x+w, y+j)) return true; }
+      return false;
+  }
+  private isRoadAt(x: number, y: number): boolean {
+      return this.occupied.has(`${x},${y}`) && this.currentGenome.some(b => b.x === x && b.y === y && b.definitionId === this.roadDefId);
+  }
   private isAreaFree(x: number, y: number, w: number, h: number): boolean {
       if (!this.isInBounds(x, y, w, h)) return false;
       for(let i=0; i<w; i++) {
@@ -325,67 +366,24 @@ export class GeneticSolver {
       }
       return true;
   }
-
   private placeExplicit(defId: string, x: number, y: number, uid: string, isModule: boolean = false, parentId?: string) {
       const def = this.definitions.find(d => d.id === defId);
-      if (!def) {
-          console.warn("Missing definition for", defId);
-          return;
-      }
-      
-      this.currentGenome.push({ 
-          uid, 
-          definitionId: defId, 
-          x, 
-          y, 
-          rotation: 0,
-          isModule,
-          parentId
-      });
-
+      if (!def) return;
+      this.currentGenome.push({ uid, definitionId: defId, x, y, rotation: 0, isModule, parentId });
       for(let i=0; i<def.width; i++) {
           for(let j=0; j<def.height; j++) this.occupied.add(`${x+i},${y+j}`);
       }
   }
-
   private place(defId: string, x: number, y: number) { this.placeExplicit(defId, x, y, generateId()); }
-  
   private buildRoadRect(x: number, y: number) { 
       for(let i=0; i<this.BLOCK_W; i++) { this.ensureRoad(x+i, y); this.ensureRoad(x+i, y+this.BLOCK_H-1); } 
       for(let j=0; j<this.BLOCK_H; j++) { this.ensureRoad(x, y+j); this.ensureRoad(x+this.BLOCK_W-1, y+j); } 
   }
+  private ensureRoad(x: number, y: number) { if (!this.occupied.has(`${x},${y}`)) { this.place(this.roadDefId, x, y); } }
+  private isOccupied(x: number, y: number, w: number, h: number): boolean { return !this.isAreaFree(x, y, w, h); }
+  private canPlace(x: number, y: number, w: number, h: number): boolean { return this.isAreaFree(x, y, w, h); }
+  private isInBounds(x: number, y: number, w: number, h: number): boolean { return x >= 0 && y >= 0 && x + w <= this.params.areaWidth && y + h <= this.params.areaHeight; }
+  private generateSpiral(rings: number): {u: number, v: number}[] { const coords: {u: number, v: number}[] = []; let x = 0, y = 0; let dx = 0, dy = -1; for (let i = 0; i < rings * rings * 4; i++) { if (Math.abs(x) <= rings && Math.abs(y) <= rings) coords.push({u: x, v: y}); if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) { const temp = dx; dx = -dy; dy = temp; } x += dx; y += dy; } return coords; }
   
-  private ensureRoad(x: number, y: number) { 
-      if (!this.occupied.has(`${x},${y}`)) { 
-          this.place(this.roadDefId, x, y); 
-      } 
-  }
-  
-  private isOccupied(x: number, y: number, w: number, h: number): boolean { 
-      return !this.isAreaFree(x, y, w, h);
-  }
-  
-  private canPlace(x: number, y: number, w: number, h: number): boolean { 
-      return this.isAreaFree(x, y, w, h);
-  }
-  
-  private isInBounds(x: number, y: number, w: number, h: number): boolean { 
-      return x >= 0 && y >= 0 && x + w <= this.params.areaWidth && y + h <= this.params.areaHeight; 
-  }
-  
-  private generateSpiral(rings: number): {u: number, v: number}[] { 
-      const coords: {u: number, v: number}[] = []; 
-      let x = 0, y = 0; 
-      let dx = 0, dy = -1; 
-      for (let i = 0; i < rings * rings * 4; i++) { 
-          if (Math.abs(x) <= rings && Math.abs(y) <= rings) coords.push({u: x, v: y}); 
-          if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) { 
-              const temp = dx; dx = -dy; dy = temp; 
-          } 
-          x += dx; y += dy; 
-      } 
-      return coords; 
-  }
-  
-  public getBest() { return { genome: this.currentGenome, fitness: this.currentGenome.length }; }
+  public getBest() { return { genome: this.currentGenome, fitness: this.currentGenome.length, errors: this.errors }; }
 }

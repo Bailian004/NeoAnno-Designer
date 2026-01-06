@@ -176,7 +176,7 @@ const ProgressOverlay: React.FC<{progress: number, generation: number, maxGenera
 };
 
 const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficiency: number, wastedSpace: number}, counts: Record<string, number>, config: GameConfig, emptyMessage: string}> = ({ title, score, metrics, counts, config, emptyMessage }) => {
-    const totalBuildings = Object.values(counts).reduce((a,b) => a+b, 0);
+    const totalBuildings = Object.values(counts).reduce((a: number, b: number) => a+b, 0);
     if (totalBuildings === 0) return <div className="flex-1 flex items-center justify-center text-slate-600 text-xs italic">{emptyMessage}</div>;
     return (
         <div className="flex-1 flex flex-col min-h-0">
@@ -206,7 +206,7 @@ const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficienc
                 <table className="w-full text-xs text-left border-collapse">
                     <thead><tr><th className="py-2 text-slate-500 font-bold uppercase border-b border-white/10">Building</th><th className="py-2 text-right text-slate-500 font-bold uppercase border-b border-white/10">Qty</th></tr></thead>
                     <tbody>
-                        {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
+                        {Object.entries(counts).sort((a: [string, number], b: [string, number]) => b[1] - a[1]).map(([id, count]) => {
                             const def = config.buildings.find(b => b.id === id);
                             if (!def || def.category === 'Decoration') return null;
                             return (
@@ -455,7 +455,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   };
 
   const getRecommendedMode = (): string => {
-      const totalBuildings = Object.values(solverCounts).reduce((a,b) => a+b, 0);
+      const totalBuildings = (Object.values(solverCounts) as number[]).reduce((a, b) => a + b, 0);
       const tiers = popGoals.map(g => g.tierId.toLowerCase());
       const hasElite = tiers.some(t => t.includes('investor') || t.includes('engineer') || t.includes('scholar'));
       if (totalBuildings > 1500 || (hasElite && totalBuildings > 800)) return 'elite';
@@ -571,7 +571,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
          </Panel>
       </div>
 
-      <div className={`absolute left-4 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
+      <div className={`absolute left-4 top-24 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
          <Panel className="flex-1 p-0 gap-0">
              <div className="flex border-b border-white/10 bg-black/20">
                  <button onClick={() => setActiveLeftTab('specs')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'specs' ? 'text-amber-500 bg-white/5 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300'}`}>Specs</button>
@@ -631,7 +631,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
                                  <div className="flex justify-between items-center mb-2 px-1">
                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Required Supply Chains</label>
-                                     <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">{Object.values(solverCounts).reduce((a,b) => a+b, 0)} Buildings</span>
+                                     <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">{Object.values(solverCounts).reduce((a: number, b: number) => a+b, 0)} Buildings</span>
                                  </div>
                                  {availableIndustryGoods.length === 0 ? (
                                      <div className="text-center p-6 text-slate-600 border-2 border-dashed border-slate-800 rounded-lg">

@@ -184,10 +184,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectGame }) => {
               </div>
               
               <div className="space-y-1">
-                  <NewsItem date="Oct 24" title="Draggable HUD Implementation" tag="UI/UX" />
-                  <NewsItem date="Oct 20" title="Added Anno 117 Roman Assets" tag="Content" />
-                  <NewsItem date="Oct 15" title="Genetic Solver: Industry Mode" tag="Algorithim" />
-                  <NewsItem date="Oct 10" title="Resource Stress Test Slider" tag="Feature" />
+                  <NewsItem date="Jan 06" title="Global Influence Overlay" tag="UI/UX" />
+                  <NewsItem date="Jan 05" title="Navigation System Fixes" tag="Patch" />
+                  <NewsItem date="Jan 04" title="Genetic Solver Optimization" tag="Core" />
+                  <NewsItem date="Jan 03" title="Draggable HUD Implementation" tag="UI/UX" />
               </div>
               
               <div className="mt-6 pt-6 border-t border-white/5">
@@ -204,7 +204,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectGame }) => {
       {/* Footer */}
       <footer className="border-t border-white/5 bg-[#080b12] py-8 text-center">
           <p className="text-xs text-slate-600 font-mono">
-              © 2024 NEOANNO DESIGNER. NOT AFFILIATED WITH UBISOFT BLUE BYTE.
+              © 2026 NEOANNO DESIGNER. NOT AFFILIATED WITH UBISOFT BLUE BYTE.
           </p>
       </footer>
     </div>
