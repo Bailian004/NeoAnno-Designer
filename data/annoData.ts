@@ -17,7 +17,7 @@ interface RawBuilding {
   Localization: { eng: string; ger?: string; [key: string]: string | undefined };
 }
 
-// --- COLOR PRESETS (Restored from Anno Designer) ---
+// --- COLOR PRESETS ---
 const PRESET_COLOR_MAP: Record<string, string> = {
   // --- Infrastructure ---
   "Road": "#A9A9A9",
@@ -49,6 +49,7 @@ const PRESET_COLOR_MAP: Record<string, string> = {
   "Food_02 (Beer Maker)": "#008000", "Food_06 (Schnapps Maker)": "#008000", 
   "Food_07 (Sausage Maker)": "#008000", "Food_05 (Canned Food Factory)": "#008000",
   "CiderFarm": "#65A30D", // Exception from default map for variation
+  "Slaughterhouse": "#008000", "Flour Mill": "#FFA500", "Processing_02 (Flour Processing)": "#FFA500",
 
   // --- Farm: Plantation (Orange) ---
   "SpiceFarm": "#FFA500", "Potato Farm": "#FFA500", "Agriculture_04 (Potato Farm)": "#FFA500", 
@@ -93,7 +94,7 @@ const PRESET_COLOR_MAP: Record<string, string> = {
   "Hospital": "#9ACD32", "Institution_03 (Hospital)": "#9ACD32", "Institution_colony01_03 (Hospital)": "#9ACD32", // YellowGreen
 
   // --- Storage (DarkSeaGreen) ---
-  "StoreHouse": "#8FBC8F", "Warehouse01": "#8FBC8F", "Logistic_02 (Warehouse I)": "#8FBC8F",
+  "StoreHouse": "#8FBC8F", "Warehouse01": "#8FBC8F", "Logistic_02 (Warehouse I)": "#8FBC8F", "Warehouse": "#8FBC8F",
 
   // --- Residences (Teals & Blues) ---
   "PeasantHouse": "#A1EAEA", "Residence_Old_World": "#A1EAEA",
@@ -114,11 +115,19 @@ const PRESET_COLOR_MAP: Record<string, string> = {
   "tycoon_worker_residence": "#D14C4C",
   "ecos_pioneer_residence": "#A1EAEA",
   "public earth 01": "#FFDAB9",
+
+  // --- MODULE COLORS (Generic) ---
+  "Module_Field": "#789c4a", 
+  "Module_Pasture": "#a3bd63"
 };
 
 // --- LOGIC INJECTION MAP ---
 const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
-  // --- ANNO 1800: FARMERS ---
+  // --- INFRASTRUCTURE ---
+  "Street_1x1": { category: 'Decoration', name: 'Road' },
+  "Logistic_02 (Warehouse I)": { name: 'Warehouse', category: 'Public' },
+
+  // --- FARMERS ---
   "Residence_Old_World": {
     category: 'Residence',
     residence: {
@@ -130,43 +139,58 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
       ]
     }
   },
-  "Logistic_01 (Marketplace)": { category: 'Public', influenceRadius: 35 },
-  "Service_01 (Pub)": { category: 'Public', influenceRadius: 30 },
+  // UPDATED RANGES & MODULES
+  "Logistic_01 (Marketplace)": { category: 'Public', influenceRange: 48 }, 
+  "Service_01 (Pub)": { category: 'Public', influenceRange: 48 },
+  "Institution_02 (Fire Department)": { category: 'Public', influenceRange: 15 },
+
   "Agriculture_01 (Grain Farm)": {
+    name: 'Grain Farm',
     category: 'Production',
+    farmConfig: { moduleType: 'Field', moduleCount: 144, moduleSize: { x: 1, y: 1 } },
     production: { outputs: [{ resourceId: 'grain', amount: 1 }], workforce: { type: 'Farmer', amount: 20 } }
   },
   "Agriculture_04 (Potato Farm)": {
+    name: 'Potato Farm',
     category: 'Production',
+    farmConfig: { moduleType: 'Field', moduleCount: 72, moduleSize: { x: 1, y: 1 } },
     production: { outputs: [{ resourceId: 'potatoes', amount: 2 }], workforce: { type: 'Farmer', amount: 20 } }
   },
   "Agriculture_06 (Sheep Farm)": {
+    name: 'Sheep Farm',
     category: 'Production',
+    farmConfig: { moduleType: 'Pasture', moduleCount: 3, moduleSize: { x: 3, y: 3 } },
     production: { outputs: [{ resourceId: 'wool', amount: 2 }], workforce: { type: 'Farmer', amount: 10 } }
   },
   "Agriculture_05 (Timber Yard)": {
+    name: "Lumberjack's Hut",
     category: 'Production',
+    influenceRadius: 7, 
     production: { outputs: [{ resourceId: 'wood', amount: 4 }], workforce: { type: 'Farmer', amount: 5 } }
   },
   "Factory_03 (Timber Factory)": {
+    name: 'Sawmill',
     category: 'Production',
     production: { inputs: [{ resourceId: 'wood', amount: 4 }], outputs: [{ resourceId: 'timber', amount: 4 }], workforce: { type: 'Farmer', amount: 10 } }
   },
   "Coastal_01 (Fish Coast Building)": {
+    name: 'Fishery',
     category: 'Production',
     production: { outputs: [{ resourceId: 'fish', amount: 2 }], workforce: { type: 'Farmer', amount: 25 } }
   },
   "Processing_04 (Weavery)": {
+    name: 'Framework Knitters',
     category: 'Production',
     production: { inputs: [{ resourceId: 'wool', amount: 2 }], outputs: [{ resourceId: 'work_clothes', amount: 2 }], workforce: { type: 'Farmer', amount: 50 } }
   },
   "Food_06 (Schnapps Maker)": {
+    name: 'Schnapps Distillery',
     category: 'Production',
     impactType: 'Negative', impactRadius: 10,
     production: { inputs: [{ resourceId: 'potatoes', amount: 2 }], outputs: [{ resourceId: 'schnapps', amount: 2 }], workforce: { type: 'Farmer', amount: 50 } }
   },
 
-  // --- ANNO 1800: WORKERS ---
+  // --- WORKERS ---
   "Residence_tier02": {
     category: 'Residence',
     residence: {
@@ -177,23 +201,28 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
       ]
     }
   },
-  "Service_02 (School)": { category: 'Public', influenceRadius: 35 },
-  "Service_04 (Church)": { category: 'Public', influenceRadius: 40 },
-  "Institution_02 (Fire Department)": { category: 'Public', influenceRadius: 26 },
-  "Institution_01 (Police)": { category: 'Public', influenceRadius: 26 },
+  "Service_02 (School)": { category: 'Public', influenceRange: 72 },
+  "Service_04 (Church)": { category: 'Public', influenceRange: 72 },
+  "Institution_01 (Police)": { category: 'Public', influenceRange: 26 },
+
   "Agriculture_08 (Pig Farm)": {
+    name: 'Pig Farm',
     category: 'Production', impactType: 'Negative', impactRadius: 12,
+    farmConfig: { moduleType: 'Pasture', moduleCount: 5, moduleSize: { x: 3, y: 4 } },
     production: { outputs: [{ resourceId: 'pigs', amount: 1 }], workforce: { type: 'Farmer', amount: 5 } }
   },
   "Food_07 (Sausage Maker)": {
+    name: 'Slaughterhouse',
     category: 'Production', impactType: 'Negative', impactRadius: 12,
     production: { inputs: [{ resourceId: 'pigs', amount: 1 }], outputs: [{ resourceId: 'sausages', amount: 1 }], workforce: { type: 'Worker', amount: 30 } }
   },
   "Processing_02 (Flour Processing)": {
+    name: 'Flour Mill',
     category: 'Production',
     production: { inputs: [{ resourceId: 'grain', amount: 2 }], outputs: [{ resourceId: 'flour', amount: 2 }], workforce: { type: 'Farmer', amount: 10 } }
   },
   "Food_01 (Bread Maker)": {
+    name: 'Bakery',
     category: 'Production',
     production: { inputs: [{ resourceId: 'flour', amount: 1 }], outputs: [{ resourceId: 'bread', amount: 1 }], workforce: { type: 'Worker', amount: 50 } }
   },
@@ -206,30 +235,66 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
     production: { outputs: [{ resourceId: 'bricks', amount: 2 }], workforce: { type: 'Worker', amount: 10 } }
   },
   "Heavy_02 (Steel Heavy Industry)": {
+    name: 'Furnace',
     category: 'Production', impactType: 'Negative', impactRadius: 15,
     production: { outputs: [{ resourceId: 'steel', amount: 1 }], workforce: { type: 'Worker', amount: 100 } }
   },
+  "Heavy_01 (Beams Heavy Industry)": {
+    name: 'Steelworks',
+    category: 'Production',
+    production: { outputs: [{ resourceId: 'steel_beams', amount: 1 }] }
+  },
 
-  // --- ANNO 1800: ARTISANS & ABOVE ---
+  // --- ARTISANS & ABOVE ---
   "Residence_tier03": { category: 'Residence', residence: { populationType: 'Artisan', maxPopulation: 30 } },
   "Residence_tier04": { category: 'Residence', residence: { populationType: 'Engineer', maxPopulation: 40 } },
   "Residence_tier05": { category: 'Residence', residence: { populationType: 'Investor', maxPopulation: 50 } },
-  "Service_05 (Cabaret)": { category: 'Public', influenceRadius: 40 },
-  "Service_07 (University)": { category: 'Public', influenceRadius: 45 },
-  "Institution_03 (Hospital)": { category: 'Public', influenceRadius: 26 },
-  "Service_09 (Club House)": { category: 'Public', influenceRadius: 35 },
-  "Service_03 (Bank)": { category: 'Public', influenceRadius: 45 },
   
+  "Service_05 (Cabaret)": { category: 'Public', influenceRange: 96 },
+  "Service_07 (University)": { category: 'Public', influenceRange: 96 },
+  "Institution_03 (Hospital)": { category: 'Public', influenceRange: 26 },
+  "Service_09 (Club House)": { category: 'Public', influenceRange: 96 },
+  "Service_03 (Bank)": { category: 'Public', influenceRange: 96 },
+
+  // NEW WORLD & OTHERS
+  "Agriculture_colony01_11 (Alpaca Farm)": { 
+      category: 'Production',
+      farmConfig: { moduleType: 'Pasture', moduleCount: 4, moduleSize: { x: 4, y: 3 } }
+  },
+  "Agriculture_colony01_08 (Banana Farm)": { 
+      category: 'Production',
+      farmConfig: { moduleType: 'Field', moduleCount: 128, moduleSize: { x: 1, y: 1 } }
+  },
+  "Agriculture_colony01_07 (Coffee Beans Farm)": { 
+      category: 'Production',
+      farmConfig: { moduleType: 'Field', moduleCount: 168, moduleSize: { x: 1, y: 1 } }
+  },
+
   // --- ROADS & SPECIALS ---
-  "Street_1x1": { category: 'Decoration', name: 'Road' },
-  "Logistic_02 (Warehouse I)": { category: 'Public' },
   "Town hall": { category: 'Public', influenceRadius: 20 },
   "Guild_house": { category: 'Public', influenceRadius: 15 },
   
-  // --- ANNO 2205 MAPPINGS ---
+  // --- ANNO 2205 ---
   "residence tier01 earth": { category: 'Residence', residence: { populationType: 'Workers', maxPopulation: 50 } },
   "public earth 01": { category: 'Public' },
   "production energy earth facility 01 t": { category: 'Production' },
+
+  // --- EXPLICIT MODULE DEFINITIONS ---
+  "Module_Field_1x1": {
+      name: 'Field', width: 1, height: 1, color: '#789c4a', category: 'Production', id: "Module_Field_1x1"
+  },
+  "Module_Pasture_3x3": {
+      name: 'Pasture', width: 3, height: 3, color: '#a3bd63', category: 'Production', id: "Module_Pasture_3x3"
+  },
+  "Module_Pasture_3x4": {
+      name: 'Pasture', width: 3, height: 4, color: '#a3bd63', category: 'Production', id: "Module_Pasture_3x4"
+  },
+  "Module_Pasture_4x3": {
+      name: 'Pasture', width: 4, height: 3, color: '#a3bd63', category: 'Production', id: "Module_Pasture_4x3"
+  },
+  "Module_Pasture_4x4": {
+      name: 'Pasture', width: 4, height: 4, color: '#a3bd63', category: 'Production', id: "Module_Pasture_4x4"
+  },
 };
 
 // --- DATA PROCESSING HELPER ---
@@ -246,8 +311,12 @@ const determineCategory = (b: RawBuilding): BuildingDefinition['category'] => {
 const determineColor = (b: RawBuilding, category: string): string => {
   // 1. Check Exact ID Match
   if (PRESET_COLOR_MAP[b.Identifier]) return PRESET_COLOR_MAP[b.Identifier];
+  // 2. Fuzzy Match
+  for (const [key, color] of Object.entries(PRESET_COLOR_MAP)) {
+      if (b.Localization.eng?.includes(key) || b.Identifier.includes(key)) return color;
+  }
 
-  // 2. Check Name/Template Heuristics (Fallbacks)
+  // 3. Fallbacks
   if (category === 'Residence') {
     if (b.Identifier.includes('tier01')) return PRESET_COLOR_MAP["Residence_Old_World"];
     if (b.Identifier.includes('tier02')) return PRESET_COLOR_MAP["Residence_tier02"];
@@ -257,15 +326,12 @@ const determineColor = (b: RawBuilding, category: string): string => {
   if (category === 'Public') return '#FFDAB9'; 
   if (category === 'Production') return '#A16207';
   if (category === 'Decoration') return '#EC4899';
-  
   return '#64748B'; 
 };
 
 const mapRawToDefinition = (raw: RawBuilding): BuildingDefinition => {
   const overrides = GAME_LOGIC_OVERRIDES[raw.Identifier] || {};
   const category = overrides.category || determineCategory(raw);
-  
-  // Assuming the user creates a "public/icons" folder and places the png files there.
   const iconPath = raw.IconFileName ? `/icons/${raw.IconFileName}` : undefined;
 
   return {
@@ -276,7 +342,8 @@ const mapRawToDefinition = (raw: RawBuilding): BuildingDefinition => {
     color: determineColor(raw, category),
     icon: iconPath,
     category: category,
-    influenceRadius: raw.InfluenceRadius > 0 ? raw.InfluenceRadius : undefined,
+    influenceRadius: overrides.influenceRadius !== undefined ? overrides.influenceRadius : (raw.InfluenceRadius > 0 ? raw.InfluenceRadius : undefined),
+    influenceRange: overrides.influenceRange, 
     ...overrides
   };
 };
@@ -317,11 +384,17 @@ const RAW_BUILDINGS: RawBuilding[] = [
   {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Factory_04 (Brick Factory)",IconFileName:"A7_bricks.png",BuildBlocker:{x:5,z:5},Template:"FactoryBuilding7",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010283,Localization:{eng:"Brick Factory"}},
   {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Heavy_02 (Steel Heavy Industry)",IconFileName:"A7_steel.png",BuildBlocker:{x:7,z:4},Template:"HeavyFactoryBuilding",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010297,Localization:{eng:"Furnace"}},
   {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Heavy_01 (Beams Heavy Industry)",IconFileName:"A7_beams.png",BuildBlocker:{x:10,z:5},Template:"HeavyFactoryBuilding",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010296,Localization:{eng:"Steelworks"}},
+  {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Processing_02 (Flour Processing)",IconFileName:"A7_flour_mill.png",BuildBlocker:{x:3,z:4},Template:"FactoryBuilding7",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010269,Localization:{eng:"Flour Mill"}},
+  {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Food_01 (Bread Maker)",IconFileName:"A7_bread.png",BuildBlocker:{x:3,z:4},Template:"FactoryBuilding7",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010291,Localization:{eng:"Bakery"}},
+  {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Factory_02 (Soap Factory)",IconFileName:"A7_soap.png",BuildBlocker:{x:4,z:4},Template:"FactoryBuilding7",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010304,Localization:{eng:"Soap Factory"}},
+  {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Farm Buildings",Identifier:"Agriculture_08 (Pig Farm)",IconFileName:"A7_pigs.png",BuildBlocker:{x:3,z:4},Template:"FarmBuilding",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010275,Localization:{eng:"Pig Farm - (5)"}},
+  {Header:"(A7) Anno 1800",Faction:"(02) Workers",Group:"Production Buildings",Identifier:"Food_07 (Sausage Maker)",IconFileName:"A7_sausage.png",BuildBlocker:{x:3,z:4},Template:"FactoryBuilding7",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010293,Localization:{eng:"Slaughterhouse"}},
 
   // --- ANNO 1800 ROADS & ORNAMENTS ---
   {Header:"- Road Presets",Faction:"Roads (x3)",Group:null,Identifier:"Street_1x1",IconFileName:null,BuildBlocker:{x:1,z:1},Template:"Road",InfluenceRange:0.0,InfluenceRadius:0.0,Road:true,Borderless:true,Guid:0,Localization:{eng:"Road"}},
   {Header:"(A7) Anno 1800",Faction:"Ornaments",Group:"03 Park Vegetation",Identifier:"Park_1x1_grass",IconFileName:"A7_park_props_1x1_01.png",BuildBlocker:{x:1,z:1},Template:"OrnamentalBuilding_Park",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:102083,Localization:{eng:"Grass"}},
   {Header:"(A7) Anno 1800",Faction:"Ornaments",Group:"01 Park Paths",Identifier:"Park_1x1_path",IconFileName:"A7_park_props_1x1_27.png",BuildBlocker:{x:1,z:1},Template:"OrnamentalBuilding_Park",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:102099,Localization:{eng:"Path"}},
+  {Header:"(A7) Anno 1800",Faction:"All Worlds",Group:"Special Buildings",Identifier:"Logistic_02 (Warehouse I)",IconFileName:"A7_warehouse.png",BuildBlocker:{x:5,z:5},Template:"Warehouse",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:1010372,Localization:{eng:"Warehouse I"}},
 
   // --- ANNO 1404 ---
   {Header:"(A4) Anno 1404",Faction:"PlayerBuildings",Group:"Residence",Identifier:"PeasantHouse",IconFileName:"A4_icon_116_132.png",BuildBlocker:{x:3,z:3},Template:"ResidenceBuilding",InfluenceRange:0.0,InfluenceRadius:0.0,Road:false,Borderless:false,Guid:0,Localization:{eng:"Peasant house"}},
@@ -348,15 +421,15 @@ const resources1800: Record<string, {name: string, icon?: string}> = {
   work_clothes: { name: 'Work Clothes' },
   potatoes: { name: 'Potatoes' },
   schnapps: { name: 'Schnapps' },
-  fish: { name: 'Fish' },
-  pigs: { name: 'Pigs' },
-  sausages: { name: 'Sausages' },
-  bread: { name: 'Bread' },
-  soap: { name: 'Soap' },
   grain: { name: 'Grain' },
   flour: { name: 'Flour' },
+  bread: { name: 'Bread' },
+  pigs: { name: 'Pigs' },
+  sausages: { name: 'Sausages' },
+  fish: { name: 'Fish' },
   bricks: { name: 'Bricks' },
-  steel: { name: 'Steel Beams' }
+  steel: { name: 'Steel' },
+  steel_beams: { name: 'Steel Beams' }
 };
 
 // --- CONFIG EXPORT ---
@@ -365,7 +438,13 @@ export const ANNO_GAMES: Record<AnnoTitle, GameConfig> = {
     title: AnnoTitle.ANNO_1800,
     gridColor: '#333',
     backgroundColor: '#1f2937',
-    buildings: RAW_BUILDINGS.filter(b => b.Header.includes('1800') || b.Identifier === 'Street_1x1').map(mapRawToDefinition),
+    buildings: [
+        ...RAW_BUILDINGS.filter(b => b.Header.includes('1800') || b.Identifier === 'Street_1x1' || b.Identifier.includes('Warehouse')).map(mapRawToDefinition),
+        // APPEND EXPLICIT MODULE DEFINITIONS
+        ...(Object.entries(GAME_LOGIC_OVERRIDES)
+            .filter(([id]) => id.startsWith('Module_'))
+            .map(([id, def]) => ({ id, ...def } as BuildingDefinition)))
+    ],
     resources: resources1800
   },
   [AnnoTitle.ANNO_1404]: {

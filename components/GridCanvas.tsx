@@ -20,6 +20,26 @@ interface GridCanvasProps {
   showAllRadii?: boolean;
 }
 
+const isRoad = (def: BuildingDefinition) => def.id === 'Street_1x1' || def.name.toLowerCase().includes('road');
+
+// Helper to lighten hex color (mix with white)
+const lightenColor = (hex: string, percent: number) => {
+    // Strip hash
+    const num = parseInt(hex.replace('#', ''), 16);
+    // Bitwise split
+    let r = (num >> 16) + Math.round(255 * (percent / 100));
+    let g = (num >> 8 & 0x00FF) + Math.round(255 * (percent / 100));
+    let b = (num & 0x0000FF) + Math.round(255 * (percent / 100));
+    
+    // Clamp
+    r = Math.min(255, r);
+    g = Math.min(255, g);
+    b = Math.min(255, b);
+
+    // Reassemble
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+};
+
 export const GridCanvas: React.FC<GridCanvasProps> = ({
   gameConfig,
   buildings,
@@ -61,8 +81,6 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       if (b.icon) {
         const img = new Image();
         img.src = b.icon;
-        
-        // Fallback logic
         img.onerror = () => {
            if (img.src.includes('/icons/')) {
                const fileName = img.src.split('/').pop();
@@ -71,7 +89,6 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                }
            }
         };
-
         loadedImages[b.id] = img; 
       }
     });
@@ -102,6 +119,43 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       observer.disconnect();
     };
   }, []);
+
+  // --- PATHFINDING FOR STREET DISTANCE ---
+  const getReachableRoads = (startX: number, startY: number, range: number) => {
+      const roadMap = new Map<string, boolean>();
+      buildings.forEach(b => {
+          const def = gameConfig.buildings.find(d => d.id === b.definitionId);
+          if (def && isRoad(def)) roadMap.set(`${b.x},${b.y}`, true);
+      });
+
+      const queue: {x: number, y: number, dist: number}[] = [];
+      const visited = new Set<string>();
+      const results: {x: number, y: number, dist: number}[] = [];
+
+      const startKey = `${startX},${startY}`;
+      queue.push({x: startX, y: startY, dist: 0});
+      visited.add(startKey);
+
+      while(queue.length > 0) {
+          const {x, y, dist} = queue.shift()!;
+          if (dist > range) continue;
+          if (dist > 0 && roadMap.has(`${x},${y}`)) results.push({x, y, dist});
+
+          const neighbors = [[0,1], [0,-1], [1,0], [-1,0]];
+          for(const [dx, dy] of neighbors) {
+              const nx = x + dx;
+              const ny = y + dy;
+              const key = `${nx},${ny}`;
+              if (!visited.has(key)) {
+                  if (roadMap.has(key) || dist === 0) {
+                      visited.add(key);
+                      queue.push({x: nx, y: ny, dist: dist + 1});
+                  }
+              }
+          }
+      }
+      return results;
+  };
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -160,14 +214,22 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       const ph = bh * CELL_SIZE;
       const isSelected = selectedBuilding?.uid === b.uid;
 
+      ctx.save();
+      
+      // COLOR LOGIC: 50% lighter if module, no alpha
+      let fillColor = def.color;
+      if (b.isModule) {
+          fillColor = lightenColor(def.color, 30); // 30-50% mix with white
+      }
+
       const img = images[b.definitionId];
 
       if (img && img.complete && img.naturalWidth !== 0 && scale > 0.3) {
-         ctx.fillStyle = def.color + '88'; 
+         ctx.fillStyle = fillColor + (b.isModule ? '' : '88'); 
          ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
-         ctx.drawImage(img, px + 1, py + 1, pw - 2, ph - 2);
+         if (!b.isModule) ctx.drawImage(img, px + 1, py + 1, pw - 2, ph - 2);
       } else {
-         ctx.fillStyle = def.color;
+         ctx.fillStyle = fillColor;
          ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
       }
       
@@ -175,12 +237,14 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       ctx.lineWidth = isSelected ? 4 / scale : 1 / scale;
       ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
 
-      if (scale > 0.6 && (!img || !img.complete || img.naturalWidth === 0)) {
+      if (scale > 0.6 && (!b.isModule) && (!img || !img.complete || img.naturalWidth === 0)) {
         ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255,255,255,0.9)';
         ctx.font = `${isSelected ? 'black' : 'bold'} ${Math.max(8, 10 / scale)}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(def.name.substring(0, 10), px + pw/2, py + ph/2 + 4);
       }
+
+      ctx.restore();
     });
 
     // Blocked Terrain
@@ -190,42 +254,54 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
     });
 
-    // Influence Areas
+    // OVERLAY LOGIC
     const drawInfluence = (b: PlacedBuilding, def: BuildingDefinition) => {
+        const range = def.influenceRange || 0;
         const radius = def.influenceRadius || def.impactRadius || 0;
-        if (radius <= 0) return;
         
-        const color = def.color; 
+        if (range > 0) {
+            const roads = getReachableRoads(b.x, b.y, range);
+            roads.forEach(r => {
+                const px = r.x * CELL_SIZE;
+                const py = r.y * CELL_SIZE;
+                const percent = 1 - (r.dist / range);
+                ctx.fillStyle = `rgba(0, 180, 0, ${0.2 + (percent * 0.4)})`;
+                ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(px + CELL_SIZE/2 - 2, py + CELL_SIZE/2 - 2, 4, 4);
+            });
+        }
         
-        const cx = (b.x + def.width / 2) * CELL_SIZE;
-        const cy = (b.y + def.height / 2) * CELL_SIZE;
-        const rPx = radius * CELL_SIZE;
+        if (radius > 0) {
+            const cx = (b.x + def.width / 2) * CELL_SIZE;
+            const cy = (b.y + def.height / 2) * CELL_SIZE;
+            const rPx = radius * CELL_SIZE;
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
-        ctx.fillStyle = `${color}44`; 
-        ctx.fill();
-        ctx.strokeStyle = `${color}AA`;
-        ctx.lineWidth = 2 / scale;
-        ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
+            ctx.fillStyle = `${def.color}44`; 
+            ctx.fill();
+            ctx.strokeStyle = `${def.color}AA`;
+            ctx.lineWidth = 2 / scale;
+            ctx.stroke();
+        }
     };
 
     if (showAllRadii) {
         buildings.forEach(b => {
              const def = gameConfig.buildings.find(d => d.id === b.definitionId);
-             if (def && (def.influenceRadius || def.impactRadius)) {
+             if (def && (def.influenceRadius || def.influenceRange || def.impactRadius)) {
                  drawInfluence(b, def);
              }
         });
     } else if (selectedBuilding) {
       const def = gameConfig.buildings.find(d => d.id === selectedBuilding.definitionId);
-      if (def && (def.influenceRadius || def.impactRadius)) {
+      if (def && (def.influenceRadius || def.influenceRange || def.impactRadius)) {
         const similarBuildings = buildings.filter(b => b.definitionId === selectedBuilding.definitionId);
         similarBuildings.forEach(b => drawInfluence(b, def));
       }
     }
 
-    // Hover Ghost (Desktop)
     if (!readOnly && activeBuildingId && hoverPos.x !== -1) {
       const def = gameConfig.buildings.find(d => d.id === activeBuildingId);
       if (def) {
@@ -245,23 +321,18 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     return () => cancelAnimationFrame(frame);
   }, [render]);
 
-  // --- Interaction Logic (Shared between Mouse and Touch) ---
   const handleInteraction = (clientX: number, clientY: number) => {
     if (readOnly) return;
     const canvas = canvasRef.current;
     if(!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    
     const mx = (clientX - rect.left - offset.x) / scale;
     const my = (clientY - rect.top - offset.y) / scale;
     const gx = Math.floor(mx / CELL_SIZE);
     const gy = Math.floor(my / CELL_SIZE);
-
-    if (terrainMode && onToggleTerrain) {
-        onToggleTerrain(gx, gy);
-    } else if (activeBuildingId) {
-        onPlaceBuilding(gx, gy);
-    } else {
+    if (terrainMode && onToggleTerrain) onToggleTerrain(gx, gy);
+    else if (activeBuildingId) onPlaceBuilding(gx, gy);
+    else {
         const clicked = buildings.find(b => {
           const def = gameConfig.buildings.find(d => d.id === b.definitionId)!;
           const isRotated = b.rotation === 90 || b.rotation === 270;
@@ -273,121 +344,27 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     }
   };
 
-  // --- Mouse Handlers ---
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey)) {
-        setIsDragging(true);
-        setLastPos({ x: e.clientX, y: e.clientY });
-        e.preventDefault();
-        return;
-    }
-    if (e.button === 0) {
-        handleInteraction(e.clientX, e.clientY);
-    }
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey)) { setIsDragging(true); setLastPos({ x: e.clientX, y: e.clientY }); e.preventDefault(); return; }
+    if (e.button === 0) handleInteraction(e.clientX, e.clientY);
   };
-
   const handleMouseMove = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if(!canvas) return;
-    
-    // Update Hover Pos
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left - offset.x) / scale;
     const my = (e.clientY - rect.top - offset.y) / scale;
     setHoverPos({ x: Math.floor(mx / CELL_SIZE), y: Math.floor(my / CELL_SIZE) });
-
-    if (isDragging) {
-      setOffset(prev => ({ x: prev.x + (e.clientX - lastPos.x), y: prev.y + (e.clientY - lastPos.y) }));
-      setLastPos({ x: e.clientX, y: e.clientY });
-    }
+    if (isDragging) { setOffset(prev => ({ x: prev.x + (e.clientX - lastPos.x), y: prev.y + (e.clientY - lastPos.y) })); setLastPos({ x: e.clientX, y: e.clientY }); }
   };
-
-  // --- Touch Handlers ---
-  const getTouchDist = (t1: React.Touch, t2: React.Touch) => {
-    const dx = t1.clientX - t2.clientX;
-    const dy = t1.clientY - t2.clientY;
-    return Math.hypot(dx, dy);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-        // Prepare for Pan or Click
-        setIsDragging(true); // Treat as drag start
-        setHasTouchMoved(false);
-        setLastPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    } else if (e.touches.length === 2) {
-        // Pinch Start
-        const dist = getTouchDist(e.touches[0], e.touches[1]);
-        setTouchStartDist(dist);
-        setStartPinchScale(scale);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // Prevent default browser scrolling
-    // Note: Touch events on canvas usually need CSS touch-action: none for full control
-    if (e.touches.length === 1 && isDragging) {
-       const dx = e.touches[0].clientX - lastPos.x;
-       const dy = e.touches[0].clientY - lastPos.y;
-       
-       // Sensitivity check to distinguish tap from drag
-       if (!hasTouchMoved && Math.hypot(dx, dy) > 5) {
-           setHasTouchMoved(true);
-       }
-
-       if (hasTouchMoved) {
-          setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-          setLastPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-       }
-    } else if (e.touches.length === 2 && touchStartDist !== null) {
-       setHasTouchMoved(true);
-       const dist = getTouchDist(e.touches[0], e.touches[1]);
-       const zoomFactor = dist / touchStartDist;
-       const newScale = Math.min(Math.max(0.1, startPinchScale * zoomFactor), 5);
-       setScale(newScale);
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    // If it was a single touch and we didn't move significantly, treat as tap
-    if (!hasTouchMoved && isDragging && e.changedTouches.length > 0 && e.touches.length === 0) {
-        const touch = e.changedTouches[0];
-        handleInteraction(touch.clientX, touch.clientY);
-    }
-
-    // Reset interaction states if no fingers left
-    if (e.touches.length === 0) {
-        setIsDragging(false);
-        setTouchStartDist(null);
-        setHasTouchMoved(false);
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); 
-  };
+  const getTouchDist = (t1: React.Touch, t2: React.Touch) => { const dx = t1.clientX - t2.clientX; const dy = t1.clientY - t2.clientY; return Math.hypot(dx, dy); };
+  const handleTouchStart = (e: React.TouchEvent) => { if (e.touches.length === 1) { setIsDragging(true); setHasTouchMoved(false); setLastPos({ x: e.touches[0].clientX, y: e.touches[0].clientY }); } else if (e.touches.length === 2) { const dist = getTouchDist(e.touches[0], e.touches[1]); setTouchStartDist(dist); setStartPinchScale(scale); } };
+  const handleTouchMove = (e: React.TouchEvent) => { if (e.touches.length === 1 && isDragging) { const dx = e.touches[0].clientX - lastPos.x; const dy = e.touches[0].clientY - lastPos.y; if (!hasTouchMoved && Math.hypot(dx, dy) > 5) setHasTouchMoved(true); if (hasTouchMoved) { setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy })); setLastPos({ x: e.touches[0].clientX, y: e.touches[0].clientY }); } } else if (e.touches.length === 2 && touchStartDist !== null) { setHasTouchMoved(true); const dist = getTouchDist(e.touches[0], e.touches[1]); const zoomFactor = dist / touchStartDist; const newScale = Math.min(Math.max(0.1, startPinchScale * zoomFactor), 5); setScale(newScale); } };
+  const handleTouchEnd = (e: React.TouchEvent) => { if (!hasTouchMoved && isDragging && e.changedTouches.length > 0 && e.touches.length === 0) { const touch = e.changedTouches[0]; handleInteraction(touch.clientX, touch.clientY); } if (e.touches.length === 0) { setIsDragging(false); setTouchStartDist(null); setHasTouchMoved(false); } };
 
   return (
     <div ref={containerRef} className="w-full h-full bg-slate-950 relative overflow-hidden cursor-crosshair touch-none">
-      <canvas 
-        ref={canvasRef} 
-        onMouseDown={handleMouseDown} 
-        onMouseMove={handleMouseMove} 
-        onMouseUp={() => setIsDragging(false)} 
-        onContextMenu={handleContextMenu}
-        
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-
-        onWheel={(e) => {
-          e.preventDefault();
-          const zoom = e.deltaY > 0 ? 0.9 : 1.1;
-          setScale(s => Math.min(Math.max(0.1, s * zoom), 5));
-        }} 
-        className="block touch-none" 
-      />
-      {/* Zoom / Pan Help Overlay */}
+      <canvas ref={canvasRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)} onContextMenu={e => e.preventDefault()} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onWheel={(e) => { e.preventDefault(); const zoom = e.deltaY > 0 ? 0.9 : 1.1; setScale(s => Math.min(Math.max(0.1, s * zoom), 5)); }} className="block touch-none" />
       <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur text-[10px] text-slate-400 p-2 rounded border border-slate-800 pointer-events-none">
         <p className="hidden md:block">Right Click / Shift+Click: Pan</p>
         <p className="md:hidden">1 Finger: Pan/Click, 2 Fingers: Zoom</p>

@@ -27,34 +27,34 @@ interface GenerationConfig {
 }
 
 const GEN_OPTIONS: GenerationConfig[] = [
-    {
-        id: 'sketch',
-        name: 'Rapid Sketch',
-        description: 'Quickly visualize layout ideas. Good for small villages.',
-        popSize: 20,
-        generations: 25,
-        estTime: '~5-10s'
+    { 
+        id: 'sketch', 
+        name: 'Rapid Sketch', 
+        description: 'Quickly visualize layout ideas. Good for small villages.', 
+        popSize: 20, 
+        generations: 25, 
+        estTime: '~5-10s' 
     },
-    {
-        id: 'standard',
-        name: 'Standard Blueprint',
-        description: 'Balanced optimization. The default for most cities.',
-        popSize: 40,
-        generations: 50,
-        estTime: '~30s'
+    { 
+        id: 'standard', 
+        name: 'Standard Blueprint', 
+        description: 'Balanced optimization. The default for most cities.', 
+        popSize: 40, 
+        generations: 50, 
+        estTime: '~30s' 
     },
-    {
-        id: 'elite',
-        name: 'Imperial Masterpiece',
-        description: 'Brute-force optimization for massive metropolises.',
-        popSize: 80,
-        generations: 100,
-        estTime: '~2m+'
+    { 
+        id: 'elite', 
+        name: 'Imperial Masterpiece', 
+        description: 'Brute-force optimization for massive metropolises.', 
+        popSize: 80, 
+        generations: 100, 
+        estTime: '~2m+' 
     }
 ];
 
 // --- UI COMPONENTS ---
-// (UI Components kept identical to preserve your styling)
+
 const Panel: React.FC<{children: React.ReactNode, className?: string, onMouseDown?: (e: React.MouseEvent) => void}> = ({children, className="", onMouseDown}) => (
   <div 
     onMouseDown={onMouseDown} 
@@ -93,103 +93,57 @@ const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ 
   const [currentSrc, setCurrentSrc] = useState(icon);
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
-      setCurrentSrc(icon);
-      setFailed(false);
-  }, [icon]);
+  useEffect(() => { setCurrentSrc(icon); setFailed(false); }, [icon]);
 
   const handleError = () => {
       if (currentSrc && currentSrc.includes('/icons/')) {
           const fileName = currentSrc.split('/').pop();
-          if (fileName) {
-              setCurrentSrc(`./${fileName}`);
-              return;
-          }
+          if (fileName) { setCurrentSrc(`./${fileName}`); return; }
       }
       setFailed(true);
   };
   
   if (currentSrc && !failed) {
-    return (
-      <img 
-        src={currentSrc} 
-        alt={name} 
-        className="w-6 h-6 object-contain drop-shadow-md" 
-        onError={handleError} 
-      />
-    );
+    return <img src={currentSrc} alt={name} className="w-6 h-6 object-contain drop-shadow-md" onError={handleError} />;
   }
   return <div className="w-5 h-5 rounded-sm flex-shrink-0 shadow-sm ring-1 ring-white/20" style={{ backgroundColor: color }}></div>;
 };
 
-const GenerationOptionsModal: React.FC<{
-    recommendedId: string;
-    onSelect: (config: GenerationConfig) => void;
-    onCancel: () => void;
-}> = ({ recommendedId, onSelect, onCancel }) => (
-    <div className="absolute inset-0 z-50 bg-[#0b0f19]/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-        <div className="w-full max-w-4xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-white/5">
-                <h2 className="text-2xl font-black text-white mb-2 tracking-tight uppercase">Generation Strategy</h2>
-                <p className="text-slate-400 text-sm">Select an evolutionary model for your layout.</p>
+// --- MODALS ---
+
+const GenerationOptionsModal: React.FC<{recommendedId: string, onSelect: (c: GenerationConfig) => void, onCancel: () => void}> = ({ recommendedId, onSelect, onCancel }) => (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <Panel className="w-full max-w-lg p-6 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-1">
+                <h2 className="text-2xl font-black text-white uppercase tracking-widest">Select Solver Algorithm</h2>
+                <p className="text-slate-400 text-xs">Choose the complexity of the genetic evolution.</p>
             </div>
-            <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid gap-3">
                 {GEN_OPTIONS.map(opt => {
                     const isRec = opt.id === recommendedId;
                     return (
-                        <button 
-                            key={opt.id}
-                            onClick={() => onSelect(opt)}
-                            className={`relative flex flex-col p-6 rounded-xl border text-left transition-all hover:scale-[1.02] group ${
-                                isRec 
-                                ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' 
-                                : 'bg-slate-800/30 border-white/5 hover:bg-slate-800/50 hover:border-white/10'
-                            }`}
-                        >
-                            {isRec && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 text-slate-900 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
-                                    Recommended
-                                </div>
-                            )}
-                            <div className="mb-4">
-                                <h3 className={`text-lg font-black uppercase tracking-wide mb-1 ${isRec ? 'text-amber-400' : 'text-slate-200 group-hover:text-white'}`}>
-                                    {opt.name}
-                                </h3>
-                                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-                                    {opt.estTime} • {opt.generations} Gens
-                                </div>
+                        <button key={opt.id} onClick={() => onSelect(opt)} className={`relative flex items-center p-4 rounded-xl border transition-all text-left group ${isRec ? 'bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50' : 'bg-slate-800/50 border-white/5 hover:bg-slate-800 hover:border-white/20'}`}>
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 text-xl ${isRec ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-slate-700 text-slate-400'}`}>
+                                {opt.id === 'sketch' ? '⚡' : opt.id === 'standard' ? '⚙️' : '🧠'}
                             </div>
-                            <p className="text-xs text-slate-400 leading-relaxed mb-6 flex-1">
-                                {opt.description}
-                            </p>
-                            <div className={`w-full py-2 text-center rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                                isRec
-                                ? 'bg-amber-500 text-slate-900'
-                                : 'bg-slate-700 text-slate-300 group-hover:bg-slate-600 group-hover:text-white'
-                            }`}>
-                                Select
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className={`font-bold uppercase tracking-wider text-sm ${isRec ? 'text-amber-500' : 'text-slate-200'}`}>{opt.name}</span>
+                                    <span className="text-[10px] font-mono text-slate-500 bg-black/30 px-2 py-1 rounded">{opt.estTime}</span>
+                                </div>
+                                <p className="text-xs text-slate-400 leading-relaxed">{opt.description}</p>
                             </div>
+                            {isRec && <div className="absolute top-2 right-2 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></div>}
                         </button>
                     );
                 })}
             </div>
-            <div className="p-6 bg-black/20 border-t border-white/5 flex justify-center">
-                <button onClick={onCancel} className="text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">
-                    Cancel
-                </button>
-            </div>
-        </div>
+            <button onClick={onCancel} className="w-full py-3 rounded-lg text-xs font-bold text-slate-500 hover:text-white hover:bg-white/5 uppercase tracking-widest transition-colors">Cancel</button>
+        </Panel>
     </div>
 );
 
-const ProgressOverlay: React.FC<{
-    progress: number; 
-    generation: number; 
-    maxGenerations: number;
-    eta: number; 
-    onCancel: () => void;
-}> = ({ progress, generation, maxGenerations, eta, onCancel }) => {
-    
+const ProgressOverlay: React.FC<{progress: number, generation: number, maxGenerations: number, eta: number, onCancel: () => void}> = ({ progress, generation, maxGenerations, eta, onCancel }) => {
     const formatEta = (seconds: number) => {
         if (!seconds || seconds <= 0) return '...';
         if (seconds < 60) return `${Math.ceil(seconds)}s`;
@@ -198,107 +152,81 @@ const ProgressOverlay: React.FC<{
     };
 
     return (
-        <div className="absolute inset-0 z-50 bg-[#0b0f19]/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
-            <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-8 flex flex-col items-center text-center">
-                <div className="w-16 h-16 mb-6 relative">
-                    <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center font-black text-amber-500 text-sm">
-                        {Math.round(progress)}%
-                    </div>
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+            <div className="w-64 space-y-4 text-center">
+                <div className="relative w-16 h-16 mx-auto">
+                    <svg className="w-full h-full transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-slate-800" /><circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={175.9} strokeDashoffset={175.9 - (progress / 100) * 175.9} className="text-emerald-500 transition-all duration-300 ease-out" /></svg>
+                    <div className="absolute inset-0 flex items-center justify-center font-black text-white text-sm">{Math.round(progress)}%</div>
                 </div>
-                
-                <h2 className="text-2xl font-black text-white mb-2 tracking-tight">DESIGNING LAYOUT</h2>
-                <p className="text-slate-400 text-sm mb-8">Evolving generation {generation} of {maxGenerations}...</p>
-                
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
-                    <div 
-                        className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300 ease-out"
-                        style={{ width: `${progress}%` }}
-                    />
+                <div>
+                    <h3 className="text-emerald-400 font-bold uppercase tracking-widest animate-pulse">Evolving Layout</h3>
+                    <p className="text-slate-500 text-xs mt-1">Generation {generation} / {maxGenerations}</p>
                 </div>
-                
-                <div className="flex justify-between w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-8">
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="flex justify-between w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">
                     <span>Optimization Phase</span>
                     <span>~{formatEta(eta)} Remaining</span>
                 </div>
-                
-                <button 
-                    onClick={onCancel}
-                    className="px-6 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
-                >
-                    Cancel Generation
-                </button>
+                <button onClick={onCancel} className="px-6 py-2 rounded-full border border-red-500/50 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-colors">ABORT</button>
             </div>
         </div>
     );
 };
 
-const AnalysisView: React.FC<{
-    title: string;
-    score?: number;
-    metrics: { efficiency: number; wastedSpace: number };
-    counts: Record<string, number>;
-    config: GameConfig;
-    emptyMessage: string;
-}> = ({ title, score, metrics, counts, config, emptyMessage }) => {
+const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficiency: number, wastedSpace: number}, counts: Record<string, number>, config: GameConfig, emptyMessage: string}> = ({ title, score, metrics, counts, config, emptyMessage }) => {
     const totalBuildings = Object.values(counts).reduce((a,b) => a+b, 0);
-    if (totalBuildings === 0) {
-        return (
-            <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">
-                {emptyMessage}
-            </div>
-        );
-    }
+    if (totalBuildings === 0) return <div className="flex-1 flex items-center justify-center text-slate-600 text-xs italic">{emptyMessage}</div>;
     return (
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-             <div className="p-4 bg-emerald-900/10 border-b border-emerald-500/20">
-                 <div className="flex justify-between items-end mb-2">
+        <div className="flex-1 flex flex-col min-h-0">
+            <div className="p-4 space-y-4 border-b border-white/5 bg-white/5">
+                <div className="flex justify-between items-end mb-2">
                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{title}</span>
                      {score !== undefined && <span className="text-3xl font-black text-white leading-none">{Math.floor(score)}</span>}
-                 </div>
-                 
-                 <div className="space-y-2 mt-4">
-                     <div className="flex justify-between text-xs">
-                         <span className="text-slate-400">Space Efficiency</span>
-                         <span className="font-mono text-white">{(metrics.efficiency * 100).toFixed(1)}%</span>
-                     </div>
-                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                         <div className="h-full bg-emerald-500" style={{width: `${Math.min(100, metrics.efficiency * 100)}%`}}></div>
-                     </div>
-                     
-                     <div className="flex justify-between text-xs pt-1">
-                         <span className="text-slate-400">Wasted Space</span>
-                         <span className={`font-mono ${metrics.wastedSpace > 0.3 ? 'text-red-400' : 'text-slate-200'}`}>{(metrics.wastedSpace * 100).toFixed(1)}%</span>
-                     </div>
-                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                         <div className="h-full bg-red-500" style={{width: `${Math.min(100, metrics.wastedSpace * 100)}%`}}></div>
-                     </div>
-                 </div>
-             </div>
-
-             <div className="p-4 space-y-4">
-                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10 pb-2">Building Breakdown</h3>
-                 
-                 {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
-                     const def = config.buildings.find(d => d.id === id);
-                     if (!def || def.category === 'Decoration') return null;
-                     return (
-                         <div key={id} className="flex items-center justify-between text-xs">
-                             <div className="flex items-center gap-2">
-                                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: def.color}}></div>
-                                 <span className="text-slate-300">{def.name}</span>
-                             </div>
-                             <span className="font-mono font-bold text-white">{count}</span>
-                         </div>
-                     );
-                 })}
-             </div>
-         </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/40 p-2 rounded border border-white/5">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Efficiency</div>
+                        <div className={`text-xl font-mono ${metrics.efficiency > 0.8 ? 'text-emerald-400' : 'text-amber-400'}`}>{(metrics.efficiency * 100).toFixed(1)}%</div>
+                        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden mt-2">
+                            <div className="h-full bg-emerald-500" style={{width: `${Math.min(100, metrics.efficiency * 100)}%`}}></div>
+                        </div>
+                    </div>
+                    <div className="bg-black/40 p-2 rounded border border-white/5">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Used Area</div>
+                        <div className="text-xl font-mono text-blue-400">{(100 - metrics.wastedSpace * 100).toFixed(1)}%</div>
+                        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden mt-2">
+                            <div className="h-full bg-blue-500" style={{width: `${Math.min(100, (1 - metrics.wastedSpace) * 100)}%`}}></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                <table className="w-full text-xs text-left border-collapse">
+                    <thead><tr><th className="py-2 text-slate-500 font-bold uppercase border-b border-white/10">Building</th><th className="py-2 text-right text-slate-500 font-bold uppercase border-b border-white/10">Qty</th></tr></thead>
+                    <tbody>
+                        {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
+                            const def = config.buildings.find(b => b.id === id);
+                            if (!def || def.category === 'Decoration') return null;
+                            return (
+                                <tr key={id} className="group hover:bg-white/5 transition-colors">
+                                    <td className="py-2 border-b border-white/5 flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full" style={{background: def?.color || '#666'}}/>
+                                        <span className="text-slate-300 group-hover:text-white truncate max-w-[120px]">{def?.name || id}</span>
+                                    </td>
+                                    <td className="py-2 text-right border-b border-white/5 font-mono text-slate-400 group-hover:text-white">{count}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 };
 
-// --- MAIN DESIGNER ---
+// --- MAIN DESIGNER COMPONENT ---
 
 export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const config = ANNO_GAMES[gameTitle];
@@ -342,7 +270,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       return getCompatibleGoods(Array.from(selectedGoods), availableIndustryGoods);
   }, [selectedGoods, availableIndustryGoods]);
 
-  // --- LIVE INDUSTRY CALCULATION (Updated with ID Translation) ---
+  // --- LIVE INDUSTRY CALCULATION ---
   useEffect(() => {
       if (solverMode === 'industry') {
           // 1. Get raw needs based on generic names ("Sawmill": 5)
@@ -352,24 +280,33 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           });
 
           // 2. TRANSLATE TO REAL IDs
-          // We look for a building in config where name roughly matches
           const realNeeds: Record<string, number> = {};
+          let totalProdBuildings = 0;
           
           Object.entries(rawNeeds).forEach(([genericName, count]) => {
-             // Exact match?
+             // Try strict then fuzzy match against Anno Data
              let match = config.buildings.find(b => b.name === genericName);
-             
-             // Fuzzy match? (e.g. "Sheep Farm" vs "Sheep Farm")
              if (!match) {
                  match = config.buildings.find(b => b.name.toLowerCase().includes(genericName.toLowerCase()));
              }
              
              if (match) {
                  realNeeds[match.id] = count;
+                 totalProdBuildings += count;
              } else {
                  console.warn(`[Designer] Could not resolve building ID for: ${genericName}`);
              }
           });
+
+          // 3. INJECT WAREHOUSES
+          // Rule of thumb: 1 Warehouse per 8 production buildings to ensure connectivity
+          const warehousesNeeded = Math.ceil(totalProdBuildings / 8);
+          if (warehousesNeeded > 0) {
+              const wh = config.buildings.find(b => b.name === 'Warehouse' || b.name.includes('Warehouse'));
+              if (wh) {
+                  realNeeds[wh.id] = warehousesNeeded;
+              }
+          }
 
           setSolverCounts(realNeeds);
       }
@@ -429,6 +366,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     };
   }, [isDraggingDock]);
 
+  // Handle Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') { setActiveTool(null); setSelectedBuildingUid(null); }
@@ -441,6 +379,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedBuildingUid]);
 
+  // Init Pop Goal
   useEffect(() => {
     const residences = config.buildings.filter(b => b.category === 'Residence');
     if (residences.length > 0) {
@@ -512,7 +451,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   };
 
   const handleOpenSolver = () => {
-      // In Industry mode, solverCounts is already set by useEffect
       setShowGenModal(true);
   };
 
@@ -535,7 +473,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           areaHeight: layout.height,
           populationSize: genConfig.popSize, 
           generations: genConfig.generations,
-          targetCounts: solverCounts, // These are now REAL IDs
+          targetCounts: solverCounts, 
           blockedCells: new Set(layout.blockedCells)
       }, config.buildings, solverMode);
       
@@ -554,20 +492,21 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           
           const bestIndividual = managerRef.current.getBest();
           const gen = managerRef.current.generationCount;
+          
+          // ETA Calculation
           const elapsed = (Date.now() - startTime) / 1000;
           const gensPerSec = gen / elapsed;
           const remainingGens = genConfig.generations - gen;
           setEta(remainingGens / (gensPerSec || 1));
 
-          if (gen % 5 === 0 || gen >= genConfig.generations) {
-              if (bestIndividual && bestIndividual.layout) {
-                  setLayout(prev => ({ ...prev, buildings: bestIndividual.layout }));
-                  setCurrentFitness(Math.floor(bestIndividual.fitness));
-              }
-          }
           const prog = Math.min((gen / genConfig.generations) * 100, 100);
           setSolverProgress(prog);
           setCurrentGeneration(gen);
+
+          if (gen % 5 === 0 && bestIndividual && bestIndividual.layout) {
+              setLayout(prev => ({ ...prev, buildings: bestIndividual.layout }));
+              setCurrentFitness(Math.floor(bestIndividual.fitness));
+          }
 
           if (gen >= genConfig.generations) {
               setIsSolving(false);
@@ -599,55 +538,39 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             readOnly={isSolving} terrainMode={terrainMode}
          />
       </div>
-      {showGenModal && (
-          <GenerationOptionsModal 
-              recommendedId={getRecommendedMode()}
-              onSelect={confirmSolver}
-              onCancel={() => setShowGenModal(false)}
-          />
-      )}
+      {showGenModal && <GenerationOptionsModal recommendedId={getRecommendedMode()} onSelect={confirmSolver} onCancel={() => setShowGenModal(false)} />}
       {isSolving && selectedConfig && (
           <ProgressOverlay 
             progress={solverProgress} 
             generation={currentGeneration} 
             maxGenerations={selectedConfig.generations}
             eta={eta} 
-            onCancel={() => {
-                setIsSolving(false);
-                if (solverInterval.current) clearInterval(solverInterval.current);
-            }} 
+            onCancel={() => { setIsSolving(false); if (solverInterval.current) clearInterval(solverInterval.current); }} 
           />
       )}
+      
       <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none p-4 flex justify-center">
         <Panel className="pointer-events-auto w-full flex-row items-center justify-between px-4 py-3 gap-6 shadow-2xl bg-[#0f172a]/95">
             <div className="flex items-center gap-5">
                 <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors group">
-                   <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 </button>
                 <div className="h-8 w-px bg-white/10"></div>
                 <div>
                    <h1 className="font-black text-amber-500 tracking-[0.2em] uppercase text-sm">{config.title}</h1>
-                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.7</div>
+                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.8</div>
                 </div>
             </div>
         </Panel>
       </div>
+      
       <div className="absolute top-24 right-4 z-20 flex gap-2">
          <Panel className="flex-row p-1 gap-1">
-            <IconButton 
-                active={leftPanelOpen}
-                onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-                title="Toggle Blueprints"
-                icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-            />
-            <IconButton 
-                active={resourcePanelOpen} 
-                onClick={() => setResourcePanelOpen(!resourcePanelOpen)} 
-                title="Resource Monitor"
-                icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-            />
+            <IconButton active={leftPanelOpen} onClick={() => setLeftPanelOpen(!leftPanelOpen)} title="Toggle Blueprints" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} />
+            <IconButton active={resourcePanelOpen} onClick={() => setResourcePanelOpen(!resourcePanelOpen)} title="Resource Monitor" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
          </Panel>
       </div>
+
       <div className={`absolute left-4 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
          <Panel className="flex-1 p-0 gap-0">
              <div className="flex border-b border-white/10 bg-black/20">
@@ -662,19 +585,14 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                         <button onClick={() => setSolverMode('industry')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent transition-all ${solverMode === 'industry' ? 'bg-slate-700 text-white shadow' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>Industry</button>
                      </div>
                      {solverMode === 'city' ? (
-                         <>
-                             <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
-                                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Add Requirement</label>
-                                 <div className="flex gap-2">
-                                    <select className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" value={newGoalTier} onChange={e => setNewGoalTier(e.target.value)}>
-                                       {config.buildings.filter(b => b.category === 'Residence').map(b => (
-                                          <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>
-                                       ))}
-                                    </select>
-                                    <input type="number" className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" value={newGoalCount} onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} />
-                                 </div>
-                                 <button onClick={handleUpdatePopGoal} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-md text-amber-500 uppercase tracking-widest shadow-sm border border-white/10 hover:border-amber-500/50 transition-all">+ Add To Manifest</button>
+                         <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
+                             <div className="flex gap-2">
+                                <select className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" value={newGoalTier} onChange={e => setNewGoalTier(e.target.value)}>
+                                   {config.buildings.filter(b => b.category === 'Residence').map(b => <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>)}
+                                </select>
+                                <input type="number" className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" value={newGoalCount} onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} />
                              </div>
+                             <button onClick={handleUpdatePopGoal} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-md text-amber-500 uppercase tracking-widest shadow-sm border border-white/10 hover:border-amber-500/50 transition-all">+ Add To Manifest</button>
                              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
                                  {popGoals.length === 0 && (
                                      <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl p-6">
@@ -683,20 +601,20 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                                  )}
                                  {popGoals.map(goal => (
                                     <div key={goal.tierId} className="flex items-center justify-between bg-slate-800/40 p-3 rounded-lg border border-white/5">
-                                       <div className="flex items-center gap-3">
-                                          <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">{goal.tierId.charAt(0)}</div>
-                                          <div>
-                                              <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
-                                              <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
-                                          </div>
-                                       </div>
-                                       <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400">
-                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                       </button>
+                                        <div className="flex items-center gap-3">
+                                           <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">{goal.tierId.charAt(0)}</div>
+                                           <div>
+                                               <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
+                                               <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
+                                           </div>
+                                        </div>
+                                        <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400">
+                                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
                                     </div>
                                  ))}
                              </div>
-                         </>
+                         </div>
                      ) : (
                          <div className="flex-1 flex flex-col">
                              <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
@@ -749,21 +667,17 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                          <button onClick={handleOpenSolver} disabled={solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0} className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${(solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}>Generate Layout</button>
                      </div>
                  </>
-             ) : activeLeftTab === 'generated' ? (
-                 <div className="flex-1 flex flex-col overflow-hidden">
-                     {!lastResult ? (
-                         <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">No generation data.<br/>Run the solver first.</div>
-                     ) : (
-                         <AnalysisView title="Generation Report" score={lastResult.fitness} metrics={lastResult.metrics} counts={lastResult.counts} config={config} emptyMessage="Result Empty" />
-                     )}
-                 </div>
              ) : (
                  <div className="flex-1 flex flex-col overflow-hidden">
-                     <AnalysisView title="Live Canvas Analysis" metrics={liveAnalysis.metrics} counts={liveAnalysis.counts} config={config} emptyMessage="Canvas Empty" />
+                     {activeLeftTab === 'generated' 
+                        ? <AnalysisView title="Generation Report" score={lastResult?.fitness} metrics={lastResult?.metrics || {efficiency:0, wastedSpace:0}} counts={lastResult?.counts || {}} config={config} emptyMessage={!lastResult ? "No generation data.\nRun the solver first." : "Result Empty"} />
+                        : <AnalysisView title="Live Canvas Analysis" metrics={liveAnalysis.metrics} counts={liveAnalysis.counts} config={config} emptyMessage="Canvas Empty" />
+                     }
                  </div>
              )}
          </Panel>
       </div>
+
       <div className={`absolute right-4 top-40 bottom-20 w-72 z-10 transition-transform duration-300 flex flex-col ${rightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'}`}>
          <Panel className="flex-1">
             <div className="flex border-b border-white/10 bg-black/20">
@@ -782,10 +696,11 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             </div>
          </Panel>
       </div>
+
       <div style={{ left: dockPos.x, top: dockPos.y }} className="fixed z-50 flex gap-2">
           <Panel onMouseDown={handleDockMouseDown} className="flex-row p-1.5 gap-1 select-none cursor-move items-stretch">
              <div className="flex flex-col items-center justify-center px-1.5 gap-0.5 border-r border-white/5 bg-black/10 text-slate-600 cursor-move">
-               <div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div>
+                <div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div>
              </div>
              <IconButton active={activeTool === null && !terrainMode} onClick={() => { setActiveTool(null); setTerrainMode(false); }} title="Select / Move" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>} />
              <IconButton active={terrainMode} onClick={() => { setTerrainMode(true); setActiveTool(null); }} title="Terrain Blocker" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>} />

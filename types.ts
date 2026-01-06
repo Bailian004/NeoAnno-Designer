@@ -14,7 +14,7 @@ export enum BlockGene {
   SERVICE_HUB = 'SVC_HUB',      // Public Services
   PARK_RESERVE = 'PARK',        // Decoration
   
-  // INDUSTRY GENES (NEW)
+  // INDUSTRY GENES
   INDUSTRY_LIGHT = 'IND_L',     // Farms/Simple Processing (Potato, Sheep)
   INDUSTRY_HEAVY = 'IND_H',     // Factories/Smelters (Steel, Weapons)
   WAREHOUSE_HUB = 'WH_HUB',     // Logistics Center (Warehouses)
@@ -34,6 +34,13 @@ export interface ResourceRate {
   amount: number; // units per minute
 }
 
+// NEW: Configuration for Farm Modules (Fields/Pastures)
+export interface FarmModuleConfig {
+    moduleType: 'Field' | 'Pasture';
+    moduleCount: number;      // e.g., 72 for Potatoes
+    moduleSize: { x: number, y: number }; // e.g., 1x1 for crops, 3x3 for sheep
+}
+
 export interface BuildingDefinition {
   id: string;
   name: string;
@@ -43,9 +50,10 @@ export interface BuildingDefinition {
   icon?: string; // Optional emoji or icon code
   category: 'Residence' | 'Production' | 'Public' | 'Decoration';
   
-  // Service coverage (Markets, etc.)
-  influenceRadius?: number; 
-
+  // LOGIC: Anno 1800 Distinction
+  influenceRadius?: number; // Euclidean (Circle) - e.g., Lumberjack, Hacienda
+  influenceRange?: number;  // Street Distance (Pathfinding) - e.g., Marketplace, Bank
+  
   // Attractiveness / Pollution system
   impactType?: 'Positive' | 'Negative'; 
   impactRadius?: number;
@@ -60,6 +68,9 @@ export interface BuildingDefinition {
       maxPopulation: number;
       consumption?: ResourceRate[]; // per house at max population
   };
+
+  // NEW: Farm Configuration
+  farmConfig?: FarmModuleConfig; 
 }
 
 export interface PlacedBuilding {
@@ -68,6 +79,10 @@ export interface PlacedBuilding {
   x: number; // Grid x
   y: number; // Grid y
   rotation: 0 | 90 | 180 | 270;
+
+  // NEW: Hierarchy for Modules
+  isModule?: boolean;
+  parentId?: string;
 }
 
 export interface Layout {
