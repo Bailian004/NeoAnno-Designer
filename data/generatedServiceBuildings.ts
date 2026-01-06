@@ -1,0 +1,136 @@
+// Auto-generated from Anno 1800 Building Reference Guide
+
+export interface ServiceBuilding {
+  name: string;
+  identifier?: string;
+  icon?: string;
+  region: string;
+  tier: string;
+  size: { x: number; z: number };
+  service: string;
+  range?: { type: 'street' | 'radius'; range: number; maxRange?: number };
+  supplyInfo?: any;
+}
+
+export const serviceBuildings: ServiceBuilding[] = [
+  {
+    name: "Marketplace",
+    identifier: "Service_colony02_01 (Bazaar)",
+    icon: "A7_bazaar.png",
+    region: "The Old World",
+    tier: "Farmers",
+    size: {"x":5,"z":6},
+    service: "Provides \"Marketplace\".",
+    range: {"type":"street","range":48},
+  },
+  {
+    name: "Pub",
+    identifier: "Service_01 (Pub)",
+    icon: "A7_pub.png",
+    region: "The Old World",
+    tier: "Farmers",
+    size: {"x":4,"z":6},
+    service: "Provides \"Pub\".",
+    range: {"type":"street","range":48},
+  },
+  {
+    name: "Fire Station",
+    identifier: "Institution_colony02_01 (Fire Station)",
+    icon: "A7_fire_brigade.png",
+    region: "The Old World",
+    tier: "Farmers",
+    size: {"x":3,"z":5},
+    service: "Extinguishes fires.",
+    range: {"type":"radius","range":15,"maxRange":null},
+  },
+  {
+    name: "Church",
+    identifier: "Service_04 (Church)",
+    icon: "A7_church.png",
+    region: "The Old World",
+    tier: "Workers",
+    size: {"x":6,"z":8},
+    service: "Provides \"Church\".",
+    range: {"type":"street","range":72},
+  },
+  {
+    name: "School",
+    identifier: "Service_02 (School)",
+    icon: "A7_school.png",
+    region: "The Old World",
+    tier: "Workers",
+    size: {"x":6,"z":8},
+    service: "Provides \"School\".",
+    range: {"type":"street","range":72},
+  },
+  {
+    name: "Variety Theatre",
+    identifier: "Service_05 (Cabaret)",
+    icon: "A7_cabaret.png",
+    region: "The Old World",
+    tier: "Artisans",
+    size: {"x":9,"z":9},
+    service: "Provides \"Variety\".",
+    range: {"type":"street","range":96},
+  },
+  {
+    name: "University",
+    identifier: "Service_07 (University)",
+    icon: "A7_university.png",
+    region: "The Old World",
+    tier: "Artisans",
+    size: {"x":10,"z":9},
+    service: "Provides \"University\".",
+    range: {"type":"street","range":96},
+  },
+  {
+    name: "Bank",
+    identifier: "Service_03 (Bank)",
+    icon: "A7_bank.png",
+    region: "The Old World",
+    tier: "Engineers",
+    size: {"x":10,"z":9},
+    service: "Provides \"Bank\".",
+    range: {"type":"street","range":96},
+  },
+  {
+    name: "Members Club",
+    identifier: "Service_09 (Club House)",
+    icon: "A7_club_house.png",
+    region: "The Old World",
+    tier: "Investors",
+    size: {"x":10,"z":10},
+    service: "Provides \"Club\".",
+    range: {"type":"street","range":96},
+  },
+  {
+    name: "Marketplace",
+    identifier: "Service_colony02_01 (Bazaar)",
+    icon: "A7_bazaar.png",
+    region: "The New World",
+    tier: "Jornaleros",
+    size: {"x":5,"z":6},
+    service: "\"Marketplace\".",
+    range: {"type":"street","range":48},
+  },
+  {
+    name: "Chapel",
+    identifier: "Service_colony01_02 (Chapel)",
+    icon: "A7_church.png",
+    region: "The New World",
+    tier: "Jornaleros",
+    size: {"x":4,"z":6},
+    service: "\"Chapel\".",
+    range: {"type":"street","range":48},
+  },
+  {
+    name: "Boxing Arena",
+    identifier: "Service_colony01_03 (Boxing Arena)",
+    icon: "A7_box_arena.png",
+    region: "The New World",
+    tier: "Obreros",
+    size: {"x":9,"z":9},
+    service: "\"Boxing Arena\".",
+    range: {"type":"street","range":72},
+  },
+];

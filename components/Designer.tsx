@@ -5,6 +5,7 @@ import { GridCanvas } from './GridCanvas';
 import { PopulationManager, GenerationResult } from '../services/PopulationManager';
 import { SolverMode } from '../services/geneticSolver';
 import { ResourcePanel } from './ResourcePanel';
+import { PopulationInput } from './PopulationInput';
 import { calculateBuildingsForPopulation, PopulationGoal } from '../utils/productionCalculator';
 import { calculateIndustryNeeds, getAvailableGoods, getCompatibleGoods } from '../utils/chainCalculator';
 import { PRODUCTION_CHAINS } from '../data/industryData';
@@ -243,6 +244,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const [solverCounts, setSolverCounts] = useState<Record<string, number>>({});
   const [isSolving, setIsSolving] = useState(false);
   const [showGenModal, setShowGenModal] = useState(false);
+  const [showPopModal, setShowPopModal] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<GenerationConfig | null>(null);
   
   const [solverProgress, setSolverProgress] = useState(0);
@@ -451,6 +453,17 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   };
 
   const handleOpenSolver = () => {
+      // If in city mode and using the new calculator, show popup first
+      if (solverMode === 'city' && popGoals.length === 0) {
+          setShowPopModal(true);
+      } else {
+          setShowGenModal(true);
+      }
+  };
+
+  const handlePopulationGenerate = (targetCountsById: Record<string, number>, summary: string) => {
+      setSolverCounts(targetCountsById);
+      setShowPopModal(false);
       setShowGenModal(true);
   };
 
@@ -538,6 +551,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             readOnly={isSolving} terrainMode={terrainMode}
          />
       </div>
+      {showPopModal && <PopulationInput onGenerate={handlePopulationGenerate} onCancel={() => setShowPopModal(false)} />}
       {showGenModal && <GenerationOptionsModal recommendedId={getRecommendedMode()} onSelect={confirmSolver} onCancel={() => setShowGenModal(false)} />}
       {isSolving && selectedConfig && (
           <ProgressOverlay 
@@ -586,6 +600,15 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                      </div>
                      {solverMode === 'city' ? (
                          <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
+                             <button onClick={() => setShowPopModal(true)} className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black rounded-lg uppercase tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2">
+                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                 Population Calculator
+                             </button>
+                             <div className="relative flex items-center gap-2">
+                                 <div className="flex-1 h-px bg-white/10"></div>
+                                 <span className="text-[9px] text-slate-600 font-bold uppercase tracking-wider">Or Manual Entry</span>
+                                 <div className="flex-1 h-px bg-white/10"></div>
+                             </div>
                              <div className="flex gap-2">
                                 <select className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" value={newGoalTier} onChange={e => setNewGoalTier(e.target.value)}>
                                    {config.buildings.filter(b => b.category === 'Residence').map(b => <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>)}
@@ -664,7 +687,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                          </div>
                      )}
                      <div className="p-4 bg-black/20 border-t border-white/10">
-                         <button onClick={handleOpenSolver} disabled={solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0} className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${(solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}>Generate Layout</button>
+                         <button onClick={handleOpenSolver} disabled={solverMode === 'city' ? (popGoals.length === 0 && Object.keys(solverCounts).length === 0) : selectedGoods.size === 0} className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${(solverMode === 'city' ? (popGoals.length === 0 && Object.keys(solverCounts).length === 0) : selectedGoods.size === 0) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}>Generate Layout</button>
                      </div>
                  </>
              ) : (

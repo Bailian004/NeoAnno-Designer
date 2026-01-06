@@ -1,0 +1,3292 @@
+{
+  "summary": {
+    "totalBuildings": 121,
+    "byType": {
+      "Public Service": 12,
+      "Residence": 7,
+      "Production": 89,
+      "Infrastructure": 2,
+      "Monument": 1,
+      "Logistics": 3,
+      "Boost": 3,
+      "Defence": 3,
+      "Power": 1
+    },
+    "byRegion": {
+      "The Old World": 77,
+      "The New World": 25,
+      "The Arctic": 8,
+      "Enbesa": 11
+    },
+    "byTier": {
+      "Farmers": 11,
+      "Workers": 21,
+      "Artisans": 13,
+      "Engineers": 12,
+      "Investors": 20,
+      "Jornaleros": 12,
+      "Obreros": 13,
+      "Unknown": 19
+    }
+  },
+  "buildings": [
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Marketplace",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Public Service",
+      "function": "Provides \"Marketplace\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 48
+      },
+      "identifier": "Service_colony02_01 (Bazaar)",
+      "icon": "A7_bazaar.png",
+      "guid": 114518
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Farmer Residence",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Farmers.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Lumberjack's Hut",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 15
+      },
+      "outputProduct": "Hut",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 5
+      },
+      "modules": null,
+      "range": {
+        "type": "radius",
+        "range": 7,
+        "maxRange": null
+      },
+      "identifier": "Agriculture_arctic_01 (Timber Yard)",
+      "icon": "A7_wood_log.png",
+      "guid": 114703
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Sawmill",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 15
+      },
+      "outputProduct": "Sawmill",
+      "inputs": [
+        {
+          "product": "Wood",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_arctic_01 (Timber Factory)",
+      "icon": "A7_wooden_planks.png",
+      "guid": 114704
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Fishery",
+      "size": {
+        "x": 5,
+        "z": 11
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Fishery",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Water Purifier",
+      "icon": "A7_fish.png",
+      "guid": 24652
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Potato Farm",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 20
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 72,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_04_field (Potato Field)",
+      "icon": "A7_potatoes.png",
+      "guid": 13917
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Schnapps Distill.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Distill.",
+      "inputs": [
+        {
+          "product": "Potato",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Sheep Farm",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 3,
+        "size": {
+          "x": 3,
+          "z": 3
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_06_field (Sheepfold)",
+      "icon": "A7_sheep.png",
+      "guid": 13919
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Framework Knit.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Knit.",
+      "inputs": [
+        {
+          "product": "Wool",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Pub",
+      "size": {
+        "x": 4,
+        "z": 6
+      },
+      "type": "Public Service",
+      "function": "Provides \"Pub\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 48
+      },
+      "identifier": "Service_01 (Pub)",
+      "icon": "A7_pub.png",
+      "guid": 1010358
+    },
+    {
+      "region": "The Old World",
+      "tier": "Farmers",
+      "name": "Fire Station",
+      "size": {
+        "x": 3,
+        "z": 5
+      },
+      "type": "Public Service",
+      "function": "Extinguishes fires.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "radius",
+        "range": 15,
+        "maxRange": null
+      },
+      "identifier": "Institution_colony02_01 (Fire Station)",
+      "icon": "A7_fire_brigade.png",
+      "guid": 119892
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Worker Residence",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Workers.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null,
+      "identifier": "Residence_tier02",
+      "icon": "A7_resident_worker.png",
+      "guid": 1010344
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Clay Pit",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Pit",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_11 (Clay Pit)",
+      "icon": "A7_clay.png",
+      "guid": 100416
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Brick Factory",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Clay",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_colony01_05 (Brick Factory)",
+      "icon": "A7_bricks.png",
+      "guid": 101268
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Pig Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 30
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 5,
+        "size": {
+          "x": 3,
+          "z": 4
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_08_field (Pig Sty)",
+      "icon": "A7_pigs.png",
+      "guid": 13920
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Slaughterhouse",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Slaughterhouse",
+      "inputs": [
+        {
+          "product": "Pig",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_07 (Sausage Maker)",
+      "icon": "A7_meat_sausage.png",
+      "guid": 1010316
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Grain Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 20
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 144,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_01_field (Grain Field)",
+      "icon": "A7_cereals_2.png",
+      "guid": 13914
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Flour Mill",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Mill",
+      "inputs": [
+        {
+          "product": "Grain",
+          "amount": 2
+        }
+      ],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Processing_02 (Flour Processing)",
+      "icon": "A7_flour.png",
+      "guid": 1010313
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Bakery",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Bakery",
+      "inputs": [
+        {
+          "product": "Flour",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "CityOrnament Food_Service_02",
+      "icon": "A7_food_service_02.png",
+      "guid": 80046
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Sailmakers",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Sailmakers",
+      "inputs": [
+        {
+          "product": "Wool",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_colony01_02 (Sailcloth Factory)",
+      "icon": "A7_sail.png",
+      "guid": 101265
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Iron Mine",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 15
+      },
+      "outputProduct": "Mine",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Mining_colony01_02 (Iron Mine)",
+      "icon": "A7_iron.png",
+      "guid": 793
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Charcoal Kiln",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Kiln",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 10
+      },
+      "modules": null,
+      "range": {
+        "type": "radius",
+        "range": 11,
+        "maxRange": null
+      },
+      "identifier": "Heavy_colony01_03 (Coal Heavy Industry)",
+      "icon": "A7_coal_burn.png",
+      "guid": 772
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Furnace",
+      "size": {
+        "x": 4,
+        "z": 7
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Furnace",
+      "inputs": [
+        {
+          "product": "Iron",
+          "amount": 1
+        },
+        {
+          "product": "Coal",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Scenario03 Steelworks",
+      "icon": "A7_steel.png",
+      "guid": 2397
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Steelworks",
+      "size": {
+        "x": 5,
+        "z": 10
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 45
+      },
+      "outputProduct": "Steelworks",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Heavy_colony01_02 (Steel Heavy Industry)",
+      "icon": "A7_beams.png",
+      "guid": 773
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Rendering Works",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Works",
+      "inputs": [
+        {
+          "product": "Pig",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 40
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Processing_01 (Tallow Processing)",
+      "icon": "A7_tallow.png",
+      "guid": 1010312
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Soap Factory",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Tallow",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_02 (Soap Factory)",
+      "icon": "A7_soap_2.png",
+      "guid": 1010281
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Weapon Factory",
+      "size": {
+        "x": 5,
+        "z": 7
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Heavy_04 (Weapons Heavy Industry)",
+      "icon": "A7_weapons.png",
+      "guid": 1010299
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Malthouse",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Malthouse",
+      "inputs": [
+        {
+          "product": "Grain",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Processing_03 (Malt Processing)",
+      "icon": "A7_malt.png",
+      "guid": 1010314
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Hop Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 20
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 96,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_03_field (Hop Field)",
+      "icon": "A7_hops.png",
+      "guid": 13916
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Brewery",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Brewery",
+      "inputs": [
+        {
+          "product": "Malt",
+          "amount": 1
+        },
+        {
+          "product": "Hops",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 75
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_02 (Beer Maker)",
+      "icon": "A7_beer.png",
+      "guid": 1010292
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "Church",
+      "size": {
+        "x": 6,
+        "z": 8
+      },
+      "type": "Public Service",
+      "function": "Provides \"Church\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 72
+      },
+      "identifier": "Service_04 (Church)",
+      "icon": "A7_church.png",
+      "guid": 1010359
+    },
+    {
+      "region": "The Old World",
+      "tier": "Workers",
+      "name": "School",
+      "size": {
+        "x": 6,
+        "z": 8
+      },
+      "type": "Public Service",
+      "function": "Provides \"School\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 72
+      },
+      "identifier": "Service_02 (School)",
+      "icon": "A7_school.png",
+      "guid": 1010360
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Artisan Res.",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Artisans.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Sand Mine",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Mine",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Coastal_03 (Quartz Sand Coast Building)",
+      "icon": "A7_quartz_sand.png",
+      "guid": 1010560
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Glassmakers",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Glassmakers",
+      "inputs": [
+        {
+          "product": "Quartz Sand",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Processing_06 (Glass Processing)",
+      "icon": "A7_glass.png",
+      "guid": 1010319
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Window Makers",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Makers",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Wood",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_07 (Window Factory)",
+      "icon": "A7_glass_window_3.png",
+      "guid": 1010285
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Cattle Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 40
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 5,
+        "size": {
+          "x": 4,
+          "z": 4
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Red Pepper Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 30
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 144,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_11_field (Pepper Field)",
+      "icon": "A7_pepper.png",
+      "guid": 13930
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Artisanal Kit.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Kit.",
+      "inputs": [
+        {
+          "product": "Beef",
+          "amount": 1
+        },
+        {
+          "product": "Pepper",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 75
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Cannery",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Cannery",
+      "inputs": [
+        {
+          "product": "Goulash",
+          "amount": 1
+        },
+        {
+          "product": "Iron",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_05 (Canned Food Factory)",
+      "icon": "A7_canned_goulash.png",
+      "guid": 1010295
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Sewing M. Fac.",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        },
+        {
+          "product": "Wood",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 150
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Hunting Cabin",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Cabin",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 10
+      },
+      "modules": null,
+      "range": {
+        "type": "radius",
+        "range": 9,
+        "maxRange": null
+      },
+      "identifier": "Agriculture_09 (Hunter's Cabin)",
+      "icon": "A7_fur.png",
+      "guid": 1010558
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Fur Dealer",
+      "size": {
+        "x": 4,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Dealer",
+      "inputs": [
+        {
+          "product": "Furs",
+          "amount": 1
+        },
+        {
+          "product": "Cotton",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_05 (Fur Coat Workshop)",
+      "icon": "A7_fur_coats.png",
+      "guid": 1010325
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "Variety Theatre",
+      "size": {
+        "x": 9,
+        "z": 9
+      },
+      "type": "Public Service",
+      "function": "Provides \"Variety\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 96
+      },
+      "identifier": "Service_05 (Cabaret)",
+      "icon": "A7_cabaret.png",
+      "guid": 1010361
+    },
+    {
+      "region": "The Old World",
+      "tier": "Artisans",
+      "name": "University",
+      "size": {
+        "x": 10,
+        "z": 9
+      },
+      "type": "Public Service",
+      "function": "Provides \"University\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 96
+      },
+      "identifier": "Service_07 (University)",
+      "icon": "A7_university.png",
+      "guid": 1010362
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Engineer Res.",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Engineers.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Limestone Quarry",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Quarry",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Mining_colony01_06 (Cement Mine)",
+      "icon": "A7_cement.png",
+      "guid": 781
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Concrete Factory",
+      "size": {
+        "x": 5,
+        "z": 8
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        },
+        {
+          "product": "Lime",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_colony01_08 (Concrete Factory)",
+      "icon": "A7_reinforced_concrete.png",
+      "guid": 774
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Spectacle Fac.",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Brass",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Bicycle Factory",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        },
+        {
+          "product": "Rubber",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Workshop_01 (High-Wheeler Workshop)",
+      "icon": "A7_high_wheeler.png",
+      "guid": 1010323
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Heavy Weapons",
+      "size": {
+        "x": 6,
+        "z": 8
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Weapons",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        },
+        {
+          "product": "Dyn.",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Motor Assembly",
+      "size": {
+        "x": 8,
+        "z": 12
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Assembly",
+      "inputs": [
+        {
+          "product": "Steel",
+          "amount": 1
+        },
+        {
+          "product": "Brass",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 200
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Clockmakers",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Clockmakers",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Gold",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 150
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Workshop_02 (Pocket Watch Workshop)",
+      "icon": "A7_pocket_watch.png",
+      "guid": 1010324
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Light Bulb Fac.",
+      "size": {
+        "x": 4,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Fil.",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Filament Fac.",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Coal",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Workers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Bank",
+      "size": {
+        "x": 10,
+        "z": 9
+      },
+      "type": "Public Service",
+      "function": "Provides \"Bank\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 96
+      },
+      "identifier": "Service_03 (Bank)",
+      "icon": "A7_bank.png",
+      "guid": 1010365
+    },
+    {
+      "region": "The Old World",
+      "tier": "Engineers",
+      "name": "Commuter Pier",
+      "size": null,
+      "type": "Infrastructure",
+      "function": "Shares workforce.",
+      "inputs": [],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Harbor_16 (Commuter Pier)",
+      "icon": "A7_commuter_pier.png",
+      "guid": 101642
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Investor Res.",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Investors.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Vineyard",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Vineyard",
+      "inputs": [],
+      "workforce": {
+        "type": "Farmers",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Champagne Cel.",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Cel.",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Grapes",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Artisans",
+        "amount": 150
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Gold Mine",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 150
+      },
+      "outputProduct": "Mine",
+      "inputs": [],
+      "workforce": {
+        "type": "Workers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Mining_08 (Gold Ore Mine)",
+      "icon": "A7_gold_ore.png",
+      "guid": 1010311
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Goldsmiths",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Goldsmiths",
+      "inputs": [
+        {
+          "product": "GoldOre",
+          "amount": 1
+        },
+        {
+          "product": "Coal",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Workshop_05 (Gold Workshop)",
+      "icon": "A7_gold.png",
+      "guid": 1010327
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Jewellers",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Jewellers",
+      "inputs": [
+        {
+          "product": "Gold",
+          "amount": 1
+        },
+        {
+          "product": "Pearl",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Workshop_06 (Jewelry Workshop)",
+      "icon": "A7_jewelry.png",
+      "guid": 1010328
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Gramophone Fac.",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Wood",
+          "amount": 1
+        },
+        {
+          "product": "Brass",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Coachmakers",
+      "size": {
+        "x": 6,
+        "z": 8
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Coachmakers",
+      "inputs": [
+        {
+          "product": "Motor",
+          "amount": 1
+        },
+        {
+          "product": "Wood",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Engineers",
+        "amount": 250
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_10 (Chassis Factory)",
+      "icon": "A7_chassis.png",
+      "guid": 1010289
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Members Club",
+      "size": {
+        "x": 10,
+        "z": 10
+      },
+      "type": "Public Service",
+      "function": "Provides \"Club\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 96
+      },
+      "identifier": "Service_09 (Club House)",
+      "icon": "A7_club_house.png",
+      "guid": 1010364
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "World's Fair",
+      "size": {
+        "x": 18,
+        "z": 22
+      },
+      "type": "Monument",
+      "function": "Cultural Events.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Small Warehouse",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Logistics",
+      "function": "2 Loading Ramps.",
+      "range": null,
+      "identifier": "Logistic_02 (Warehouse I)",
+      "icon": "A7_warehouse.png",
+      "guid": 1010371
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Medium Warehouse",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Logistics",
+      "function": "3 Loading Ramps.",
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Large Warehouse",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Logistics",
+      "function": "4 Loading Ramps.",
+      "range": null
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Trade Union",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Boost",
+      "function": "Production slots.",
+      "range": {
+        "type": "radius",
+        "range": 15,
+        "maxRange": null
+      },
+      "identifier": "Guild_house",
+      "icon": "A7_guildhouse.png",
+      "guid": 1010516
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Town Hall",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Boost",
+      "function": "Residence slots.",
+      "range": {
+        "type": "radius",
+        "range": 20,
+        "maxRange": null
+      },
+      "identifier": "Town hall",
+      "icon": "A7_townhall.png",
+      "guid": 100415
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Harbourmaster",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Boost",
+      "function": "Harbour slots.",
+      "range": {
+        "type": "radius",
+        "range": 18,
+        "maxRange": null
+      },
+      "identifier": "Dockland_Module_Item",
+      "icon": "A7_docklands_module_item.png",
+      "guid": 601461
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Mounted Guns",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Defence",
+      "function": "Harbour defence.",
+      "range": null,
+      "identifier": "Harbor_04 (Tower 01, Puckle Gun)",
+      "icon": "A7_defense_tower_pucklegun.png",
+      "guid": 1010522
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Cannon Tower",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Defence",
+      "function": "Long range defence.",
+      "range": null,
+      "identifier": "Harbor_05 (Tower 02, Cannon Tower)",
+      "icon": "A7_defense_tower_cannon.png",
+      "guid": 1010523
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Repair Crane",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Defence",
+      "function": "Repairs ships.",
+      "range": null,
+      "identifier": "Dockland_Module_RepairCrane",
+      "icon": "A7_docklands_module_crane.png",
+      "guid": 131777
+    },
+    {
+      "region": "The Old World",
+      "tier": "Investors",
+      "name": "Electricity Plant",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Power",
+      "function": "Electricity.",
+      "range": {
+        "type": "street",
+        "range": 40
+      }
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Marketplace",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Public Service",
+      "function": "\"Marketplace\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 48
+      },
+      "identifier": "Service_colony02_01 (Bazaar)",
+      "icon": "A7_bazaar.png",
+      "guid": 114518
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Jornalero Res.",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Jornaleros.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Plantain Plant.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Plant.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Fried Plantain",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Plantain",
+      "inputs": [
+        {
+          "product": "Plantain",
+          "amount": 1
+        },
+        {
+          "product": "Oil",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Fish Oil Factory",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Factory",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Coastal_colony01_02 (Fish Coast Building)",
+      "icon": "A7_fishoil.png",
+      "guid": 101262
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Sugar Cane Plt.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Plt.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Rum Distillery",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Distillery",
+      "inputs": [
+        {
+          "product": "Cane",
+          "amount": 1
+        },
+        {
+          "product": "Wood",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_colony01_01 (Rum Maker)",
+      "icon": "A7_rum_barrel.png",
+      "guid": 1010340
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Alpaca Farm",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 4,
+        "size": {
+          "x": 4,
+          "z": 3
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_colony01_11_field (Alpaca Pasture)",
+      "icon": "A7_alpacca.png",
+      "guid": 13976
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Poncho Darner",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Darner",
+      "inputs": [
+        {
+          "product": "Alpaca Wool",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Processing_colony01_02 (Poncho Maker)",
+      "icon": "A7_poncho.png",
+      "guid": 101266
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Cotton Plant.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Plant.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 144,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Cotton Mill",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Mill",
+      "inputs": [
+        {
+          "product": "Cotton",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_colony01_03 (Cotton Cloth Processing)",
+      "icon": "A7_cotton_fur.png",
+      "guid": 1010318
+    },
+    {
+      "region": "The New World",
+      "tier": "Jornaleros",
+      "name": "Chapel",
+      "size": {
+        "x": 4,
+        "z": 6
+      },
+      "type": "Public Service",
+      "function": "\"Chapel\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 48
+      },
+      "identifier": "Service_colony01_02 (Chapel)",
+      "icon": "A7_church.png",
+      "guid": 101258
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Obrero Res.",
+      "size": {
+        "x": 3,
+        "z": 3
+      },
+      "type": "Residence",
+      "function": "Houses Obreros.",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Corn Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null,
+      "identifier": "CreativeMode_Agriculture_colony01_10_field (Corn Field)",
+      "icon": "A7_corn.png",
+      "guid": 13957
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Tortilla Maker",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Maker",
+      "inputs": [
+        {
+          "product": "Corn",
+          "amount": 1
+        },
+        {
+          "product": "Beef",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 15
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_colony01_05 (Burrito Maker)",
+      "icon": "A7_burrito.png",
+      "guid": 101271
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Coffee Plant.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Plant.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 168,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Coffee Roaster",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Roaster",
+      "inputs": [
+        {
+          "product": "Coffee Bean",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 15
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Food_colony01_03 (Coffee Maker)",
+      "icon": "A7_coffe_cup.png",
+      "guid": 101252
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Felt Producer",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Producer",
+      "inputs": [
+        {
+          "product": "Alpaca Wool",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 15
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_colony01_06 (Felt Maker)",
+      "icon": "A7_felt.png",
+      "guid": 101415
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Bowler Hat Mkr.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Mkr.",
+      "inputs": [
+        {
+          "product": "Felt",
+          "amount": 1
+        },
+        {
+          "product": "Cotton",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 75
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Tobacco Plant.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Plant.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 192,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Cigar Factory",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "Tobacco",
+          "amount": 1
+        },
+        {
+          "product": "Veneer",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 150
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Workshop_colony01_01 (Cigars Workshop)",
+      "icon": "A7_cigars.png",
+      "guid": 1010342
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Cocoa Plant.",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Plant.",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Chocolate Fac.",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Cocoa",
+          "amount": 1
+        },
+        {
+          "product": "Sugar",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Obreros",
+        "amount": 75
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Pearl Farm",
+      "size": {
+        "x": 6,
+        "z": 14
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 90
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Jornaleros",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Coastal_colony01_01 (Pearls Coast Building)",
+      "icon": "A7_pearls.png",
+      "guid": 1010339
+    },
+    {
+      "region": "The New World",
+      "tier": "Obreros",
+      "name": "Boxing Arena",
+      "size": {
+        "x": 9,
+        "z": 9
+      },
+      "type": "Public Service",
+      "function": "\"Boxing Arena\".",
+      "inputs": [],
+      "workforce": null,
+      "modules": null,
+      "range": {
+        "type": "street",
+        "range": 72
+      },
+      "identifier": "Service_colony01_03 (Boxing Arena)",
+      "icon": "A7_box_arena.png",
+      "guid": 101259
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Heater",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Infrastructure",
+      "function": "Provides Heat.",
+      "inputs": [
+        {
+          "product": "Coal",
+          "amount": 1
+        }
+      ],
+      "workforce": null,
+      "modules": null,
+      "range": null,
+      "identifier": "Heater_Arctic",
+      "icon": "A7_heating_center.png",
+      "guid": 114751
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Whaling Station",
+      "size": {
+        "x": 6,
+        "z": 17
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Station",
+      "inputs": [],
+      "workforce": {
+        "type": "Explorers",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Coastal_arctic_01 (Whale Coast Building)",
+      "icon": "A7_whale_oil_2.png",
+      "guid": 112666
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Caribou Hunting",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Hunting",
+      "inputs": [],
+      "workforce": {
+        "type": "Explorers",
+        "amount": 10
+      },
+      "modules": null,
+      "range": {
+        "type": "radius",
+        "range": 9,
+        "maxRange": null
+      }
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Pemmican Cook.",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Cook.",
+      "inputs": [
+        {
+          "product": "WhaleOil",
+          "amount": 1
+        },
+        {
+          "product": "Meat",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Explorers",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Sleeping Bag",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Bag",
+      "inputs": [
+        {
+          "product": "SealSkin",
+          "amount": 1
+        },
+        {
+          "product": "Feather",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Explorers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Oil Lamp Fac.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "WhaleOil",
+          "amount": 1
+        },
+        {
+          "product": "Brass",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Explorers",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Parka Factory",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Factory",
+      "inputs": [
+        {
+          "product": "SealSkin",
+          "amount": 1
+        },
+        {
+          "product": "Bear",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Technicians",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null,
+      "identifier": "Factory_arctic_04 (Parka Factory)",
+      "icon": "A7_fur_parka.png",
+      "guid": 112672
+    },
+    {
+      "region": "The Arctic",
+      "tier": "Unknown",
+      "name": "Husky Sled Fac.",
+      "size": {
+        "x": 5,
+        "z": 6
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Husky",
+          "amount": 1
+        },
+        {
+          "product": "Sled",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Technicians",
+        "amount": 100
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Sangha Cow Farm",
+      "size": {
+        "x": 4,
+        "z": 5
+      },
+      "type": "Production",
+      "function": "Milk/Beef.",
+      "inputs": [],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 4,
+        "size": {
+          "x": 4,
+          "z": 4
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Goat Farm",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "function": "Goat Milk.",
+      "inputs": [],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 10
+      },
+      "modules": {
+        "type": "Pastures",
+        "count": 3,
+        "size": {
+          "x": 3,
+          "z": 4
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Dried Meat Fac.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Beef",
+          "amount": 1
+        },
+        {
+          "product": "Salt",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 10
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Finery",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Finery",
+      "inputs": [
+        {
+          "product": "Linen",
+          "amount": 1
+        },
+        {
+          "product": "Cotton",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Hibiscus Farm",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Farm",
+      "inputs": [],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 15
+      },
+      "modules": {
+        "type": "Fields",
+        "count": 128,
+        "size": {
+          "x": 1,
+          "z": 1
+        }
+      },
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Tea Spice Blend",
+      "size": {
+        "x": 3,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 30
+      },
+      "outputProduct": "Blend",
+      "inputs": [
+        {
+          "product": "Hibiscus",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Shepherds",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Mud Brick Fac.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Fac.",
+      "inputs": [
+        {
+          "product": "Mud",
+          "amount": 1
+        },
+        {
+          "product": "Straw",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Elders",
+        "amount": 15
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Tapestry Loom",
+      "size": {
+        "x": 5,
+        "z": 5
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Loom",
+      "inputs": [
+        {
+          "product": "Linen",
+          "amount": 1
+        },
+        {
+          "product": "Indigo",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Elders",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Ceramics Wkshp",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Wkshp",
+      "inputs": [
+        {
+          "product": "Mud",
+          "amount": 1
+        },
+        {
+          "product": "Coal",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Elders",
+        "amount": 25
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Illuminated Scr.",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 120
+      },
+      "outputProduct": "Scr.",
+      "inputs": [
+        {
+          "product": "Paper",
+          "amount": 1
+        },
+        {
+          "product": "Indigo",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Elders",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    },
+    {
+      "region": "Enbesa",
+      "tier": "Unknown",
+      "name": "Lanternmaker",
+      "size": {
+        "x": 4,
+        "z": 4
+      },
+      "type": "Production",
+      "production": {
+        "amount": 1,
+        "time": 60
+      },
+      "outputProduct": "Lanternmaker",
+      "inputs": [
+        {
+          "product": "Glass",
+          "amount": 1
+        },
+        {
+          "product": "Candle",
+          "amount": 1
+        }
+      ],
+      "workforce": {
+        "type": "Elders",
+        "amount": 50
+      },
+      "modules": null,
+      "range": null
+    }
+  ]
+}

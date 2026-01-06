@@ -81,6 +81,13 @@ export class GeneticSolver {
               } else local.push(id);
           } else {
                // CITY MODE SORTING
+               // NOTE: For now, allow Production buildings in city mode
+               // TODO: Separate production chains to external areas
+               if (def.category === 'Production') {
+                  local.push(id); // Place in local queue
+                  // Skip the filter for now to allow full layouts
+               } else
+               
                if (def.category === 'Public') {
                   // Major services (Church, School, Bank) -> Spine
                   // Minor services (Pub, Fire, Police) -> Local
@@ -276,7 +283,11 @@ export class GeneticSolver {
               const cx = x + Math.floor((this.BLOCK_W - svcDef.width)/2);
               const cy = y + Math.floor((this.BLOCK_H - svcDef.height)/2);
               
-              if (this.canPlace(cx, cy, svcDef.width, svcDef.height)) {
+              // REQUIREMENT 2: Must be adjacent to road in city mode
+              // REQUIREMENT 3: Check service overlap
+              if (this.canPlace(cx, cy, svcDef.width, svcDef.height) && 
+                  this.isTouchingRoad(cx, cy, svcDef.width, svcDef.height) &&
+                  !this.hasExcessiveServiceOverlap(svcId, cx, cy)) {
                   this.place(svcId, cx, cy);
                   this.spineQueue.shift();
                   
@@ -295,7 +306,11 @@ export class GeneticSolver {
           const svcId = this.localQueue[0];
           const svcDef = this.definitions.find(d => d.id === svcId)!;
           // Try corner placement for small services
-          if (this.canPlace(x+1, y+1, svcDef.width, svcDef.height)) {
+          // REQUIREMENT 2: Must be adjacent to road in city mode
+          // REQUIREMENT 3: Check service overlap
+          if (this.canPlace(x+1, y+1, svcDef.width, svcDef.height) &&
+              this.isTouchingRoad(x+1, y+1, svcDef.width, svcDef.height) &&
+              !this.hasExcessiveServiceOverlap(svcId, x+1, y+1)) {
               this.place(svcId, x+1, y+1);
               this.localQueue.shift();
           }
@@ -323,7 +338,10 @@ export class GeneticSolver {
               if (queue.length === 0) return;
               const id = queue[0];
               const def = this.definitions.find(d => d.id === id)!;
-              if (this.canPlace(px, py, def.width, def.height)) {
+              
+              // REQUIREMENT 2: All buildings in city mode must be adjacent to roads
+              if (this.canPlace(px, py, def.width, def.height) &&
+                  this.isTouchingRoad(px, py, def.width, def.height)) {
                   this.place(id, px, py);
                   queue.shift();
                   px += def.width;
@@ -353,6 +371,60 @@ export class GeneticSolver {
       for(let i=0; i<w; i++) { if (this.isRoadAt(x+i, y-1)) return true; if (this.isRoadAt(x+i, y+h)) return true; }
       for(let j=0; j<h; j++) { if (this.isRoadAt(x-1, y+j)) return true; if (this.isRoadAt(x+w, y+j)) return true; }
       return false;
+  }
+  
+  // REQUIREMENT 3: Check if service building placement would overlap coverage by more than 20%
+  private hasExcessiveServiceOverlap(defId: string, x: number, y: number): boolean {
+      const def = this.definitions.find(d => d.id === defId);
+      if (!def || def.category !== 'Public') return false;
+      
+      // Get the influence range/radius for this building
+      const newRange = def.influenceRange || 0;
+      const newRadius = def.influenceRadius || 0;
+      const newInfluence = Math.max(newRange, newRadius);
+      if (newInfluence === 0) return false; // No influence, no overlap
+      
+      // Find center of new building
+      const newCenterX = x + def.width / 2;
+      const newCenterY = y + def.height / 2;
+      
+      // Check all existing service buildings of the same type
+      for (const placed of this.currentGenome) {
+          const placedDef = this.definitions.find(d => d.id === placed.definitionId);
+          if (!placedDef || placedDef.category !== 'Public') continue;
+          if (placed.definitionId !== defId) continue; // Only check same building type
+          
+          const placedRange = placedDef.influenceRange || 0;
+          const placedRadius = placedDef.influenceRadius || 0;
+          const placedInfluence = Math.max(placedRange, placedRadius);
+          if (placedInfluence === 0) continue;
+          
+          // Find center of existing building
+          const placedCenterX = placed.x + placedDef.width / 2;
+          const placedCenterY = placed.y + placedDef.height / 2;
+          
+          // Calculate distance between centers
+          const dx = newCenterX - placedCenterX;
+          const dy = newCenterY - placedCenterY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Calculate overlap: if distance < sum of radii, there's overlap
+          const sumInfluence = newInfluence + placedInfluence;
+          if (distance >= sumInfluence) continue; // No overlap
+          
+          // Calculate overlap percentage based on the smaller influence area
+          // Overlap occurs when distance < r1 + r2
+          const overlapDistance = sumInfluence - distance;
+          const minInfluence = Math.min(newInfluence, placedInfluence);
+          const overlapPercentage = (overlapDistance / minInfluence) * 100;
+          
+          // REQUIREMENT 3: Reject if overlap exceeds 20%
+          if (overlapPercentage > 20) {
+              return true; // Excessive overlap detected
+          }
+      }
+      
+      return false; // No excessive overlap
   }
   private isRoadAt(x: number, y: number): boolean {
       return this.occupied.has(`${x},${y}`) && this.currentGenome.some(b => b.x === x && b.y === y && b.definitionId === this.roadDefId);
