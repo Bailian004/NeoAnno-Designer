@@ -8,11 +8,18 @@ export enum AnnoTitle {
 
 // --- GENETIC ALGORITHM TYPES ---
 export enum BlockGene {
-  RESIDENTIAL_TIER1 = 'RES_T1', // Farmers/Workers (Basic Services)
-  RESIDENTIAL_TIER2 = 'RES_T2', // Artisans+ (Advanced Services)
-  SERVICE_HUB = 'SVC_HUB',      // Force extra services
-  PARK_RESERVE = 'PARK',        // Decoration only
-  EMPTY = 'EMPTY'               // Do not build
+  // CITY GENES
+  RESIDENTIAL_TIER1 = 'RES_T1', // Farmers/Workers
+  RESIDENTIAL_TIER2 = 'RES_T2', // Artisans+
+  SERVICE_HUB = 'SVC_HUB',      // Public Services
+  PARK_RESERVE = 'PARK',        // Decoration
+  
+  // INDUSTRY GENES (NEW)
+  INDUSTRY_LIGHT = 'IND_L',     // Farms/Simple Processing (Potato, Sheep)
+  INDUSTRY_HEAVY = 'IND_H',     // Factories/Smelters (Steel, Weapons)
+  WAREHOUSE_HUB = 'WH_HUB',     // Logistics Center (Warehouses)
+  
+  EMPTY = 'EMPTY'               
 }
 
 export interface CityGenome {

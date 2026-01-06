@@ -1,22 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { AnnoTitle, Layout, PlacedBuilding } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AnnoTitle, Layout, PlacedBuilding, GameConfig } from '../types';
 import { ANNO_GAMES } from '../data/annoData';
 import { GridCanvas } from './GridCanvas';
 import { PopulationManager, GenerationResult } from '../services/PopulationManager';
 import { SolverMode } from '../services/geneticSolver';
 import { ResourcePanel } from './ResourcePanel';
 import { calculateBuildingsForPopulation, PopulationGoal } from '../utils/productionCalculator';
+import { calculateIndustryNeeds, getAvailableGoods, getCompatibleGoods } from '../utils/chainCalculator';
+import { PRODUCTION_CHAINS } from '../data/industryData';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
-const MAX_GENERATIONS = 40; 
 
 interface DesignerProps {
   gameTitle: AnnoTitle;
   onBack: () => void;
 }
 
-// --- UI COMPONENTS ---
+// --- CONFIG TYPES ---
+interface GenerationConfig {
+    id: 'sketch' | 'standard' | 'elite';
+    name: string;
+    description: string;
+    popSize: number;
+    generations: number;
+    estTime: string;
+}
 
+const GEN_OPTIONS: GenerationConfig[] = [
+    {
+        id: 'sketch',
+        name: 'Rapid Sketch',
+        description: 'Quickly visualize layout ideas. Good for small villages.',
+        popSize: 20,
+        generations: 25,
+        estTime: '~5-10s'
+    },
+    {
+        id: 'standard',
+        name: 'Standard Blueprint',
+        description: 'Balanced optimization. The default for most cities.',
+        popSize: 40,
+        generations: 50,
+        estTime: '~30s'
+    },
+    {
+        id: 'elite',
+        name: 'Imperial Masterpiece',
+        description: 'Brute-force optimization for massive metropolises.',
+        popSize: 80,
+        generations: 100,
+        estTime: '~2m+'
+    }
+];
+
+// --- UI COMPONENTS ---
+// (UI Components kept identical to preserve your styling)
 const Panel: React.FC<{children: React.ReactNode, className?: string, onMouseDown?: (e: React.MouseEvent) => void}> = ({children, className="", onMouseDown}) => (
   <div 
     onMouseDown={onMouseDown} 
@@ -84,48 +122,181 @@ const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ 
   return <div className="w-5 h-5 rounded-sm flex-shrink-0 shadow-sm ring-1 ring-white/20" style={{ backgroundColor: color }}></div>;
 };
 
-// --- PROGRESS OVERLAY ---
-const ProgressOverlay: React.FC<{
-    progress: number; 
-    generation: number; 
-    eta: number; 
+const GenerationOptionsModal: React.FC<{
+    recommendedId: string;
+    onSelect: (config: GenerationConfig) => void;
     onCancel: () => void;
-}> = ({ progress, generation, eta, onCancel }) => (
-    <div className="absolute inset-0 z-50 bg-[#0b0f19]/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
-        <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 mb-6 relative">
-                <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center font-black text-amber-500 text-sm">
-                    {Math.round(progress)}%
-                </div>
+}> = ({ recommendedId, onSelect, onCancel }) => (
+    <div className="absolute inset-0 z-50 bg-[#0b0f19]/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+        <div className="w-full max-w-4xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-8 border-b border-white/5">
+                <h2 className="text-2xl font-black text-white mb-2 tracking-tight uppercase">Generation Strategy</h2>
+                <p className="text-slate-400 text-sm">Select an evolutionary model for your layout.</p>
             </div>
-            
-            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">DESIGNING LAYOUT</h2>
-            <p className="text-slate-400 text-sm mb-8">Evolving generation {generation} of {MAX_GENERATIONS}...</p>
-            
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
-                <div 
-                    className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300 ease-out"
-                    style={{ width: `${progress}%` }}
-                />
+            <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                {GEN_OPTIONS.map(opt => {
+                    const isRec = opt.id === recommendedId;
+                    return (
+                        <button 
+                            key={opt.id}
+                            onClick={() => onSelect(opt)}
+                            className={`relative flex flex-col p-6 rounded-xl border text-left transition-all hover:scale-[1.02] group ${
+                                isRec 
+                                ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' 
+                                : 'bg-slate-800/30 border-white/5 hover:bg-slate-800/50 hover:border-white/10'
+                            }`}
+                        >
+                            {isRec && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 text-slate-900 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                                    Recommended
+                                </div>
+                            )}
+                            <div className="mb-4">
+                                <h3 className={`text-lg font-black uppercase tracking-wide mb-1 ${isRec ? 'text-amber-400' : 'text-slate-200 group-hover:text-white'}`}>
+                                    {opt.name}
+                                </h3>
+                                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                                    {opt.estTime} • {opt.generations} Gens
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-400 leading-relaxed mb-6 flex-1">
+                                {opt.description}
+                            </p>
+                            <div className={`w-full py-2 text-center rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                                isRec
+                                ? 'bg-amber-500 text-slate-900'
+                                : 'bg-slate-700 text-slate-300 group-hover:bg-slate-600 group-hover:text-white'
+                            }`}>
+                                Select
+                            </div>
+                        </button>
+                    );
+                })}
             </div>
-            
-            <div className="flex justify-between w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-8">
-                <span>Optimization Phase</span>
-                <span>~{eta > 0 ? eta.toFixed(0) : '...'}s Remaining</span>
+            <div className="p-6 bg-black/20 border-t border-white/5 flex justify-center">
+                <button onClick={onCancel} className="text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">
+                    Cancel
+                </button>
             </div>
-            
-            <button 
-                onClick={onCancel}
-                className="px-6 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
-            >
-                Cancel Generation
-            </button>
         </div>
     </div>
 );
+
+const ProgressOverlay: React.FC<{
+    progress: number; 
+    generation: number; 
+    maxGenerations: number;
+    eta: number; 
+    onCancel: () => void;
+}> = ({ progress, generation, maxGenerations, eta, onCancel }) => {
+    
+    const formatEta = (seconds: number) => {
+        if (!seconds || seconds <= 0) return '...';
+        if (seconds < 60) return `${Math.ceil(seconds)}s`;
+        if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`;
+        return `${(seconds / 3600).toFixed(1)}h`;
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 bg-[#0b0f19]/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
+            <div className="w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 mb-6 relative">
+                    <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center font-black text-amber-500 text-sm">
+                        {Math.round(progress)}%
+                    </div>
+                </div>
+                
+                <h2 className="text-2xl font-black text-white mb-2 tracking-tight">DESIGNING LAYOUT</h2>
+                <p className="text-slate-400 text-sm mb-8">Evolving generation {generation} of {maxGenerations}...</p>
+                
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
+                    <div 
+                        className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+                
+                <div className="flex justify-between w-full text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-8">
+                    <span>Optimization Phase</span>
+                    <span>~{formatEta(eta)} Remaining</span>
+                </div>
+                
+                <button 
+                    onClick={onCancel}
+                    className="px-6 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
+                >
+                    Cancel Generation
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const AnalysisView: React.FC<{
+    title: string;
+    score?: number;
+    metrics: { efficiency: number; wastedSpace: number };
+    counts: Record<string, number>;
+    config: GameConfig;
+    emptyMessage: string;
+}> = ({ title, score, metrics, counts, config, emptyMessage }) => {
+    const totalBuildings = Object.values(counts).reduce((a,b) => a+b, 0);
+    if (totalBuildings === 0) {
+        return (
+            <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">
+                {emptyMessage}
+            </div>
+        );
+    }
+    return (
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+             <div className="p-4 bg-emerald-900/10 border-b border-emerald-500/20">
+                 <div className="flex justify-between items-end mb-2">
+                     <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{title}</span>
+                     {score !== undefined && <span className="text-3xl font-black text-white leading-none">{Math.floor(score)}</span>}
+                 </div>
+                 
+                 <div className="space-y-2 mt-4">
+                     <div className="flex justify-between text-xs">
+                         <span className="text-slate-400">Space Efficiency</span>
+                         <span className="font-mono text-white">{(metrics.efficiency * 100).toFixed(1)}%</span>
+                     </div>
+                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                         <div className="h-full bg-emerald-500" style={{width: `${Math.min(100, metrics.efficiency * 100)}%`}}></div>
+                     </div>
+                     
+                     <div className="flex justify-between text-xs pt-1">
+                         <span className="text-slate-400">Wasted Space</span>
+                         <span className={`font-mono ${metrics.wastedSpace > 0.3 ? 'text-red-400' : 'text-slate-200'}`}>{(metrics.wastedSpace * 100).toFixed(1)}%</span>
+                     </div>
+                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                         <div className="h-full bg-red-500" style={{width: `${Math.min(100, metrics.wastedSpace * 100)}%`}}></div>
+                     </div>
+                 </div>
+             </div>
+
+             <div className="p-4 space-y-4">
+                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10 pb-2">Building Breakdown</h3>
+                 
+                 {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
+                     const def = config.buildings.find(d => d.id === id);
+                     if (!def || def.category === 'Decoration') return null;
+                     return (
+                         <div key={id} className="flex items-center justify-between text-xs">
+                             <div className="flex items-center gap-2">
+                                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: def.color}}></div>
+                                 <span className="text-slate-300">{def.name}</span>
+                             </div>
+                             <span className="font-mono font-bold text-white">{count}</span>
+                         </div>
+                     );
+                 })}
+             </div>
+         </div>
+    );
+};
 
 // --- MAIN DESIGNER ---
 
@@ -133,40 +304,80 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   const config = ANNO_GAMES[gameTitle];
   const [layout, setLayout] = useState<Layout>({ width: 120, height: 120, buildings: [], blockedCells: [] });
   
-  // Tools & Modes
   const [activeTool, setActiveTool] = useState<string | null>(null); 
   const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
   const [terrainMode, setTerrainMode] = useState(false);
   const [solverMode, setSolverMode] = useState<SolverMode>('city');
   const [activeCategory, setActiveCategory] = useState('Residence');
-  const [activeLeftTab, setActiveLeftTab] = useState<'specs' | 'results'>('specs');
+  const [activeLeftTab, setActiveLeftTab] = useState<'specs' | 'generated' | 'live'>('specs');
 
-  // Selection
   const [selectedBuildingUid, setSelectedBuildingUid] = useState<string | null>(null);
-  
-  // Solver State
   const [solverCounts, setSolverCounts] = useState<Record<string, number>>({});
   const [isSolving, setIsSolving] = useState(false);
+  const [showGenModal, setShowGenModal] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<GenerationConfig | null>(null);
+  
   const [solverProgress, setSolverProgress] = useState(0);
   const [currentGeneration, setCurrentGeneration] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [eta, setEta] = useState<number>(0);
   const [lastResult, setLastResult] = useState<GenerationResult | null>(null);
+  const [currentFitness, setCurrentFitness] = useState(0);
   
-  // Use the Population Manager
   const managerRef = useRef<PopulationManager | null>(null);
   const solverInterval = useRef<number | null>(null);
 
-  // UI State
   const [popGoals, setPopGoals] = useState<PopulationGoal[]>([]);
   const [newGoalTier, setNewGoalTier] = useState<string>('');
   const [newGoalCount, setNewGoalCount] = useState<number>(100);
   
+  const [industryPop, setIndustryPop] = useState<Record<string, number>>({ 'Farmer': 0, 'Worker': 0, 'Artisan': 0, 'Jornalero': 0 });
+  const [selectedGoods, setSelectedGoods] = useState<Set<string>>(new Set());
+  
+  const availableIndustryGoods = useMemo(() => {
+      return getAvailableGoods(industryPop);
+  }, [industryPop]);
+
+  const compatibleGoods = useMemo(() => {
+      return getCompatibleGoods(Array.from(selectedGoods), availableIndustryGoods);
+  }, [selectedGoods, availableIndustryGoods]);
+
+  // --- LIVE INDUSTRY CALCULATION (Updated with ID Translation) ---
+  useEffect(() => {
+      if (solverMode === 'industry') {
+          // 1. Get raw needs based on generic names ("Sawmill": 5)
+          const rawNeeds = calculateIndustryNeeds({
+              population: industryPop,
+              selectedGoods: Array.from(selectedGoods)
+          });
+
+          // 2. TRANSLATE TO REAL IDs
+          // We look for a building in config where name roughly matches
+          const realNeeds: Record<string, number> = {};
+          
+          Object.entries(rawNeeds).forEach(([genericName, count]) => {
+             // Exact match?
+             let match = config.buildings.find(b => b.name === genericName);
+             
+             // Fuzzy match? (e.g. "Sheep Farm" vs "Sheep Farm")
+             if (!match) {
+                 match = config.buildings.find(b => b.name.toLowerCase().includes(genericName.toLowerCase()));
+             }
+             
+             if (match) {
+                 realNeeds[match.id] = count;
+             } else {
+                 console.warn(`[Designer] Could not resolve building ID for: ${genericName}`);
+             }
+          });
+
+          setSolverCounts(realNeeds);
+      }
+  }, [industryPop, selectedGoods, solverMode, config.buildings]);
+
   const [resourcePanelOpen, setResourcePanelOpen] = useState(false);
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-
-  // Draggable Dock
   const [dockPos, setDockPos] = useState({ x: 0, y: 0 });
   const [isDraggingDock, setIsDraggingDock] = useState(false);
   const dockDragOffset = useRef({ x: 0, y: 0 });
@@ -174,6 +385,27 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   useEffect(() => {
     setDockPos({ x: window.innerWidth / 2 - 140, y: window.innerHeight - 90 });
   }, []);
+
+  const liveAnalysis = useMemo(() => {
+      const buildings = layout.buildings;
+      const totalArea = layout.width * layout.height;
+      let builtArea = 0;
+      const counts: Record<string, number> = {};
+      buildings.forEach(b => {
+          const def = config.buildings.find(d => d.id === b.definitionId);
+          if (def) {
+              builtArea += def.width * def.height;
+              counts[def.id] = (counts[def.id] || 0) + 1;
+          }
+      });
+      return {
+          metrics: {
+              efficiency: totalArea > 0 ? builtArea / totalArea : 0,
+              wastedSpace: totalArea > 0 ? (totalArea - builtArea) / totalArea : 0
+          },
+          counts
+      };
+  }, [layout.buildings, layout.width, layout.height, config.buildings]);
 
   const handleDockMouseDown = (e: React.MouseEvent) => {
     setIsDraggingDock(true);
@@ -187,7 +419,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
         }
     };
     const handleUp = () => setIsDraggingDock(false);
-
     if (isDraggingDock) {
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleUp);
@@ -198,7 +429,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     };
   }, [isDraggingDock]);
 
-  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') { setActiveTool(null); setSelectedBuildingUid(null); }
@@ -211,15 +441,12 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedBuildingUid]);
 
-  // Init default goal tier
   useEffect(() => {
     const residences = config.buildings.filter(b => b.category === 'Residence');
     if (residences.length > 0) {
         setNewGoalTier(residences[0].residence?.populationType || '');
     }
   }, [config]);
-
-  // --- ACTIONS ---
 
   const handlePlaceBuilding = (x: number, y: number) => {
       if (!activeTool) return;
@@ -228,7 +455,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       const w = isRotated ? def.height : def.width;
       const h = isRotated ? def.width : def.height;
       if (x < 0 || y < 0 || x + w > layout.width || y + h > layout.height) return;
-
       const collides = layout.buildings.some(b => {
           const bd = config.buildings.find(d => d.id === b.definitionId)!;
           const isBRotated = b.rotation === 90 || b.rotation === 270;
@@ -236,7 +462,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           const bh = isBRotated ? bd.width : bd.height;
           return !(x >= b.x + bw || x + w <= b.x || y >= b.y + bh || y + h <= b.y);
       });
-
       if (!collides) {
           setLayout(prev => ({
               ...prev,
@@ -275,19 +500,42 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       setSolverCounts(calculateBuildingsForPopulation(newGoals, config));
   };
 
-  const runSolver = () => {
-      if (isSolving) {
-          if (solverInterval.current) clearInterval(solverInterval.current);
-          setIsSolving(false);
-          return;
-      }
+  const handleUpdateIndustryPop = (tier: string, count: number) => {
+      setIndustryPop(prev => ({ ...prev, [tier]: count }));
+  };
+
+  const toggleGoodSelection = (goodId: string) => {
+      const next = new Set(selectedGoods);
+      if (next.has(goodId)) next.delete(goodId);
+      else next.add(goodId);
+      setSelectedGoods(next);
+  };
+
+  const handleOpenSolver = () => {
+      // In Industry mode, solverCounts is already set by useEffect
+      setShowGenModal(true);
+  };
+
+  const getRecommendedMode = (): string => {
+      const totalBuildings = Object.values(solverCounts).reduce((a,b) => a+b, 0);
+      const tiers = popGoals.map(g => g.tierId.toLowerCase());
+      const hasElite = tiers.some(t => t.includes('investor') || t.includes('engineer') || t.includes('scholar'));
+      if (totalBuildings > 1500 || (hasElite && totalBuildings > 800)) return 'elite';
+      if (totalBuildings < 300 && !hasElite) return 'sketch';
+      return 'standard';
+  };
+
+  const confirmSolver = (genConfig: GenerationConfig) => {
+      setShowGenModal(false);
+      setSelectedConfig(genConfig);
+      if (solverInterval.current) clearInterval(solverInterval.current);
       
       const manager = new PopulationManager({
           areaWidth: layout.width,
           areaHeight: layout.height,
-          populationSize: 40, 
-          generations: MAX_GENERATIONS,
-          targetCounts: solverCounts,
+          populationSize: genConfig.popSize, 
+          generations: genConfig.generations,
+          targetCounts: solverCounts, // These are now REAL IDs
           blockedCells: new Set(layout.blockedCells)
       }, config.buildings, solverMode);
       
@@ -300,38 +548,30 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       setStartTime(Date.now());
       setLastResult(null);
 
-      // Evolution Loop
       solverInterval.current = window.setInterval(() => {
           if (!managerRef.current) return;
-          
           managerRef.current.stepGeneration();
           
           const bestIndividual = managerRef.current.getBest();
           const gen = managerRef.current.generationCount;
-          
-          // Estimate Time
           const elapsed = (Date.now() - startTime) / 1000;
           const gensPerSec = gen / elapsed;
-          const remainingGens = MAX_GENERATIONS - gen;
+          const remainingGens = genConfig.generations - gen;
           setEta(remainingGens / (gensPerSec || 1));
 
-          // Visualize (Throttle visualization to every 5 gens for performance, or last gen)
-          if (gen % 5 === 0 || gen >= MAX_GENERATIONS) {
+          if (gen % 5 === 0 || gen >= genConfig.generations) {
               if (bestIndividual && bestIndividual.layout) {
                   setLayout(prev => ({ ...prev, buildings: bestIndividual.layout }));
                   setCurrentFitness(Math.floor(bestIndividual.fitness));
               }
           }
-          
-          const prog = Math.min((gen / MAX_GENERATIONS) * 100, 100);
+          const prog = Math.min((gen / genConfig.generations) * 100, 100);
           setSolverProgress(prog);
           setCurrentGeneration(gen);
 
-          if (gen >= MAX_GENERATIONS) {
+          if (gen >= genConfig.generations) {
               setIsSolving(false);
               if (solverInterval.current) clearInterval(solverInterval.current);
-              
-              // Save final result for analysis
               if (bestIndividual) {
                   setLastResult({
                       fitness: bestIndividual.fitness,
@@ -341,16 +581,14 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                           return acc;
                       }, {} as Record<string, number>)
                   });
-                  setActiveLeftTab('results'); // Switch to results tab
+                  setActiveLeftTab('generated'); 
               }
           }
-      }, 50); // Fast cycle
+      }, 50);
   };
 
   return (
     <div className="relative h-screen w-screen bg-[#0b0f19] text-slate-100 overflow-hidden font-sans select-none">
-      
-      {/* 1. Full Screen Canvas */}
       <div className="absolute inset-0 z-0">
           <GridCanvas 
             gameConfig={config} buildings={layout.buildings} blockedCells={new Set(layout.blockedCells)}
@@ -361,12 +599,18 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             readOnly={isSolving} terrainMode={terrainMode}
          />
       </div>
-
-      {/* Progress Overlay */}
-      {isSolving && (
+      {showGenModal && (
+          <GenerationOptionsModal 
+              recommendedId={getRecommendedMode()}
+              onSelect={confirmSolver}
+              onCancel={() => setShowGenModal(false)}
+          />
+      )}
+      {isSolving && selectedConfig && (
           <ProgressOverlay 
             progress={solverProgress} 
             generation={currentGeneration} 
+            maxGenerations={selectedConfig.generations}
             eta={eta} 
             onCancel={() => {
                 setIsSolving(false);
@@ -374,8 +618,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             }} 
           />
       )}
-
-      {/* 2. Top Navigation Bar */}
       <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none p-4 flex justify-center">
         <Panel className="pointer-events-auto w-full flex-row items-center justify-between px-4 py-3 gap-6 shadow-2xl bg-[#0f172a]/95">
             <div className="flex items-center gap-5">
@@ -385,13 +627,11 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                 <div className="h-8 w-px bg-white/10"></div>
                 <div>
                    <h1 className="font-black text-amber-500 tracking-[0.2em] uppercase text-sm">{config.title}</h1>
-                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.1</div>
+                   <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.7</div>
                 </div>
             </div>
         </Panel>
       </div>
-
-      {/* 2.5 Top-Right Toggles */}
       <div className="absolute top-24 right-4 z-20 flex gap-2">
          <Panel className="flex-row p-1 gap-1">
             <IconButton 
@@ -408,182 +648,133 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             />
          </Panel>
       </div>
-
-      {/* 3. Left Panel: Specs & Results */}
       <div className={`absolute left-4 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
          <Panel className="flex-1 p-0 gap-0">
-             {/* Header Tabs */}
              <div className="flex border-b border-white/10 bg-black/20">
-                 <button 
-                    onClick={() => setActiveLeftTab('specs')}
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'specs' ? 'text-amber-500 bg-white/5' : 'text-slate-500 hover:text-slate-300'}`}
-                 >
-                    Specifications
-                 </button>
-                 <button 
-                    onClick={() => setActiveLeftTab('results')}
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'results' ? 'text-emerald-500 bg-white/5' : 'text-slate-500 hover:text-slate-300'}`}
-                 >
-                    Results
-                 </button>
+                 <button onClick={() => setActiveLeftTab('specs')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'specs' ? 'text-amber-500 bg-white/5 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300'}`}>Specs</button>
+                 <button onClick={() => setActiveLeftTab('generated')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'generated' ? 'text-emerald-500 bg-white/5 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-300'}`}>Generated</button>
+                 <button onClick={() => setActiveLeftTab('live')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'live' ? 'text-blue-500 bg-white/5 border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-300'}`}>Live Data</button>
              </div>
-
              {activeLeftTab === 'specs' ? (
                  <>
-                     {/* Add Target Form */}
-                     <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
-                         <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Add Requirement</label>
-                         <div className="flex gap-2">
-                            <select 
-                                className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" 
-                                value={newGoalTier} 
-                                onChange={e => setNewGoalTier(e.target.value)}
-                            >
-                               {config.buildings.filter(b => b.category === 'Residence').map(b => (
-                                  <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>
-                               ))}
-                            </select>
-                            <input 
-                                type="number" 
-                                className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" 
-                                value={newGoalCount} 
-                                onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} 
-                            />
-                         </div>
-                         <button onClick={handleUpdatePopGoal} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-md text-amber-500 uppercase tracking-widest shadow-sm border border-white/10 hover:border-amber-500/50 transition-all">
-                            + Add To Manifest
-                         </button>
+                     <div className="p-3 bg-black/20 border-b border-white/10 flex gap-2">
+                        <button onClick={() => setSolverMode('city')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent transition-all ${solverMode === 'city' ? 'bg-slate-700 text-white shadow' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>City Mode</button>
+                        <button onClick={() => setSolverMode('industry')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent transition-all ${solverMode === 'industry' ? 'bg-slate-700 text-white shadow' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>Industry</button>
                      </div>
-
-                     {/* Goal List */}
-                     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                         {popGoals.length === 0 && (
-                             <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl p-6">
-                                 <p className="text-[10px] font-bold uppercase tracking-wide">Manifest Empty</p>
+                     {solverMode === 'city' ? (
+                         <>
+                             <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
+                                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Add Requirement</label>
+                                 <div className="flex gap-2">
+                                    <select className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" value={newGoalTier} onChange={e => setNewGoalTier(e.target.value)}>
+                                       {config.buildings.filter(b => b.category === 'Residence').map(b => (
+                                          <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>
+                                       ))}
+                                    </select>
+                                    <input type="number" className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" value={newGoalCount} onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} />
+                                 </div>
+                                 <button onClick={handleUpdatePopGoal} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-md text-amber-500 uppercase tracking-widest shadow-sm border border-white/10 hover:border-amber-500/50 transition-all">+ Add To Manifest</button>
                              </div>
-                         )}
-                         {popGoals.map(goal => (
-                            <div key={goal.tierId} className="flex items-center justify-between bg-slate-800/40 p-3 rounded-lg border border-white/5">
-                               <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">
-                                     {goal.tierId.charAt(0)}
-                                  </div>
-                                  <div>
-                                      <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
-                                      <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
-                                  </div>
-                               </div>
-                               <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400">
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                               </button>
-                            </div>
-                         ))}
-                     </div>
-
-                     {/* Action Button */}
-                     <div className="p-4 bg-black/20 border-t border-white/10">
-                         <div className="flex gap-2 mb-3">
-                            <button onClick={() => setSolverMode('city')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent ${solverMode === 'city' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>City Mode</button>
-                            <button onClick={() => setSolverMode('industry')} className={`flex-1 py-2 text-[10px] font-bold rounded uppercase tracking-wider border border-transparent ${solverMode === 'industry' ? 'bg-slate-700 text-white' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>Industry</button>
-                         </div>
-                         <button 
-                            onClick={runSolver} 
-                            disabled={popGoals.length === 0}
-                            className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${popGoals.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}
-                         >
-                            Generate Layout
-                         </button>
-                     </div>
-                 </>
-             ) : (
-                 // --- RESULTS TAB ---
-                 <div className="flex-1 flex flex-col overflow-hidden">
-                     {!lastResult ? (
-                         <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">
-                             No analysis available.<br/>Run generation first.
-                         </div>
+                             <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                                 {popGoals.length === 0 && (
+                                     <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl p-6">
+                                         <p className="text-[10px] font-bold uppercase tracking-wide">Manifest Empty</p>
+                                     </div>
+                                 )}
+                                 {popGoals.map(goal => (
+                                    <div key={goal.tierId} className="flex items-center justify-between bg-slate-800/40 p-3 rounded-lg border border-white/5">
+                                       <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded bg-slate-900 flex items-center justify-center border border-white/10 text-amber-500 font-bold text-xs">{goal.tierId.charAt(0)}</div>
+                                          <div>
+                                              <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{goal.tierId}</p>
+                                              <p className="text-sm font-bold text-white leading-none mt-0.5">{goal.count}</p>
+                                          </div>
+                                       </div>
+                                       <button onClick={() => handleDeleteGoal(goal.tierId)} className="p-1.5 text-slate-600 hover:text-red-400">
+                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                       </button>
+                                    </div>
+                                 ))}
+                             </div>
+                         </>
                      ) : (
-                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                             {/* Score Card */}
-                             <div className="p-4 bg-emerald-900/10 border-b border-emerald-500/20">
-                                 <div className="flex justify-between items-end mb-2">
-                                     <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Fitness Score</span>
-                                     <span className="text-3xl font-black text-white leading-none">{Math.floor(lastResult.fitness)}</span>
-                                 </div>
-                                 
-                                 <div className="space-y-2 mt-4">
-                                     <div className="flex justify-between text-xs">
-                                         <span className="text-slate-400">Space Efficiency</span>
-                                         <span className="font-mono text-white">{(lastResult.metrics.efficiency * 100).toFixed(1)}%</span>
-                                     </div>
-                                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                                         <div className="h-full bg-emerald-500" style={{width: `${lastResult.metrics.efficiency * 100}%`}}></div>
-                                     </div>
-                                     
-                                     <div className="flex justify-between text-xs pt-1">
-                                         <span className="text-slate-400">Wasted Space</span>
-                                         <span className={`font-mono ${lastResult.metrics.wastedSpace > 0.3 ? 'text-red-400' : 'text-slate-200'}`}>{(lastResult.metrics.wastedSpace * 100).toFixed(1)}%</span>
-                                     </div>
-                                     <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
-                                         <div className="h-full bg-red-500" style={{width: `${lastResult.metrics.wastedSpace * 100}%`}}></div>
-                                     </div>
+                         <div className="flex-1 flex flex-col">
+                             <div className="p-4 bg-white/5 space-y-3 border-b border-white/5">
+                                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Target Population</label>
+                                 <div className="grid grid-cols-2 gap-2">
+                                     {['Farmer', 'Worker', 'Artisan', 'Jornalero'].map(tier => (
+                                         <div key={tier} className="bg-black/30 rounded-md p-2 border border-white/10 flex items-center justify-between">
+                                             <span className="text-[10px] font-bold text-slate-400 uppercase">{tier}</span>
+                                             <input type="number" className="w-12 bg-transparent text-right text-xs font-mono font-bold text-white outline-none" value={industryPop[tier] || 0} onChange={e => handleUpdateIndustryPop(tier, parseInt(e.target.value) || 0)} />
+                                         </div>
+                                     ))}
                                  </div>
                              </div>
-
-                             {/* Building Manifest Breakdown */}
-                             <div className="p-4 space-y-4">
-                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/10 pb-2">Building Breakdown</h3>
-                                 
-                                 {Object.entries(lastResult.counts).sort((a,b) => b[1] - a[1]).map(([id, count]) => {
-                                     const def = config.buildings.find(d => d.id === id);
-                                     if (!def || def.category === 'Decoration') return null;
-                                     return (
-                                         <div key={id} className="flex items-center justify-between text-xs">
-                                             <div className="flex items-center gap-2">
-                                                 <div className="w-2 h-2 rounded-full" style={{backgroundColor: def.color}}></div>
-                                                 <span className="text-slate-300">{def.name}</span>
-                                             </div>
-                                             <span className="font-mono font-bold text-white">{count}</span>
-                                         </div>
-                                     );
-                                 })}
+                             <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                                 <div className="flex justify-between items-center mb-2 px-1">
+                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Required Supply Chains</label>
+                                     <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">{Object.values(solverCounts).reduce((a,b) => a+b, 0)} Buildings</span>
+                                 </div>
+                                 {availableIndustryGoods.length === 0 ? (
+                                     <div className="text-center p-6 text-slate-600 border-2 border-dashed border-slate-800 rounded-lg">
+                                         <p className="text-[10px] font-bold">No Demands</p>
+                                         <p className="text-[9px]">Add population above</p>
+                                     </div>
+                                 ) : (
+                                     availableIndustryGoods.map(goodId => {
+                                         const isSelected = selectedGoods.has(goodId);
+                                         const isCompatible = compatibleGoods.includes(goodId);
+                                         const def = PRODUCTION_CHAINS[goodId];
+                                         if (!def) return null;
+                                         return (
+                                             <button key={goodId} onClick={() => isCompatible && toggleGoodSelection(goodId)} disabled={!isCompatible} className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-all ${isSelected ? 'bg-amber-500/10 border-amber-500/50' : isCompatible ? 'bg-slate-800/40 border-white/5 hover:border-white/20 cursor-pointer' : 'bg-black/20 border-transparent opacity-40 cursor-not-allowed grayscale'}`}>
+                                                 <div className="flex items-center gap-3">
+                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-slate-600'}`}>
+                                                         {isSelected && <svg className="w-3 h-3 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>}
+                                                     </div>
+                                                     <div>
+                                                         <span className={`text-xs font-bold block text-left ${isSelected ? 'text-amber-400' : 'text-slate-300'}`}>{goodId}</span>
+                                                         <span className="text-[9px] text-slate-500 uppercase tracking-wider block text-left">{def.region}</span>
+                                                     </div>
+                                                 </div>
+                                                 {!isCompatible && <span className="text-[9px] text-slate-600 font-bold uppercase tracking-wider">Incompatible</span>}
+                                             </button>
+                                         );
+                                     })
+                                 )}
                              </div>
                          </div>
                      )}
+                     <div className="p-4 bg-black/20 border-t border-white/10">
+                         <button onClick={handleOpenSolver} disabled={solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0} className={`w-full py-3.5 rounded-lg font-black tracking-widest text-xs uppercase shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${(solverMode === 'city' ? popGoals.length === 0 : selectedGoods.size === 0) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`}>Generate Layout</button>
+                     </div>
+                 </>
+             ) : activeLeftTab === 'generated' ? (
+                 <div className="flex-1 flex flex-col overflow-hidden">
+                     {!lastResult ? (
+                         <div className="flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold uppercase tracking-wider p-8 text-center">No generation data.<br/>Run the solver first.</div>
+                     ) : (
+                         <AnalysisView title="Generation Report" score={lastResult.fitness} metrics={lastResult.metrics} counts={lastResult.counts} config={config} emptyMessage="Result Empty" />
+                     )}
+                 </div>
+             ) : (
+                 <div className="flex-1 flex flex-col overflow-hidden">
+                     <AnalysisView title="Live Canvas Analysis" metrics={liveAnalysis.metrics} counts={liveAnalysis.counts} config={config} emptyMessage="Canvas Empty" />
                  </div>
              )}
          </Panel>
       </div>
-
-      {/* 4. Right Panel: Asset Browser */}
       <div className={`absolute right-4 top-40 bottom-20 w-72 z-10 transition-transform duration-300 flex flex-col ${rightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'}`}>
          <Panel className="flex-1">
             <div className="flex border-b border-white/10 bg-black/20">
                {['Residence', 'Public', 'Production', 'Decoration'].map(cat => (
-                   <CategoryTab 
-                     key={cat} 
-                     label={cat === 'Decoration' ? 'Deco' : cat === 'Production' ? 'Prod' : cat} 
-                     active={activeCategory === cat} 
-                     onClick={() => setActiveCategory(cat)} 
-                   />
+                   <CategoryTab key={cat} label={cat === 'Decoration' ? 'Deco' : cat === 'Production' ? 'Prod' : cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
                ))}
             </div>
-            
             <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
                <div className="grid grid-cols-4 gap-2">
-                   {config.buildings
-                     .filter(b => b.category === activeCategory)
-                     .map(b => (
-                       <button 
-                          key={b.id}
-                          onClick={() => { setActiveTool(b.id); setTerrainMode(false); }}
-                          title={b.name}
-                          className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all relative group ${
-                              activeTool === b.id 
-                              ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg scale-105 z-10' 
-                              : 'bg-slate-800/50 border-white/5 text-slate-400 hover:bg-slate-700 hover:border-slate-500 hover:text-white'
-                          }`}
-                       >
+                   {config.buildings.filter(b => b.category === activeCategory).map(b => (
+                       <button key={b.id} onClick={() => { setActiveTool(b.id); setTerrainMode(false); }} title={b.name} className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all relative group ${activeTool === b.id ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg scale-105 z-10' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:bg-slate-700 hover:border-slate-500 hover:text-white'}`}>
                            <BuildingIcon icon={b.icon} color={b.color} name={b.name} />
                        </button>
                    ))}
@@ -591,43 +782,20 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             </div>
          </Panel>
       </div>
-
-      {/* 5. Bottom Control Dock */}
-      <div 
-        style={{ left: dockPos.x, top: dockPos.y }}
-        className="fixed z-50 flex gap-2"
-      >
+      <div style={{ left: dockPos.x, top: dockPos.y }} className="fixed z-50 flex gap-2">
           <Panel onMouseDown={handleDockMouseDown} className="flex-row p-1.5 gap-1 select-none cursor-move items-stretch">
              <div className="flex flex-col items-center justify-center px-1.5 gap-0.5 border-r border-white/5 bg-black/10 text-slate-600 cursor-move">
-               <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-               <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-               <div className="w-1 h-1 rounded-full bg-slate-600"></div>
+               <div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div>
              </div>
-             
-             <IconButton 
-                active={activeTool === null && !terrainMode}
-                onClick={() => { setActiveTool(null); setTerrainMode(false); }}
-                title="Select / Move"
-                icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>}
-             />
-             <IconButton 
-                active={terrainMode}
-                onClick={() => { setTerrainMode(true); setActiveTool(null); }}
-                title="Terrain Blocker"
-                icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
-             />
-             
+             <IconButton active={activeTool === null && !terrainMode} onClick={() => { setActiveTool(null); setTerrainMode(false); }} title="Select / Move" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>} />
+             <IconButton active={terrainMode} onClick={() => { setTerrainMode(true); setActiveTool(null); }} title="Terrain Blocker" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>} />
              <div className="px-4 flex items-center justify-center min-w-[140px] bg-black/40 rounded mx-1 border border-white/5 border-b-white/10 shadow-inner">
                 <span className={`text-[10px] font-mono tracking-widest uppercase ${activeTool ? 'text-amber-400' : terrainMode ? 'text-red-400' : 'text-slate-400'}`}>
-                    {activeTool 
-                        ? (config.buildings.find(b => b.id === activeTool)?.name.substring(0, 18) || 'Unknown Asset') 
-                        : terrainMode ? 'TERRAIN EDITOR' : 'CURSOR MODE'
-                    }
+                    {activeTool ? (config.buildings.find(b => b.id === activeTool)?.name.substring(0, 18) || 'Unknown Asset') : terrainMode ? 'TERRAIN EDITOR' : 'CURSOR MODE'}
                 </span>
              </div>
           </Panel>
       </div>
-
       <ResourcePanel isOpen={resourcePanelOpen} onClose={() => setResourcePanelOpen(false)} buildings={layout.buildings} config={config} />
     </div>
   );

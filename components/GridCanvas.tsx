@@ -17,6 +17,7 @@ interface GridCanvasProps {
   selectedBuilding: PlacedBuilding | null;
   readOnly?: boolean;
   terrainMode?: boolean;
+  showAllRadii?: boolean;
 }
 
 export const GridCanvas: React.FC<GridCanvasProps> = ({
@@ -33,7 +34,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   activeRotation,
   selectedBuilding,
   readOnly = false,
-  terrainMode = false
+  terrainMode = false,
+  showAllRadii = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -189,26 +191,37 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     });
 
     // Influence Areas
-    if (selectedBuilding) {
+    const drawInfluence = (b: PlacedBuilding, def: BuildingDefinition) => {
+        const radius = def.influenceRadius || def.impactRadius || 0;
+        if (radius <= 0) return;
+        
+        const color = def.color; 
+        
+        const cx = (b.x + def.width / 2) * CELL_SIZE;
+        const cy = (b.y + def.height / 2) * CELL_SIZE;
+        const rPx = radius * CELL_SIZE;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
+        ctx.fillStyle = `${color}44`; 
+        ctx.fill();
+        ctx.strokeStyle = `${color}AA`;
+        ctx.lineWidth = 2 / scale;
+        ctx.stroke();
+    };
+
+    if (showAllRadii) {
+        buildings.forEach(b => {
+             const def = gameConfig.buildings.find(d => d.id === b.definitionId);
+             if (def && (def.influenceRadius || def.impactRadius)) {
+                 drawInfluence(b, def);
+             }
+        });
+    } else if (selectedBuilding) {
       const def = gameConfig.buildings.find(d => d.id === selectedBuilding.definitionId);
       if (def && (def.influenceRadius || def.impactRadius)) {
-        const radius = def.influenceRadius || def.impactRadius || 0;
-        const color = def.influenceRadius ? '#facc15' : (def.impactType === 'Negative' ? '#ef4444' : '#4ade80');
-        
         const similarBuildings = buildings.filter(b => b.definitionId === selectedBuilding.definitionId);
-        similarBuildings.forEach(b => {
-          const cx = (b.x + def.width / 2) * CELL_SIZE;
-          const cy = (b.y + def.height / 2) * CELL_SIZE;
-          const rPx = radius * CELL_SIZE;
-
-          ctx.beginPath();
-          ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
-          ctx.fillStyle = `${color}44`; 
-          ctx.fill();
-          ctx.strokeStyle = `${color}88`;
-          ctx.lineWidth = 3 / scale;
-          ctx.stroke();
-        });
+        similarBuildings.forEach(b => drawInfluence(b, def));
       }
     }
 
@@ -223,7 +236,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         ctx.fillRect(hoverPos.x * CELL_SIZE, hoverPos.y * CELL_SIZE, w, h);
       }
     }
-  }, [width, height, offset, scale, gameConfig, buildings, blockedCells, activeBuildingId, activeRotation, hoverPos, readOnly, selectedBuilding, images]);
+  }, [width, height, offset, scale, gameConfig, buildings, blockedCells, activeBuildingId, activeRotation, hoverPos, readOnly, selectedBuilding, images, showAllRadii]);
 
   useEffect(() => {
     let frame: number;
