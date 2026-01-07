@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { PlacedBuilding, GameConfig, BuildingDefinition } from '../types';
 import { CELL_SIZE } from '../constants';
 
@@ -59,6 +59,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const reachabilityCacheRef = useRef<Map<string, { signature: string, results: {x: number, y: number, dist: number}[] }>>(new Map());
   const [scale, setScale] = useState(0.8);
   const [offset, setOffset] = useState({ x: 100, y: 100 });
   
@@ -74,6 +75,22 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
 
   // Image Cache
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
+
+  // Road Cache
+  const roadSet = useMemo(() => {
+    const roads = new Set<string>();
+    buildings.forEach(b => {
+      const def = gameConfig.buildings.find(d => d.id === b.definitionId);
+      if (def && isRoad(def)) roads.add(`${b.x},${b.y}`);
+    });
+    return roads;
+  }, [buildings, gameConfig.buildings]);
+
+  const roadSignature = useMemo(() => Array.from(roadSet).sort().join('|'), [roadSet]);
+
+  useEffect(() => {
+    reachabilityCacheRef.current.clear();
+  }, [roadSignature]);
 
   useEffect(() => {
     const loadedImages: Record<string, HTMLImageElement> = {};
@@ -120,42 +137,36 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     };
   }, []);
 
-  // --- PATHFINDING FOR STREET DISTANCE ---
-  const getReachableRoads = (startX: number, startY: number, range: number) => {
-      const roadMap = new Map<string, boolean>();
-      buildings.forEach(b => {
-          const def = gameConfig.buildings.find(d => d.id === b.definitionId);
-          if (def && isRoad(def)) roadMap.set(`${b.x},${b.y}`, true);
-      });
+    // --- PATHFINDING FOR STREET DISTANCE ---
+    const getReachableRoads = useCallback((startX: number, startY: number, range: number) => {
+      const cacheKey = `${startX},${startY},${range}`;
+      const cached = reachabilityCacheRef.current.get(cacheKey);
+      if (cached && cached.signature === roadSignature) return cached.results;
 
-      const queue: {x: number, y: number, dist: number}[] = [];
-      const visited = new Set<string>();
+      const queue: {x: number, y: number, dist: number}[] = [{ x: startX, y: startY, dist: 0 }];
+      const visited = new Set<string>([`${startX},${startY}`]);
       const results: {x: number, y: number, dist: number}[] = [];
 
-      const startKey = `${startX},${startY}`;
-      queue.push({x: startX, y: startY, dist: 0});
-      visited.add(startKey);
-
       while(queue.length > 0) {
-          const {x, y, dist} = queue.shift()!;
-          if (dist > range) continue;
-          if (dist > 0 && roadMap.has(`${x},${y}`)) results.push({x, y, dist});
+        const {x, y, dist} = queue.shift()!;
+        if (dist > range) continue;
+        if (dist > 0 && roadSet.has(`${x},${y}`)) results.push({x, y, dist});
 
-          const neighbors = [[0,1], [0,-1], [1,0], [-1,0]];
-          for(const [dx, dy] of neighbors) {
-              const nx = x + dx;
-              const ny = y + dy;
-              const key = `${nx},${ny}`;
-              if (!visited.has(key)) {
-                  if (roadMap.has(key) || dist === 0) {
-                      visited.add(key);
-                      queue.push({x: nx, y: ny, dist: dist + 1});
-                  }
-              }
+        const neighbors: [number, number][] = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+        for(const [nx, ny] of neighbors) {
+          const key = `${nx},${ny}`;
+          if (!visited.has(key)) {
+            if (roadSet.has(key) || dist === 0) {
+              visited.add(key);
+              queue.push({x: nx, y: ny, dist: dist + 1});
+            }
           }
+        }
       }
+
+      reachabilityCacheRef.current.set(cacheKey, { signature: roadSignature, results });
       return results;
-  };
+    }, [roadSet, roadSignature]);
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -312,7 +323,16 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         ctx.fillRect(hoverPos.x * CELL_SIZE, hoverPos.y * CELL_SIZE, w, h);
       }
     }
-  }, [width, height, offset, scale, gameConfig, buildings, blockedCells, activeBuildingId, activeRotation, hoverPos, readOnly, selectedBuilding, images, showAllRadii]);
+    if (terrainMode && hoverPos.x !== -1) {
+      const cellKey = `${hoverPos.x},${hoverPos.y}`;
+      const fill = blockedCells.has(cellKey) ? 'rgba(248, 113, 113, 0.25)' : 'rgba(34, 197, 94, 0.2)';
+      ctx.fillStyle = fill;
+      ctx.fillRect(hoverPos.x * CELL_SIZE, hoverPos.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1 / scale;
+      ctx.strokeRect(hoverPos.x * CELL_SIZE + 0.5, hoverPos.y * CELL_SIZE + 0.5, CELL_SIZE - 1, CELL_SIZE - 1);
+    }
+  }, [width, height, offset, scale, gameConfig, buildings, blockedCells, activeBuildingId, activeRotation, hoverPos, readOnly, selectedBuilding, images, showAllRadii, terrainMode, roadSignature, roadSet, getReachableRoads]);
 
   useEffect(() => {
     let frame: number;

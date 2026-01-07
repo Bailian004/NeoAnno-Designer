@@ -92,7 +92,9 @@ export const TIER_CONSUMPTION: Record<string, ConsumptionRate[]> = {
     {
       good: "Fishery",
       building: "Fishery",
-      tonsPer1000PerMinute: 25.000,
+      // Corrected to match in-game rate: ~1 Fishery per 500 Farmers/Workers
+      // (2 t/min output → 4 t/1000/min consumption)
+      tonsPer1000PerMinute: 4.000,
     },
   ],
   'Investors': [
@@ -186,7 +188,9 @@ export const TIER_CONSUMPTION: Record<string, ConsumptionRate[]> = {
     {
       good: "Fishery",
       building: "Fishery",
-      tonsPer1000PerMinute: 50.000,
+      // Corrected to match in-game rate: ~1 Fishery per 500 Farmers/Workers
+      // (2 t/min output → 4 t/1000/min consumption)
+      tonsPer1000PerMinute: 4.000,
     },
     {
       good: "Slaughterhouse",

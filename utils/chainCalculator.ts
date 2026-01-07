@@ -1,8 +1,36 @@
-import { CONSUMPTION_RATES, PRODUCTION_CHAINS, ChainLink } from "../data/industryData";
+import { CONSUMPTION_RATES, PRODUCTION_CHAINS, ChainLink, ProductionDefinition } from "../data/industryData";
 
 export interface IndustryRequest {
     population: Record<string, number>; 
     selectedGoods: string[]; 
+}
+
+/**
+ * Get region for a population tier
+ */
+function getTierRegion(tier: string): 'Old World' | 'New World' | undefined {
+    if (['Farmer', 'Worker', 'Artisan', 'Engineer', 'Investor'].includes(tier)) {
+        return 'Old World';
+    }
+    if (['Jornalero', 'Obrero'].includes(tier)) {
+        return 'New World';
+    }
+    return undefined;
+}
+
+/**
+ * Check if a good is available for the given population setup
+ */
+function isGoodCompatible(good: ProductionDefinition, populationRegions: Set<string>): boolean {
+    // If we have both regions, allow both
+    if (populationRegions.size >= 2) return true;
+    
+    // Otherwise check region match
+    for (const region of populationRegions) {
+        if (good.region === region) return true;
+    }
+    
+    return false;
 }
 
 // --- CORE CALCULATOR ---
@@ -82,8 +110,23 @@ const getChainDependencies = (goodId: string): Set<string> => {
     return dependencies;
 };
 
-export const getCompatibleGoods = (selectedGoods: string[], availableGoods: string[]): string[] => {
-    if (selectedGoods.length === 0) return availableGoods;
+export const getCompatibleGoods = (selectedGoods: string[], availableGoods: string[], populationTiers: string[] = []): string[] => {
+    if (selectedGoods.length === 0) {
+        // Apply region filter if we have population info
+        if (populationTiers.length > 0) {
+            const regions = new Set<string>();
+            populationTiers.forEach(tier => {
+                const region = getTierRegion(tier);
+                if (region) regions.add(region);
+            });
+            
+            return availableGoods.filter(goodId => {
+                const def = PRODUCTION_CHAINS[goodId];
+                return def && isGoodCompatible(def, regions);
+            });
+        }
+        return availableGoods;
+    }
 
     const activeBuildings = new Set<string>();
     selectedGoods.forEach(good => {
@@ -93,6 +136,18 @@ export const getCompatibleGoods = (selectedGoods: string[], availableGoods: stri
 
     return availableGoods.filter(candidate => {
         if (selectedGoods.includes(candidate)) return true;
+        
+        // Check region compatibility
+        const def = PRODUCTION_CHAINS[candidate];
+        if (def && populationTiers.length > 0) {
+            const regions = new Set<string>();
+            populationTiers.forEach(tier => {
+                const region = getTierRegion(tier);
+                if (region) regions.add(region);
+            });
+            if (!isGoodCompatible(def, regions)) return false;
+        }
+        
         const candidateDeps = getChainDependencies(candidate);
         for (const b of candidateDeps) {
             if (activeBuildings.has(b)) return true;

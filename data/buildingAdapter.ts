@@ -7,6 +7,7 @@ import { BuildingDefinition } from '../types';
 import { productionChains } from './generatedProductionChains';
 import { serviceBuildings } from './generatedServiceBuildings';
 import { residenceBuildings } from './generatedResidences';
+import { getBuildingIdFromName, BUILDING_ID_MAP } from './buildingIdMap';
 
 // Color scheme for different building types
 const COLORS = {
@@ -85,60 +86,69 @@ export function loadBuildingDefinitions(): BuildingDefinition[] {
 }
 
 /**
- * Get building definition by name (case-insensitive, fuzzy matching)
+ * Get building definition by name using ID mapping table
  */
 export function getBuildingByName(
   definitions: BuildingDefinition[],
   name: string
 ): BuildingDefinition | undefined {
+  // Try ID mapping table first (most reliable)
+  const mappedId = getBuildingIdFromName(name);
+  if (mappedId) {
+    const match = definitions.find(d => d.id === mappedId);
+    if (match) return match;
+  }
+
+  // Fallback to direct ID match
+  let match = definitions.find(d => d.id === name);
+  if (match) return match;
+
+  // Fallback to exact name match
   const normalized = name.toLowerCase().trim();
-  
-  // Try exact match first
-  let match = definitions.find(d => d.name.toLowerCase() === normalized);
+  match = definitions.find(d => d.name.toLowerCase() === normalized);
   if (match) return match;
   
-  // Try contains match
+  // Fallback to contains match (less reliable)
   match = definitions.find(d => d.name.toLowerCase().includes(normalized));
   if (match) return match;
   
-  // Try reverse: name contains definition name (e.g., "Workers Residence" contains "Worker")
-  match = definitions.find(d => {
-    const defName = d.name.toLowerCase();
-    return normalized.includes(defName) || defName.includes(normalized.split(' ')[0]);
-  });
-  if (match) return match;
-  
-  // Try special cases for residences
-  if (normalized.includes('residence')) {
-    const tier = normalized.split(' ')[0]; // e.g., "Workers" from "Workers Residence"
-    match = definitions.find(d => 
-      d.category === 'Residence' && 
-      d.name.toLowerCase().includes(tier.toLowerCase())
-    );
-  }
-  
-  return match;
+  return undefined;
 }
 
 /**
  * Map targetCounts with friendly names to actual building IDs
+ * Now with proper error reporting and validation
  */
 export function mapTargetCountsToIds(
   targetCounts: Record<string, number>,
   definitions: BuildingDefinition[]
 ): Record<string, number> {
   const mapped: Record<string, number> = {};
+  const failures: string[] = [];
 
   Object.entries(targetCounts).forEach(([name, count]) => {
     const def = getBuildingByName(definitions, name);
     if (def) {
       mapped[def.id] = count;
     } else {
-      console.warn(`Could not find building definition for: ${name}`);
-      // Try using the name as-is in case it's already an ID
-      mapped[name] = count;
+      // Check if it's already an ID
+      const byId = definitions.find(d => d.id === name);
+      if (byId) {
+        mapped[name] = count;
+      } else {
+        failures.push(name);
+        console.warn(`[BuildingAdapter] Could not find building: "${name}"`);
+      }
     }
   });
+
+  // Report summary if there were failures
+  if (failures.length > 0) {
+    console.error(
+      `[BuildingAdapter] Failed to resolve ${failures.length} building(s):`,
+      failures.join(', ')
+    );
+  }
 
   return mapped;
 }

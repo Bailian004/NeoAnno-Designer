@@ -16,6 +16,7 @@ export class GeneticSolver {
   private houseQueue: string[] = []; // Residences / Farms
   
   private occupied: Set<string> = new Set();
+    private roadCells: Set<string> = new Set();
   private center: { x: number, y: number };
   private roadDefId: string;
   private warehouseDefId: string; 
@@ -47,6 +48,7 @@ export class GeneticSolver {
   public init(genome?: CityGenome) {
       this.currentGenome = [];
       this.occupied.clear();
+    this.roadCells.clear();
       this.errors = [];
       this.isFinished = false;
       this.currentSpiralIndex = 0;
@@ -189,7 +191,7 @@ export class GeneticSolver {
               if (!this.isInBounds(x, y, def.width, def.height)) continue;
               
               if (this.isAreaFree(x, y, def.width, def.height)) {
-                  if (this.isTouchingRoad(x, y, def.width, def.height)) {
+                  if (this.hasWarehouseConnection(x, y, def.width, def.height, def.id)) {
                       const parentId = generateId();
                       this.placeExplicit(id, x, y, parentId, false);
                       if (def.farmConfig) this.placeOrganicModules(x, y, def, parentId);
@@ -286,7 +288,7 @@ export class GeneticSolver {
               // REQUIREMENT 2: Must be adjacent to road in city mode
               // REQUIREMENT 3: Check service overlap
               if (this.canPlace(cx, cy, svcDef.width, svcDef.height) && 
-                  this.isTouchingRoad(cx, cy, svcDef.width, svcDef.height) &&
+                  this.hasWarehouseConnection(cx, cy, svcDef.width, svcDef.height, svcId) &&
                   !this.hasExcessiveServiceOverlap(svcId, cx, cy)) {
                   this.place(svcId, cx, cy);
                   this.spineQueue.shift();
@@ -309,7 +311,7 @@ export class GeneticSolver {
           // REQUIREMENT 2: Must be adjacent to road in city mode
           // REQUIREMENT 3: Check service overlap
           if (this.canPlace(x+1, y+1, svcDef.width, svcDef.height) &&
-              this.isTouchingRoad(x+1, y+1, svcDef.width, svcDef.height) &&
+              this.hasWarehouseConnection(x+1, y+1, svcDef.width, svcDef.height, svcId) &&
               !this.hasExcessiveServiceOverlap(svcId, x+1, y+1)) {
               this.place(svcId, x+1, y+1);
               this.localQueue.shift();
@@ -341,7 +343,7 @@ export class GeneticSolver {
               
               // REQUIREMENT 2: All buildings in city mode must be adjacent to roads
               if (this.canPlace(px, py, def.width, def.height) &&
-                  this.isTouchingRoad(px, py, def.width, def.height)) {
+                  this.hasWarehouseConnection(px, py, def.width, def.height, def.id)) {
                   this.place(id, px, py);
                   queue.shift();
                   px += def.width;
@@ -367,9 +369,50 @@ export class GeneticSolver {
           [array[i], array[j]] = [array[j], array[i]];
       }
   }
-  private isTouchingRoad(x: number, y: number, w: number, h: number): boolean {
-      for(let i=0; i<w; i++) { if (this.isRoadAt(x+i, y-1)) return true; if (this.isRoadAt(x+i, y+h)) return true; }
-      for(let j=0; j<h; j++) { if (this.isRoadAt(x-1, y+j)) return true; if (this.isRoadAt(x+w, y+j)) return true; }
+  private getAdjacentRoadCells(x: number, y: number, w: number, h: number): string[] {
+      const adj: string[] = [];
+      for(let i=0; i<w; i++) { if (this.isRoadAt(x+i, y-1)) adj.push(`${x+i},${y-1}`); if (this.isRoadAt(x+i, y+h)) adj.push(`${x+i},${y+h}`); }
+      for(let j=0; j<h; j++) { if (this.isRoadAt(x-1, y+j)) adj.push(`${x-1},${y+j}`); if (this.isRoadAt(x+w, y+j)) adj.push(`${x+w},${y+j}`); }
+      return adj;
+  }
+
+  private hasWarehouseConnection(x: number, y: number, w: number, h: number, defId: string): boolean {
+      const startRoads = this.getAdjacentRoadCells(x, y, w, h);
+      if (startRoads.length === 0) return false;
+
+      // Collect warehouse/market road contact points
+      const targetRoads = new Set<string>();
+      this.currentGenome.forEach(b => {
+          const def = this.definitions.find(d => d.id === b.definitionId);
+          if (!def) return;
+          const isWarehouse = b.definitionId === this.warehouseDefId || def.name.toLowerCase().includes('market');
+          if (!isWarehouse) return;
+          this.getAdjacentRoadCells(b.x, b.y, def.width, def.height).forEach(cell => {
+              if (this.roadCells.has(cell)) targetRoads.add(cell);
+          });
+      });
+
+      // Allow initial placement when no warehouses yet or placing a warehouse
+      if (targetRoads.size === 0 || defId === this.warehouseDefId) return true;
+
+      const visited = new Set<string>(startRoads);
+      const queue = [...startRoads];
+
+      while (queue.length > 0) {
+          const cell = queue.shift()!;
+          if (targetRoads.has(cell)) return true;
+
+          const [cx, cy] = cell.split(',').map(Number);
+          const neighbors = [[cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]];
+          for (const [nx, ny] of neighbors) {
+              const key = `${nx},${ny}`;
+              if (visited.has(key)) continue;
+              if (!this.roadCells.has(key)) continue;
+              visited.add(key);
+              queue.push(key);
+          }
+      }
+
       return false;
   }
   
@@ -426,9 +469,7 @@ export class GeneticSolver {
       
       return false; // No excessive overlap
   }
-  private isRoadAt(x: number, y: number): boolean {
-      return this.occupied.has(`${x},${y}`) && this.currentGenome.some(b => b.x === x && b.y === y && b.definitionId === this.roadDefId);
-  }
+    private isRoadAt(x: number, y: number): boolean { return this.roadCells.has(`${x},${y}`); }
   private isAreaFree(x: number, y: number, w: number, h: number): boolean {
       if (!this.isInBounds(x, y, w, h)) return false;
       for(let i=0; i<w; i++) {
@@ -443,7 +484,11 @@ export class GeneticSolver {
       if (!def) return;
       this.currentGenome.push({ uid, definitionId: defId, x, y, rotation: 0, isModule, parentId });
       for(let i=0; i<def.width; i++) {
-          for(let j=0; j<def.height; j++) this.occupied.add(`${x+i},${y+j}`);
+          for(let j=0; j<def.height; j++) {
+              const key = `${x+i},${y+j}`;
+              this.occupied.add(key);
+              if (defId === this.roadDefId) this.roadCells.add(key);
+          }
       }
   }
   private place(defId: string, x: number, y: number) { this.placeExplicit(defId, x, y, generateId()); }
@@ -451,7 +496,7 @@ export class GeneticSolver {
       for(let i=0; i<this.BLOCK_W; i++) { this.ensureRoad(x+i, y); this.ensureRoad(x+i, y+this.BLOCK_H-1); } 
       for(let j=0; j<this.BLOCK_H; j++) { this.ensureRoad(x, y+j); this.ensureRoad(x+this.BLOCK_W-1, y+j); } 
   }
-  private ensureRoad(x: number, y: number) { if (!this.occupied.has(`${x},${y}`)) { this.place(this.roadDefId, x, y); } }
+    private ensureRoad(x: number, y: number) { if (!this.occupied.has(`${x},${y}`)) { this.place(this.roadDefId, x, y); } }
   private isOccupied(x: number, y: number, w: number, h: number): boolean { return !this.isAreaFree(x, y, w, h); }
   private canPlace(x: number, y: number, w: number, h: number): boolean { return this.isAreaFree(x, y, w, h); }
   private isInBounds(x: number, y: number, w: number, h: number): boolean { return x >= 0 && y >= 0 && x + w <= this.params.areaWidth && y + h <= this.params.areaHeight; }

@@ -93,13 +93,18 @@ const CategoryTab: React.FC<{label: string, active: boolean, onClick: () => void
 const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ icon, color, name }) => {
   const [currentSrc, setCurrentSrc] = useState(icon);
   const [failed, setFailed] = useState(false);
+  const [attemptedFallback, setAttemptedFallback] = useState(false);
 
-  useEffect(() => { setCurrentSrc(icon); setFailed(false); }, [icon]);
+  useEffect(() => { setCurrentSrc(icon); setFailed(false); setAttemptedFallback(false); }, [icon]);
 
   const handleError = () => {
-      if (currentSrc && currentSrc.includes('/icons/')) {
+      if (currentSrc && currentSrc.includes('/icons/') && !attemptedFallback) {
           const fileName = currentSrc.split('/').pop();
-          if (fileName) { setCurrentSrc(`./${fileName}`); return; }
+          if (fileName) { 
+              setCurrentSrc(`./${fileName}`); 
+              setAttemptedFallback(true);
+              return; 
+          }
       }
       setFailed(true);
   };
@@ -107,7 +112,17 @@ const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ 
   if (currentSrc && !failed) {
     return <img src={currentSrc} alt={name} className="w-6 h-6 object-contain drop-shadow-md" onError={handleError} />;
   }
-  return <div className="w-5 h-5 rounded-sm flex-shrink-0 shadow-sm ring-1 ring-white/20" style={{ backgroundColor: color }}></div>;
+  
+  // Fallback: show first letter of building name with color background
+  return (
+      <div 
+          className="w-6 h-6 rounded-sm flex items-center justify-center text-white text-xs font-bold shadow-sm ring-1 ring-white/20" 
+          style={{ backgroundColor: color }}
+          title={`Icon missing: ${name}`}
+      >
+          {name.charAt(0).toUpperCase()}
+      </div>
+  );
 };
 
 // --- MODALS ---
@@ -184,7 +199,19 @@ const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficienc
             <div className="p-4 space-y-4 border-b border-white/5 bg-white/5">
                 <div className="flex justify-between items-end mb-2">
                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{title}</span>
-                     {score !== undefined && <span className="text-3xl font-black text-white leading-none">{Math.floor(score)}</span>}
+                     {score !== undefined && (
+                         <div className="flex items-center gap-2">
+                             <span className="text-3xl font-black text-white leading-none">{Math.floor(score)}</span>
+                             <button 
+                                 className="text-slate-500 hover:text-white transition-colors"
+                                 title="Fitness Score = (Completion × 500) + (Efficiency × 200) + (Compactness × 300)\n\nCompletion: % of requested buildings placed\nEfficiency: % of area filled\nCompactness: How tightly buildings are grouped"
+                             >
+                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                 </svg>
+                             </button>
+                         </div>
+                     )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     <div className="bg-black/40 p-2 rounded border border-white/5">
@@ -230,12 +257,34 @@ const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficienc
 // --- MAIN DESIGNER COMPONENT ---
 
 export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
-  const config = ANNO_GAMES[gameTitle];
-  const [layout, setLayout] = useState<Layout>({ width: 120, height: 120, buildings: [], blockedCells: [] });
+    const config = ANNO_GAMES[gameTitle];
+    if (!config) {
+        return (
+            <div className="h-screen w-screen bg-[#0b0f19] text-slate-100 flex items-center justify-center">
+                <div className="bg-[#0f172a] border border-white/10 rounded p-4">
+                    <p className="text-sm">Configuration missing for selected game.</p>
+                    <button className="mt-3 px-3 py-1 rounded bg-amber-500 text-slate-900 text-xs font-bold" onClick={onBack}>Back</button>
+                </div>
+            </div>
+        );
+    }
+  
+  // Grid size validation (Anno 1800 max: 200x200 realistic limit)
+  const MAX_GRID_SIZE = 200;
+  const initialWidth = Math.min(120, MAX_GRID_SIZE);
+  const initialHeight = Math.min(120, MAX_GRID_SIZE);
+  
+  const [layout, setLayout] = useState<Layout>({ 
+      width: initialWidth, 
+      height: initialHeight, 
+      buildings: [], 
+      blockedCells: [] 
+  });
   
   const [activeTool, setActiveTool] = useState<string | null>(null); 
   const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
-  const [terrainMode, setTerrainMode] = useState(false);
+    const [terrainMode, setTerrainMode] = useState(false);
+    const [showAllRadii, setShowAllRadii] = useState(false);
   const [solverMode, setSolverMode] = useState<SolverMode>('city');
   const [activeCategory, setActiveCategory] = useState('Residence');
   const [activeLeftTab, setActiveLeftTab] = useState<'specs' | 'generated' | 'live'>('specs');
@@ -256,6 +305,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   
   const managerRef = useRef<PopulationManager | null>(null);
   const solverInterval = useRef<number | null>(null);
+    const etaRef = useRef<number>(0);
 
   const [popGoals, setPopGoals] = useState<PopulationGoal[]>([]);
   const [newGoalTier, setNewGoalTier] = useState<string>('');
@@ -269,8 +319,9 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   }, [industryPop]);
 
   const compatibleGoods = useMemo(() => {
-      return getCompatibleGoods(Array.from(selectedGoods), availableIndustryGoods);
-  }, [selectedGoods, availableIndustryGoods]);
+      const popTiers = Object.keys(industryPop).filter(tier => industryPop[tier] > 0);
+      return getCompatibleGoods(Array.from(selectedGoods), availableIndustryGoods, popTiers);
+  }, [selectedGoods, availableIndustryGoods, industryPop]);
 
   // --- LIVE INDUSTRY CALCULATION ---
   useEffect(() => {
@@ -300,9 +351,12 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
              }
           });
 
-          // 3. INJECT WAREHOUSES
-          // Rule of thumb: 1 Warehouse per 8 production buildings to ensure connectivity
-          const warehousesNeeded = Math.ceil(totalProdBuildings / 8);
+          // 3. INJECT WAREHOUSES (Anno 1800 logistics mechanics)
+          // Warehouses needed based on actual Anno logistics:
+          // - Each warehouse covers radius of ~40 tiles
+          // - Production buildings need warehouse access for goods storage/transport
+          // - Rule: 1 warehouse per 50 tiles of built area (approx 5-8 production buildings)
+          const warehousesNeeded = Math.max(1, Math.ceil(totalProdBuildings / 6));
           if (warehousesNeeded > 0) {
               const wh = config.buildings.find(b => b.name === 'Warehouse' || b.name.includes('Warehouse'));
               if (wh) {
@@ -324,6 +378,33 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   useEffect(() => {
     setDockPos({ x: window.innerWidth / 2 - 140, y: window.innerHeight - 90 });
   }, []);
+
+    const workforceStatus = useMemo(() => {
+            const supply: Record<string, number> = {};
+            const demand: Record<string, number> = {};
+
+            layout.buildings.forEach(b => {
+                    const def = config.buildings.find(d => d.id === b.definitionId);
+                    if (!def) return;
+
+                    if (def.residence?.populationType && def.residence.maxPopulation) {
+                            const tier = def.residence.populationType;
+                            supply[tier] = (supply[tier] || 0) + def.residence.maxPopulation;
+                    }
+
+                    if (def.production?.workforce) {
+                            const wf = def.production.workforce;
+                            demand[wf.type] = (demand[wf.type] || 0) + wf.amount;
+                    }
+            });
+
+            const deficits = Object.entries(demand)
+                .filter(([tier, need]) => need > (supply[tier] || 0))
+                .map(([tier, need]) => ({ tier, need, have: supply[tier] || 0, deficit: need - (supply[tier] || 0) }))
+                .sort((a, b) => b.deficit - a.deficit);
+
+            return { deficits, hasDeficit: deficits.length > 0 };
+    }, [layout.buildings, config.buildings]);
 
   const liveAnalysis = useMemo(() => {
       const buildings = layout.buildings;
@@ -428,11 +509,18 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
 
   const handleUpdatePopGoal = () => {
       const existing = popGoals.find(g => g.tierId === newGoalTier);
-      let newGoals = existing 
-        ? popGoals.map(g => g.tierId === newGoalTier ? { ...g, count: newGoalCount } : g)
-        : [...popGoals, { tierId: newGoalTier, count: newGoalCount }];
-      setPopGoals(newGoals);
-      setSolverCounts(calculateBuildingsForPopulation(newGoals, config));
+      if (existing) {
+          // Update existing tier instead of creating duplicate
+          const newGoals = popGoals.map(g => g.tierId === newGoalTier ? { ...g, count: newGoalCount } : g);
+          setPopGoals(newGoals);
+      } else {
+          // Add new tier
+          setPopGoals([...popGoals, { tierId: newGoalTier, count: newGoalCount }]);
+      }
+      setSolverCounts(calculateBuildingsForPopulation(
+          existing ? popGoals.map(g => g.tierId === newGoalTier ? { ...g, count: newGoalCount } : g) : [...popGoals, { tierId: newGoalTier, count: newGoalCount }], 
+          config
+      ));
   };
 
   const handleDeleteGoal = (tierId: string) => {
@@ -450,6 +538,62 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       if (next.has(goodId)) next.delete(goodId);
       else next.add(goodId);
       setSelectedGoods(next);
+  };
+
+  // Save/Load functionality
+  const handleSaveLayout = () => {
+      const saveData = {
+          version: '1.0',
+          gameTitle,
+          layout,
+          solverMode,
+          popGoals,
+          timestamp: new Date().toISOString()
+      };
+      
+      const jsonStr = JSON.stringify(saveData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `anno-layout-${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  };
+
+  const handleLoadLayout = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e: Event) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  try {
+                      const data = JSON.parse(e.target?.result as string);
+                      if (data.layout) setLayout(data.layout);
+                      if (data.solverMode) setSolverMode(data.solverMode);
+                      if (data.popGoals) setPopGoals(data.popGoals);
+                  } catch (err) {
+                      console.error('Failed to load layout:', err);
+                      alert('Failed to load layout file. Please check the file format.');
+                  }
+              };
+              reader.readAsText(file);
+          }
+      };
+      input.click();
+  };
+
+  const handleClearLayout = () => {
+      if (confirm('Are you sure you want to clear the entire layout?')) {
+          setLayout({ width: 120, height: 120, buildings: [], blockedCells: [] });
+          setSolverCounts({});
+          setLastResult(null);
+      }
   };
 
   const handleOpenSolver = () => {
@@ -496,8 +640,10 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       setIsSolving(true);
       setSolverProgress(0);
       setCurrentGeneration(0);
-      setStartTime(Date.now());
-      setLastResult(null);
+    setStartTime(Date.now());
+    setLastResult(null);
+    setEta(0);
+    etaRef.current = 0;
 
       solverInterval.current = window.setInterval(() => {
           if (!managerRef.current) return;
@@ -508,9 +654,12 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           
           // ETA Calculation
           const elapsed = (Date.now() - startTime) / 1000;
-          const gensPerSec = gen / elapsed;
+          const gensPerSec = gen / Math.max(elapsed, 0.001);
           const remainingGens = genConfig.generations - gen;
-          setEta(remainingGens / (gensPerSec || 1));
+          const rawEta = remainingGens / Math.max(gensPerSec, 0.001);
+          const smoothedEta = etaRef.current ? (etaRef.current * 0.7 + rawEta * 0.3) : rawEta;
+          etaRef.current = smoothedEta;
+          setEta(smoothedEta);
 
           const prog = Math.min((gen / genConfig.generations) * 100, 100);
           setSolverProgress(prog);
@@ -547,8 +696,8 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
             width={layout.width} height={layout.height}
             onPlaceBuilding={handlePlaceBuilding} onRemoveBuilding={handleRemoveBuilding}
             onSelectBuilding={setSelectedBuildingUid} onToggleTerrain={handleToggleTerrain}
-            activeBuildingId={activeTool} activeRotation={rotation} selectedBuilding={layout.buildings.find(b => b.uid === selectedBuildingUid) || null}
-            readOnly={isSolving} terrainMode={terrainMode}
+                        activeBuildingId={activeTool} activeRotation={rotation} selectedBuilding={layout.buildings.find(b => b.uid === selectedBuildingUid) || null}
+                        readOnly={isSolving} terrainMode={terrainMode} showAllRadii={showAllRadii}
          />
       </div>
       {showPopModal && <PopulationInput onGenerate={handlePopulationGenerate} onCancel={() => setShowPopModal(false)} />}
@@ -574,6 +723,20 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                    <h1 className="font-black text-amber-500 tracking-[0.2em] uppercase text-sm">{config.title}</h1>
                    <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.8</div>
                 </div>
+            </div>
+            <div className="flex items-center gap-3">
+                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${workforceStatus.hasDeficit ? 'bg-red-500/10 text-red-300 border-red-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40'}`} title={workforceStatus.hasDeficit ? 'Add more residences or reduce workforce demand.' : 'All workforce demands are covered.'}>
+                    {workforceStatus.hasDeficit ? `Workforce deficit: ${workforceStatus.deficits.slice(0,2).map(d => `${d.tier} -${Math.ceil(d.deficit)}`).join(' · ')}` : 'Workforce balanced'}
+                </div>
+                <button onClick={handleSaveLayout} title="Save Layout" className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                </button>
+                <button onClick={handleLoadLayout} title="Load Layout" className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-400 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                </button>
+                <button onClick={handleClearLayout} title="Clear Layout" className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
             </div>
         </Panel>
       </div>
@@ -727,11 +890,27 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
              </div>
              <IconButton active={activeTool === null && !terrainMode} onClick={() => { setActiveTool(null); setTerrainMode(false); }} title="Select / Move" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>} />
              <IconButton active={terrainMode} onClick={() => { setTerrainMode(true); setActiveTool(null); }} title="Terrain Blocker" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>} />
+             <IconButton active={showAllRadii} onClick={() => setShowAllRadii(prev => !prev)} title="Show All Service Radii" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>} />
              <div className="px-4 flex items-center justify-center min-w-[140px] bg-black/40 rounded mx-1 border border-white/5 border-b-white/10 shadow-inner">
                 <span className={`text-[10px] font-mono tracking-widest uppercase ${activeTool ? 'text-amber-400' : terrainMode ? 'text-red-400' : 'text-slate-400'}`}>
                     {activeTool ? (config.buildings.find(b => b.id === activeTool)?.name.substring(0, 18) || 'Unknown Asset') : terrainMode ? 'TERRAIN EDITOR' : 'CURSOR MODE'}
                 </span>
              </div>
+             {activeTool && (
+                 <div className="flex items-center gap-1 px-2 border-l border-white/5">
+                     <span className="text-[9px] text-slate-500 uppercase font-bold mr-1">Rotation</span>
+                     <button 
+                         onClick={() => setRotation(prev => (prev + 90) % 360 as any)}
+                         className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 transition-colors border border-white/5"
+                         title="Rotate (R key)"
+                     >
+                         <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ transform: `rotate(${rotation}deg)` }}>
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                         </svg>
+                     </button>
+                     <span className="text-xs font-mono text-amber-400 font-bold min-w-[32px]">{rotation}°</span>
+                 </div>
+             )}
           </Panel>
       </div>
       <ResourcePanel isOpen={resourcePanelOpen} onClose={() => setResourcePanelOpen(false)} buildings={layout.buildings} config={config} />

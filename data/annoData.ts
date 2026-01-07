@@ -1,4 +1,5 @@
 import { AnnoTitle, GameConfig, BuildingDefinition, ResourceRate } from "../types";
+import { ANNO_117_BUILDINGS_RAW } from "./anno117Buildings";
 
 // --- Types for Raw JSON Data ---
 interface RawBuilding {
@@ -101,7 +102,7 @@ const PRESET_COLOR_MAP: Record<string, string> = {
   "CitizenHouse": "#69C4C4", "Residence_tier02": "#69C4C4",
   "PatricianHouse": "#44A6A6", "Residence_tier03": "#44A6A6",
   "NoblemanHouse": "#008080", "Residence_tier04": "#008080",
-  "Residence_tier05": "#035E5E",
+  "Residence_tier05": "#035E5E", // Investors
   "Residence_New_World": "#FF9A67", // Jornalero
   "Residence_colony01_tier02": "#FF6517", // Obrero
   "Residence_Arctic_World": "#85B9FF", // Explorer
@@ -148,46 +149,46 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
     name: 'Grain Farm',
     category: 'Production',
     farmConfig: { moduleType: 'Field', moduleCount: 144, moduleSize: { x: 1, y: 1 } },
-    production: { outputs: [{ resourceId: 'grain', amount: 1 }], workforce: { type: 'Farmer', amount: 20 } }
+    production: { outputs: [{ resourceId: 'grain', amount: 1 }], workforce: { type: 'Farmer', amount: 20 }, cycleTime: 60 }
   },
   "Agriculture_04 (Potato Farm)": {
     name: 'Potato Farm',
     category: 'Production',
     farmConfig: { moduleType: 'Field', moduleCount: 72, moduleSize: { x: 1, y: 1 } },
-    production: { outputs: [{ resourceId: 'potatoes', amount: 2 }], workforce: { type: 'Farmer', amount: 20 } }
+    production: { outputs: [{ resourceId: 'potatoes', amount: 1 }], workforce: { type: 'Farmer', amount: 20 }, cycleTime: 30 }
   },
   "Agriculture_06 (Sheep Farm)": {
     name: 'Sheep Farm',
     category: 'Production',
     farmConfig: { moduleType: 'Pasture', moduleCount: 3, moduleSize: { x: 3, y: 3 } },
-    production: { outputs: [{ resourceId: 'wool', amount: 2 }], workforce: { type: 'Farmer', amount: 10 } }
+    production: { outputs: [{ resourceId: 'wool', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 }
   },
   "Agriculture_05 (Timber Yard)": {
     name: "Lumberjack's Hut",
     category: 'Production',
     influenceRadius: 7, 
-    production: { outputs: [{ resourceId: 'wood', amount: 4 }], workforce: { type: 'Farmer', amount: 5 } }
+    production: { outputs: [{ resourceId: 'wood', amount: 1 }], workforce: { type: 'Farmer', amount: 5 }, cycleTime: 15 }
   },
   "Factory_03 (Timber Factory)": {
     name: 'Sawmill',
     category: 'Production',
-    production: { inputs: [{ resourceId: 'wood', amount: 4 }], outputs: [{ resourceId: 'timber', amount: 4 }], workforce: { type: 'Farmer', amount: 10 } }
+    production: { inputs: [{ resourceId: 'wood', amount: 4 }], outputs: [{ resourceId: 'timber', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 }
   },
   "Coastal_01 (Fish Coast Building)": {
     name: 'Fishery',
     category: 'Production',
-    production: { outputs: [{ resourceId: 'fish', amount: 2 }], workforce: { type: 'Farmer', amount: 25 } }
+    production: { outputs: [{ resourceId: 'fish', amount: 1 }], workforce: { type: 'Farmer', amount: 25 }, cycleTime: 30 }
   },
   "Processing_04 (Weavery)": {
     name: 'Framework Knitters',
     category: 'Production',
-    production: { inputs: [{ resourceId: 'wool', amount: 2 }], outputs: [{ resourceId: 'work_clothes', amount: 2 }], workforce: { type: 'Farmer', amount: 50 } }
+    production: { inputs: [{ resourceId: 'wool', amount: 2 }], outputs: [{ resourceId: 'work_clothes', amount: 1 }], workforce: { type: 'Farmer', amount: 50 }, cycleTime: 30 }
   },
   "Food_06 (Schnapps Maker)": {
     name: 'Schnapps Distillery',
     category: 'Production',
     impactType: 'Negative', impactRadius: 10,
-    production: { inputs: [{ resourceId: 'potatoes', amount: 2 }], outputs: [{ resourceId: 'schnapps', amount: 2 }], workforce: { type: 'Farmer', amount: 50 } }
+    production: { inputs: [{ resourceId: 'potatoes', amount: 2 }], outputs: [{ resourceId: 'schnapps', amount: 1 }], workforce: { type: 'Farmer', amount: 50 }, cycleTime: 30 }
   },
 
   // --- WORKERS ---
@@ -196,8 +197,13 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
     residence: {
       populationType: 'Worker', maxPopulation: 20,
       consumption: [
-        { resourceId: 'fish', amount: 0.1 }, { resourceId: 'work_clothes', amount: 0.123 }, { resourceId: 'schnapps', amount: 0.133 },
-        { resourceId: 'sausages', amount: 0.08 }, { resourceId: 'bread', amount: 0.08 }, { resourceId: 'soap', amount: 0.04 }
+        { resourceId: 'fish', amount: 0.020 }, 
+        { resourceId: 'work_clothes', amount: 0.0225 }, 
+        { resourceId: 'schnapps', amount: 0.024 },
+        { resourceId: 'sausages', amount: 0.020 }, 
+        { resourceId: 'bread', amount: 0.018 }, 
+        { resourceId: 'soap', amount: 0.008 },
+        { resourceId: 'beer', amount: 0.026 }
       ]
     }
   },
@@ -209,26 +215,26 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
     name: 'Pig Farm',
     category: 'Production', impactType: 'Negative', impactRadius: 12,
     farmConfig: { moduleType: 'Pasture', moduleCount: 5, moduleSize: { x: 3, y: 4 } },
-    production: { outputs: [{ resourceId: 'pigs', amount: 1 }], workforce: { type: 'Farmer', amount: 5 } }
+    production: { outputs: [{ resourceId: 'pigs', amount: 1 }], workforce: { type: 'Farmer', amount: 5 }, cycleTime: 60 }
   },
   "Food_07 (Sausage Maker)": {
     name: 'Slaughterhouse',
     category: 'Production', impactType: 'Negative', impactRadius: 12,
-    production: { inputs: [{ resourceId: 'pigs', amount: 1 }], outputs: [{ resourceId: 'sausages', amount: 1 }], workforce: { type: 'Worker', amount: 30 } }
+    production: { inputs: [{ resourceId: 'pigs', amount: 1 }], outputs: [{ resourceId: 'sausages', amount: 1 }], workforce: { type: 'Worker', amount: 30 }, cycleTime: 60 }
   },
   "Processing_02 (Flour Processing)": {
     name: 'Flour Mill',
     category: 'Production',
-    production: { inputs: [{ resourceId: 'grain', amount: 2 }], outputs: [{ resourceId: 'flour', amount: 2 }], workforce: { type: 'Farmer', amount: 10 } }
+    production: { inputs: [{ resourceId: 'grain', amount: 2 }], outputs: [{ resourceId: 'flour', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 }
   },
   "Food_01 (Bread Maker)": {
     name: 'Bakery',
     category: 'Production',
-    production: { inputs: [{ resourceId: 'flour', amount: 1 }], outputs: [{ resourceId: 'bread', amount: 1 }], workforce: { type: 'Worker', amount: 50 } }
+    production: { inputs: [{ resourceId: 'flour', amount: 1 }], outputs: [{ resourceId: 'bread', amount: 1 }], workforce: { type: 'Worker', amount: 50 }, cycleTime: 60 }
   },
   "Factory_02 (Soap Factory)": {
     category: 'Production', impactType: 'Negative', impactRadius: 15,
-    production: { outputs: [{ resourceId: 'soap', amount: 1 }], workforce: { type: 'Worker', amount: 50 } }
+    production: { outputs: [{ resourceId: 'soap', amount: 1 }], workforce: { type: 'Worker', amount: 50 }, cycleTime: 30 }
   },
   "Factory_04 (Brick Factory)": {
     category: 'Production',
@@ -237,20 +243,110 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
   "Heavy_02 (Steel Heavy Industry)": {
     name: 'Furnace',
     category: 'Production', impactType: 'Negative', impactRadius: 15,
-    production: { outputs: [{ resourceId: 'steel', amount: 1 }], workforce: { type: 'Worker', amount: 100 } }
+    production: { outputs: [{ resourceId: 'steel', amount: 1 }], workforce: { type: 'Worker', amount: 100 }, cycleTime: 30 }
   },
   "Heavy_01 (Beams Heavy Industry)": {
     name: 'Steelworks',
     category: 'Production',
-    production: { outputs: [{ resourceId: 'steel_beams', amount: 1 }] }
+    production: { outputs: [{ resourceId: 'steel_beams', amount: 1 }], cycleTime: 45 }
   },
 
-  // --- ARTISANS & ABOVE ---
-  "Residence_tier03": { category: 'Residence', residence: { populationType: 'Artisan', maxPopulation: 30 } },
-  "Residence_tier04": { category: 'Residence', residence: { populationType: 'Engineer', maxPopulation: 40 } },
-  "Residence_tier05": { category: 'Residence', residence: { populationType: 'Investor', maxPopulation: 50 } },
+  // --- ARTISANS ---
+  "Residence_tier03": { 
+    category: 'Residence', 
+    residence: { 
+      populationType: 'Artisan', 
+      maxPopulation: 30,
+      consumption: [
+        { resourceId: 'sausages', amount: 0.030 },
+        { resourceId: 'bread', amount: 0.027 },
+        { resourceId: 'soap', amount: 0.012 },
+        { resourceId: 'canned_food', amount: 0.0174 },
+        { resourceId: 'sewing_machines', amount: 0.0141 },
+        { resourceId: 'fur_coats', amount: 0.0141 },
+        { resourceId: 'rum', amount: 0.033 },
+        { resourceId: 'beer', amount: 0.039 }
+      ]
+    }
+  },
   
-  "Service_05 (Cabaret)": { category: 'Public', influenceRange: 96 },
+  // --- ENGINEERS ---
+  "Residence_tier04": { 
+    category: 'Residence', 
+    residence: { 
+      populationType: 'Engineer', 
+      maxPopulation: 40,
+      consumption: [
+        { resourceId: 'canned_food', amount: 0.0232 },
+        { resourceId: 'sewing_machines', amount: 0.0188 },
+        { resourceId: 'fur_coats', amount: 0.0188 },
+        { resourceId: 'glasses', amount: 0.0092 },
+        { resourceId: 'coffee', amount: 0.068 },
+        { resourceId: 'light_bulbs', amount: 0.014 },
+        { resourceId: 'rum', amount: 0.044 },
+        { resourceId: 'beer', amount: 0.052 },
+        { resourceId: 'bicycles', amount: 0.0092 },
+        { resourceId: 'pocket_watches', amount: 0.0092 }
+      ]
+    }
+  },
+  
+  // --- INVESTORS ---
+  "Residence_tier05": { 
+    category: 'Residence', 
+    residence: { 
+      populationType: 'Investor', 
+      maxPopulation: 50,
+      consumption: [
+        { resourceId: 'canned_food', amount: 0.029 },
+        { resourceId: 'sewing_machines', amount: 0.0235 },
+        { resourceId: 'fur_coats', amount: 0.0235 },
+        { resourceId: 'glasses', amount: 0.0115 },
+        { resourceId: 'coffee', amount: 0.085 },
+        { resourceId: 'light_bulbs', amount: 0.0175 },
+        { resourceId: 'champagne', amount: 0.055 },
+        { resourceId: 'cigars', amount: 0.02 },
+        { resourceId: 'chocolate', amount: 0.02 },
+        { resourceId: 'steam_carriages', amount: 0.0115 },
+        { resourceId: 'pocket_watches', amount: 0.0115 },
+        { resourceId: 'jewelry', amount: 0.0115 },
+        { resourceId: 'gramophones', amount: 0.0115 }
+      ]
+    }
+  },
+  
+  // --- NEW WORLD RESIDENCES ---
+  "Residence_New_World": {
+    category: 'Residence',
+    residence: {
+      populationType: 'Jornalero',
+      maxPopulation: 10,
+      consumption: [
+        { resourceId: 'fried_plantains', amount: 0.020 },
+        { resourceId: 'ponchos', amount: 0.020 },
+        { resourceId: 'rum', amount: 0.024 }
+      ]
+    }
+  },
+  
+  "Residence_colony01_tier02": {
+    category: 'Residence',
+    residence: {
+      populationType: 'Obrero',
+      maxPopulation: 20,
+      consumption: [
+        { resourceId: 'fried_plantains', amount: 0.020 },
+        { resourceId: 'ponchos', amount: 0.020 },
+        { resourceId: 'tortillas', amount: 0.014 },
+        { resourceId: 'coffee', amount: 0.020 },
+        { resourceId: 'bowler_hats', amount: 0.008 },
+        { resourceId: 'cigars', amount: 0.008 },
+        { resourceId: 'rum', amount: 0.024 }
+      ]
+    }
+  },
+  
+  "Service_05 (Cabaret)": { name: 'Variety Theatre', category: 'Public', influenceRange: 96 },
   "Service_07 (University)": { category: 'Public', influenceRange: 96 },
   "Institution_03 (Hospital)": { category: 'Public', influenceRange: 26 },
   "Service_09 (Club House)": { category: 'Public', influenceRange: 96 },
@@ -295,7 +391,213 @@ const GAME_LOGIC_OVERRIDES: Record<string, Partial<BuildingDefinition>> = {
   "Module_Pasture_4x4": {
       name: 'Pasture', width: 4, height: 4, color: '#a3bd63', category: 'Production', id: "Module_Pasture_4x4"
   },
+
+  // --- AUTO-GENERATED: 121 MISSING PRODUCERS FROM ANNO-1800-CALCULATOR ---
+  // Last updated: generated from reference producers.json to ensure full coverage
+  // These definitions provide baseline production specs for all reference buildings
+  "Oil Power Plant": { name: 'Oil Power Plant', category: 'Production', production: { outputs: [{ resourceId: 'electricity', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: -1 } },
+  "Coal Power Plant": { name: 'Coal Power Plant', category: 'Production', production: { outputs: [{ resourceId: 'electricity', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: -1 } },
+  "Lumberjack Hut": { name: 'Lumberjack Hut', category: 'Production', production: { outputs: [{ resourceId: 'wood', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Iron Mine": { name: 'Iron Mine', category: 'Production', production: { outputs: [{ resourceId: 'iron', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Coal Mine": { name: 'Coal Mine', category: 'Production', production: { outputs: [{ resourceId: 'coal', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Oil Refinery": { name: 'Oil Refinery', category: 'Production', production: { outputs: [{ resourceId: 'oil', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Oil Well": { name: 'Oil Well', category: 'Production', production: { outputs: [{ resourceId: 'oil', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Clay Harvester": { name: 'Clay Harvester', category: 'Production', production: { outputs: [{ resourceId: 'clay', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Pipe Maker": { name: 'Pipe Maker', category: 'Production', production: { outputs: [{ resourceId: 'claypipes', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Paper Mill": { name: 'Paper Mill', category: 'Production', production: { outputs: [{ resourceId: 'paper', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Luminer": { name: 'Luminer', category: 'Production', production: { outputs: [{ resourceId: 'illuminatedscripts', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Fuel Station": { name: 'Fuel Station', category: 'Production', production: { outputs: [{ resourceId: 'fuel', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Pristine Hunting Cabin": { name: 'Pristine Hunting Cabin', category: 'Production', production: { outputs: [{ resourceId: 'furs', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Wanza Woodcutter": { name: 'Wanza Woodcutter', category: 'Production', production: { outputs: [{ resourceId: 'wanzatimber', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 15 } },
+  "Clay Pit": { name: 'Clay Pit', category: 'Production', production: { outputs: [{ resourceId: 'clay', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Sailmakers": { name: 'Sailmakers', category: 'Production', production: { outputs: [{ resourceId: 'sails', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Soap Factory": { name: 'Soap Factory', category: 'Production', production: { outputs: [{ resourceId: 'soap', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Charcoal Kiln": { name: 'Charcoal Kiln', category: 'Production', production: { outputs: [{ resourceId: 'coal', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Malthouse": { name: 'Malthouse', category: 'Production', production: { outputs: [{ resourceId: 'malt', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Sand Mine": { name: 'Sand Mine', category: 'Production', production: { outputs: [{ resourceId: 'quartzsand', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Glassmakers": { name: 'Glassmakers', category: 'Production', production: { outputs: [{ resourceId: 'glass', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Sewing Machine Factory": { name: 'Sewing Machine Factory', category: 'Production', production: { outputs: [{ resourceId: 'sewingmachines', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Sugar Cane Plantation": { name: 'Sugar Cane Plantation', category: 'Production', production: { outputs: [{ resourceId: 'sugarcane', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Rum Distillery": { name: 'Rum Distillery', category: 'Production', production: { outputs: [{ resourceId: 'rum', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Fur Dealer": { name: 'Fur Dealer', category: 'Production', production: { outputs: [{ resourceId: 'furcoats', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Limestone Quarry": { name: 'Limestone Quarry', category: 'Production', production: { outputs: [{ resourceId: 'cement', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Zinc Mine": { name: 'Zinc Mine', category: 'Production', production: { outputs: [{ resourceId: 'zinc', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Copper Mine": { name: 'Copper Mine', category: 'Production', production: { outputs: [{ resourceId: 'copper', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Bicycle Factory": { name: 'Bicycle Factory', category: 'Production', production: { outputs: [{ resourceId: 'pennyfarthingss', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Champagne Cellar": { name: 'Champagne Cellar', category: 'Production', production: { outputs: [{ resourceId: 'champagne', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Jewellers": { name: 'Jewellers', category: 'Production', production: { outputs: [{ resourceId: 'jewelry', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Fish Oil Factory": { name: 'Fish Oil Factory', category: 'Production', production: { outputs: [{ resourceId: 'fishoil', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Plantain Plantation": { name: 'Plantain Plantation', category: 'Production', production: { outputs: [{ resourceId: 'plantains', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Fried Plantain Kitchen": { name: 'Fried Plantain Kitchen', category: 'Production', production: { outputs: [{ resourceId: 'friedplantains', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Cotton Mill": { name: 'Cotton Mill', category: 'Production', production: { outputs: [{ resourceId: 'cottonfabric', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Alpaca Farm": { name: 'Alpaca Farm', category: 'Production', production: { outputs: [{ resourceId: 'alpacawool', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Poncho Darner": { name: 'Poncho Darner', category: 'Production', production: { outputs: [{ resourceId: 'ponchos', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Tortilla Maker": { name: 'Tortilla Maker', category: 'Production', production: { outputs: [{ resourceId: 'tortillas', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Coffee Roaster": { name: 'Coffee Roaster', category: 'Production', production: { outputs: [{ resourceId: 'coffee', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Felt Producer": { name: 'Felt Producer', category: 'Production', production: { outputs: [{ resourceId: 'felt', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Bombin Weaver": { name: 'Bombin Weaver', category: 'Production', production: { outputs: [{ resourceId: 'bowlerhats', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Cigar Factory": { name: 'Cigar Factory', category: 'Production', production: { outputs: [{ resourceId: 'cigars', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Sugar Refinery": { name: 'Sugar Refinery', category: 'Production', production: { outputs: [{ resourceId: 'sugar', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Chocolate Factory": { name: 'Chocolate Factory', category: 'Production', production: { outputs: [{ resourceId: 'chocolate', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Advanced Coffee Roaster": { name: 'Advanced Coffee Roaster', category: 'Production', production: { outputs: [{ resourceId: 'advancedcoffee', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Advanced Rum Distillery": { name: 'Advanced Rum Distillery', category: 'Production', production: { outputs: [{ resourceId: 'advancedrum', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Advanced Cotton Mill": { name: 'Advanced Cotton Mill', category: 'Production', production: { outputs: [{ resourceId: 'advancedcottonfabric', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Seal Hunting Docks": { name: 'Seal Hunting Docks', category: 'Production', production: { outputs: [{ resourceId: 'sealskin', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Tapestry Looms": { name: 'Tapestry Looms', category: 'Production', production: { outputs: [{ resourceId: 'tapestries', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Wat Kitchen": { name: 'Wat Kitchen', category: 'Production', production: { outputs: [{ resourceId: 'seafoodstew', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Oil Storage": { name: 'Oil Storage', category: 'Production', production: { outputs: [{ resourceId: 'oilstorage', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Small Oil Harbour": { name: 'Small Oil Harbour', category: 'Production', production: { outputs: [{ resourceId: 'oilstorage', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Linen Mill": { name: 'Linen Mill', category: 'Production', production: { outputs: [{ resourceId: 'linen', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Salt Works": { name: 'Salt Works', category: 'Production', production: { outputs: [{ resourceId: 'salt', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Dry-House": { name: 'Dry-House', category: 'Production', production: { outputs: [{ resourceId: 'driedmeat', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Ceramics Workshop": { name: 'Ceramics Workshop', category: 'Production', production: { outputs: [{ resourceId: 'ceramics', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Teff Mill": { name: 'Teff Mill', category: 'Production', production: { outputs: [{ resourceId: 'spicedflour', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Apiary": { name: 'Apiary', category: 'Production', production: { outputs: [{ resourceId: 'beeswax', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Chandler": { name: 'Chandler', category: 'Production', production: { outputs: [{ resourceId: 'ornatecandles', amount: 1 }], workforce: { type: 'Farmer', amount: 10 }, cycleTime: 30 } },
+  "Telephone Manufacturer": { name: 'Telephone Manufacturer', category: 'Production', production: { outputs: [{ resourceId: 'telephones', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 45 } },
+  "Brick Factory": { name: 'Brick Factory', category: 'Production', production: { outputs: [{ resourceId: 'bricks', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Rendering Works": { name: 'Rendering Works', category: 'Production', production: { outputs: [{ resourceId: 'tallow', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Brewery": { name: 'Brewery', category: 'Production', production: { outputs: [{ resourceId: 'beer', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Window Makers": { name: 'Window Makers', category: 'Production', production: { outputs: [{ resourceId: 'windows', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Hunting Cabin": { name: 'Hunting Cabin', category: 'Production', production: { outputs: [{ resourceId: 'furs', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Concrete Factory": { name: 'Concrete Factory', category: 'Production', production: { outputs: [{ resourceId: 'reinforcedconcrete', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Brass Smeltery": { name: 'Brass Smeltery', category: 'Production', production: { outputs: [{ resourceId: 'brass', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Goldsmiths": { name: 'Goldsmiths', category: 'Production', production: { outputs: [{ resourceId: 'gold', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Filament Factory": { name: 'Filament Factory', category: 'Production', production: { outputs: [{ resourceId: 'filament', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Light Bulb Factory": { name: 'Light Bulb Factory', category: 'Production', production: { outputs: [{ resourceId: 'lightbulbs', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Dynamite Factory": { name: 'Dynamite Factory', category: 'Production', production: { outputs: [{ resourceId: 'dynamite', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Marquetry Workshop": { name: 'Marquetry Workshop', category: 'Production', production: { outputs: [{ resourceId: 'woodveneers', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Gramophone Factory": { name: 'Gramophone Factory', category: 'Production', production: { outputs: [{ resourceId: 'gramophones', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Cab Assembly Line": { name: 'Cab Assembly Line', category: 'Production', production: { outputs: [{ resourceId: 'steamcarriages', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Cotton Plantation": { name: 'Cotton Plantation', category: 'Production', production: { outputs: [{ resourceId: 'cotton', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Caoutchouc Plantation": { name: 'Caoutchouc Plantation', category: 'Production', production: { outputs: [{ resourceId: 'caoutchouc', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Corn Farm": { name: 'Corn Farm', category: 'Production', production: { outputs: [{ resourceId: 'corn', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Coffee Plantation": { name: 'Coffee Plantation', category: 'Production', production: { outputs: [{ resourceId: 'coffeebeans', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Cocoa Plantation": { name: 'Cocoa Plantation', category: 'Production', production: { outputs: [{ resourceId: 'cocoa', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Bootmakers": { name: 'Bootmakers', category: 'Production', production: { outputs: [{ resourceId: 'leatherboots', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Tailors Shop": { name: 'Tailors Shop', category: 'Production', production: { outputs: [{ resourceId: 'tailoredsuits', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Whaling Station": { name: 'Whaling Station', category: 'Production', production: { outputs: [{ resourceId: 'whaleoil', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Caribou Hunting Cabin": { name: 'Caribou Hunting Cabin', category: 'Production', production: { outputs: [{ resourceId: 'cariboumeat', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Pemmican Cookhouse": { name: 'Pemmican Cookhouse', category: 'Production', production: { outputs: [{ resourceId: 'pemmican', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Sleeping Bag Factory": { name: 'Sleeping Bag Factory', category: 'Production', production: { outputs: [{ resourceId: 'sleepingbags', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Oil Lamps Factory": { name: 'Oil Lamps Factory', category: 'Production', production: { outputs: [{ resourceId: 'oillamps', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Sled Frame Factory": { name: 'Sled Frame Factory', category: 'Production', production: { outputs: [{ resourceId: 'sleds', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Husky Sled Factory": { name: 'Husky Sled Factory', category: 'Production', production: { outputs: [{ resourceId: 'huskysleds', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Deep Gold Mine": { name: 'Deep Gold Mine', category: 'Production', production: { outputs: [{ resourceId: 'gold', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Goat Farm": { name: 'Goat Farm', category: 'Production', production: { outputs: [{ resourceId: 'goatmilk', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Linseed Farm": { name: 'Linseed Farm', category: 'Production', production: { outputs: [{ resourceId: 'linseed', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Embroiderer": { name: 'Embroiderer', category: 'Production', production: { outputs: [{ resourceId: 'finery', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Sanga Farm": { name: 'Sanga Farm', category: 'Production', production: { outputs: [{ resourceId: 'sangacows', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Hibiscus Farm": { name: 'Hibiscus Farm', category: 'Production', production: { outputs: [{ resourceId: 'hibiscus', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Teff Farm": { name: 'Teff Farm', category: 'Production', production: { outputs: [{ resourceId: 'teff', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Brick Dry-House": { name: 'Brick Dry-House', category: 'Production', production: { outputs: [{ resourceId: 'mudbricks', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Indigo Farm": { name: 'Indigo Farm', category: 'Production', production: { outputs: [{ resourceId: 'indigo', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Spice Farm": { name: 'Spice Farm', category: 'Production', production: { outputs: [{ resourceId: 'spices', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Lobster Fishery": { name: 'Lobster Fishery', category: 'Production', production: { outputs: [{ resourceId: 'lobsters', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Lanternsmith": { name: 'Lanternsmith', category: 'Production', production: { outputs: [{ resourceId: 'lanterns', amount: 1 }], workforce: { type: 'Worker', amount: 10 }, cycleTime: 60 } },
+  "Weapon Factory": { name: 'Weapon Factory', category: 'Production', production: { outputs: [{ resourceId: 'weapons', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Hop Farm": { name: 'Hop Farm', category: 'Production', production: { outputs: [{ resourceId: 'hop', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Cannery": { name: 'Cannery', category: 'Production', production: { outputs: [{ resourceId: 'cannedfood', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Spectacle Factory": { name: 'Spectacle Factory', category: 'Production', production: { outputs: [{ resourceId: 'glasses', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Motor Assembly Line": { name: 'Motor Assembly Line', category: 'Production', production: { outputs: [{ resourceId: 'steammotors', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Clockmakers": { name: 'Clockmakers', category: 'Production', production: { outputs: [{ resourceId: 'pocketwatches', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Pearl Farm": { name: 'Pearl Farm', category: 'Production', production: { outputs: [{ resourceId: 'pearls', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Tea Spicer": { name: 'Tea Spicer', category: 'Production', production: { outputs: [{ resourceId: 'hibiscustea', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Bear Hunting Cabin": { name: 'Bear Hunting Cabin', category: 'Production', production: { outputs: [{ resourceId: 'bearfurs', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Parka Factory": { name: 'Parka Factory', category: 'Production', production: { outputs: [{ resourceId: 'parkas', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 90 } },
+  "Cattle Farm": { name: 'Cattle Farm', category: 'Production', production: { outputs: [{ resourceId: 'beef', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Red Pepper Farm": { name: 'Red Pepper Farm', category: 'Production', production: { outputs: [{ resourceId: 'redpeppers', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Artisanal Kitchen": { name: 'Artisanal Kitchen', category: 'Production', production: { outputs: [{ resourceId: 'goulash', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Saltpeter Works": { name: 'Saltpeter Works', category: 'Production', production: { outputs: [{ resourceId: 'saltpeter', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Heavy Weapons Factory": { name: 'Heavy Weapons Factory', category: 'Production', production: { outputs: [{ resourceId: 'advancedweapons', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Vineyard": { name: 'Vineyard', category: 'Production', production: { outputs: [{ resourceId: 'grapes', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Coachmakers": { name: 'Coachmakers', category: 'Production', production: { outputs: [{ resourceId: 'chassis', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Tobacco Plantation": { name: 'Tobacco Plantation', category: 'Production', production: { outputs: [{ resourceId: 'tobacco', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Goose Farm": { name: 'Goose Farm', category: 'Production', production: { outputs: [{ resourceId: 'goosefeathers', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Husky Farm": { name: 'Husky Farm', category: 'Production', production: { outputs: [{ resourceId: 'huskies', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 120 } },
+  "Gold Mine": { name: 'Gold Mine', category: 'Production', production: { outputs: [{ resourceId: 'goldore', amount: 1 }], workforce: { type: 'Engineer', amount: 10 }, cycleTime: 150 } },
+
+  // --- NON-RAW PUBLIC/INFRASTRUCTURE/RESIDENCE (names only for audit/lookup) ---
+  "Harbor_03 (Steam Shipyard)": { name: 'Steam Shipyard', category: 'Public' },
+  "Harbor_01 (Depot)": { name: 'Depot', category: 'Public' },
+  "Harbor_04 (Tower 01, Puckle Gun)": { name: 'Mounted Guns', category: 'Public' },
+  "Harbor_05 (Tower 02, Cannon Tower)": { name: 'Cannon Tower', category: 'Public' },
+  "Harbor_07 (Repair Crane)": { name: 'Repair Crane', category: 'Public' },
+  "Harbor_08 (Pier)": { name: 'Pier', category: 'Public' },
+  "Harbor_09 (tourism_pier_01)": { name: 'Public Mooring', category: 'Public' },
+  "Service_colony01_03 (Boxing Arena)": { name: 'Boxing Arena', category: 'Public' },
+  "Service_moderate_LoL_01 (Radio Station)": { name: 'Radio Tower', category: 'Public' },
+  "Institution_arctic_01 (Ranger Station)": { name: 'Ranger Station', category: 'Public' },
+  "River_colony02_03 (Water Pump)": { name: 'Water Pump', category: 'Public' },
+  "Service_colony02_03 (Monastery)": { name: 'Monastery', category: 'Public' },
+  "Residence_Arctic_World": { name: 'Explorer Shelter', category: 'Residence' },
+  "Residence_arctic_tier02": { name: 'Technician Shelter', category: 'Residence' },
+  "Street_Dirt": { name: 'Dirt Road', category: 'Decoration' },
+  "Street_Paved": { name: 'Paved Street', category: 'Decoration' },
+  "Street_Desert": { name: 'Desert Road', category: 'Decoration' },
+  "Small Warehouse": { name: 'Small Warehouse', category: 'Public' },
+  "Worlds_Fair_Foundations": { name: "World's Fair: Foundations", category: 'Public' },
+  "Research_Institute_Foundations": { name: 'Research Institute: Foundations', category: 'Public' },
+  "Heater_Arctic": { name: 'Heater', category: 'Public' },
+  "Post_Office": { name: 'Post Office', category: 'Public' },
+  "Musicians_Court": { name: 'Musicians Court', category: 'Public' },
+  "Shepherd_Residence": { name: 'Shepherd Residence', category: 'Residence' },
+  "Generic_Residence": { name: 'Residence', category: 'Residence' },
+  "Tier_Farmers": { name: 'Farmers', category: 'Residence' },
+  "Tier_Workers": { name: 'Workers', category: 'Residence' },
+  "Tier_Artisans": { name: 'Artisans', category: 'Residence' },
+  "Tier_Engineers": { name: 'Engineers', category: 'Residence' },
+  "Tier_Investors": { name: 'Investors', category: 'Residence' },
+  "Tier_Scholars": { name: 'Scholars', category: 'Residence' },
+  "Tier_Jornaleros": { name: 'Jornaleros', category: 'Residence' },
+  "Tier_Obreros": { name: 'Obreros', category: 'Residence' },
+  "Tier_Explorers": { name: 'Explorers', category: 'Residence' },
+  "Tier_Technicians": { name: 'Technicians', category: 'Residence' },
+  "Tier_Shepherds": { name: 'Shepherds', category: 'Residence' },
+  "Tier_Elders": { name: 'Elders', category: 'Residence' },
 };
+
+// Non-raw Anno 1800 infrastructure/public/residence entries (sourced from presets.json)
+const EXTRA_1800_NONRAW: BuildingDefinition[] = [
+  { id: 'Service_05 (Cabaret)', name: 'Variety Theatre', width: 4, height: 5, color: '#DEB887', category: 'Public', influenceRange: 40 },
+  { id: 'Harbor_03 (Steam Shipyard)', name: 'Steam Shipyard', width: 17, height: 7, color: '#FFDAB9', category: 'Public' },
+  { id: 'Harbor_01 (Depot)', name: 'Depot', width: 10, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'Harbor_04 (Tower 01, Puckle Gun)', name: 'Mounted Guns', width: 4, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'Harbor_05 (Tower 02, Cannon Tower)', name: 'Cannon Tower', width: 4, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'Harbor_07 (Repair Crane)', name: 'Repair Crane', width: 5, height: 5, color: '#FFDAB9', category: 'Public', influenceRadius: 20 },
+  { id: 'Harbor_08 (Pier)', name: 'Pier', width: 6, height: 7, color: '#FFDAB9', category: 'Public' },
+  { id: 'Harbor_09 (tourism_pier_01)', name: 'Public Mooring', width: 25, height: 8, color: '#FFDAB9', category: 'Public' },
+  { id: 'Service_colony01_03 (Boxing Arena)', name: 'Boxing Arena', width: 6, height: 5, color: '#FFDAB9', category: 'Public', influenceRange: 30 },
+  { id: 'Service_moderate_LoL_01 (Radio Station)', name: 'Radio Tower', width: 5, height: 5, color: '#FFDAB9', category: 'Public', influenceRange: 25 },
+  { id: 'Institution_arctic_01 (Ranger Station)', name: 'Ranger Station', width: 4, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'River_colony02_03 (Water Pump)', name: 'Water Pump', width: 5, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'Service_colony02_03 (Monastery)', name: 'Monastery', width: 7, height: 6, color: '#FFDAB9', category: 'Public', influenceRange: 30 },
+  { id: 'Residence_Arctic_World', name: 'Explorer Shelter', width: 3, height: 3, color: '#85B9FF', category: 'Residence', residence: { populationType: 'Explorer', maxPopulation: 10 } },
+  { id: 'Residence_arctic_tier02', name: 'Technician Shelter', width: 3, height: 3, color: '#0096FF', category: 'Residence', residence: { populationType: 'Technician', maxPopulation: 10 } },
+  { id: 'Street_Dirt', name: 'Dirt Road', width: 1, height: 1, color: '#9CA3AF', category: 'Decoration' },
+  { id: 'Street_Paved', name: 'Paved Street', width: 1, height: 1, color: '#9CA3AF', category: 'Decoration' },
+  { id: 'Street_Desert', name: 'Desert Road', width: 1, height: 1, color: '#D6B370', category: 'Decoration' },
+  { id: 'Small Warehouse', name: 'Small Warehouse', width: 4, height: 4, color: '#FFDAB9', category: 'Public' },
+  { id: 'Worlds_Fair_Foundations', name: "World's Fair: Foundations", width: 10, height: 10, color: '#FFDAB9', category: 'Public' },
+  { id: 'Research_Institute_Foundations', name: 'Research Institute: Foundations', width: 10, height: 10, color: '#FFDAB9', category: 'Public' },
+  { id: 'Heater_Arctic', name: 'Heater', width: 3, height: 3, color: '#FFDAB9', category: 'Public' },
+  { id: 'Post_Office', name: 'Post Office', width: 5, height: 5, color: '#FFDAB9', category: 'Public' },
+  { id: 'Musicians_Court', name: 'Musicians Court', width: 6, height: 6, color: '#FFDAB9', category: 'Public' },
+  { id: 'Shepherd_Residence', name: 'Shepherd Residence', width: 3, height: 3, color: '#FFE885', category: 'Residence', residence: { populationType: 'Shepherd', maxPopulation: 10 } },
+  { id: 'Generic_Residence', name: 'Residence', width: 3, height: 3, color: '#22c55e', category: 'Residence', residence: { populationType: 'Generic', maxPopulation: 10 } },
+  { id: 'Tier_Farmers', name: 'Farmers', width: 1, height: 1, color: '#A1EAEA', category: 'Residence', residence: { populationType: 'Farmer', maxPopulation: 1 } },
+  { id: 'Tier_Workers', name: 'Workers', width: 1, height: 1, color: '#69C4C4', category: 'Residence', residence: { populationType: 'Worker', maxPopulation: 1 } },
+  { id: 'Tier_Artisans', name: 'Artisans', width: 1, height: 1, color: '#44A6A6', category: 'Residence', residence: { populationType: 'Artisan', maxPopulation: 1 } },
+  { id: 'Tier_Engineers', name: 'Engineers', width: 1, height: 1, color: '#008080', category: 'Residence', residence: { populationType: 'Engineer', maxPopulation: 1 } },
+  { id: 'Tier_Investors', name: 'Investors', width: 1, height: 1, color: '#035E5E', category: 'Residence', residence: { populationType: 'Investor', maxPopulation: 1 } },
+  { id: 'Tier_Scholars', name: 'Scholars', width: 1, height: 1, color: '#2F4F4F', category: 'Residence', residence: { populationType: 'Scholar', maxPopulation: 1 } },
+  { id: 'Tier_Jornaleros', name: 'Jornaleros', width: 1, height: 1, color: '#FF9A67', category: 'Residence', residence: { populationType: 'Jornalero', maxPopulation: 1 } },
+  { id: 'Tier_Obreros', name: 'Obreros', width: 1, height: 1, color: '#FF6517', category: 'Residence', residence: { populationType: 'Obrero', maxPopulation: 1 } },
+  { id: 'Tier_Explorers', name: 'Explorers', width: 1, height: 1, color: '#85B9FF', category: 'Residence', residence: { populationType: 'Explorer', maxPopulation: 1 } },
+  { id: 'Tier_Technicians', name: 'Technicians', width: 1, height: 1, color: '#0096FF', category: 'Residence', residence: { populationType: 'Technician', maxPopulation: 1 } },
+  { id: 'Tier_Shepherds', name: 'Shepherds', width: 1, height: 1, color: '#FFE885', category: 'Residence', residence: { populationType: 'Shepherd', maxPopulation: 1 } },
+  { id: 'Tier_Elders', name: 'Elders', width: 1, height: 1, color: '#FFD106', category: 'Residence', residence: { populationType: 'Elder', maxPopulation: 1 } }
+];
 
 // --- DATA PROCESSING HELPER ---
 
@@ -443,7 +745,9 @@ export const ANNO_GAMES: Record<AnnoTitle, GameConfig> = {
         // APPEND EXPLICIT MODULE DEFINITIONS
         ...(Object.entries(GAME_LOGIC_OVERRIDES)
             .filter(([id]) => id.startsWith('Module_'))
-            .map(([id, def]) => ({ id, ...def } as BuildingDefinition)))
+        .map(([id, def]) => ({ id, ...def } as BuildingDefinition))),
+      // APPEND NON-RAW INFRASTRUCTURE/PUBLIC/RESIDENCE ENTRIES
+      ...EXTRA_1800_NONRAW
     ],
     resources: resources1800
   },
@@ -469,10 +773,6 @@ export const ANNO_GAMES: Record<AnnoTitle, GameConfig> = {
     title: AnnoTitle.ANNO_117,
     gridColor: '#44403c',
     backgroundColor: '#292524',
-    buildings: [
-        { id: 'res_pleb', name: 'Insula (Plebeian)', width: 3, height: 3, color: '#d6c0b0', category: 'Residence', residence: { populationType: 'Plebeian', maxPopulation: 10, consumption: [] } },
-        { id: 'forum', name: 'Forum', width: 6, height: 6, color: '#FFDAB9', category: 'Public', influenceRadius: 25 },
-        { id: 'Street_1x1', name: 'Roman Road', width: 1, height: 1, color: '#A9A9A9', category: 'Decoration' }
-    ]
+    buildings: ANNO_117_BUILDINGS_RAW.map(mapRawToDefinition)
   }
 };

@@ -1,0 +1,5 @@
+[
+  { "date": "2026-01-07", "title": "Added Anno 117 building data (290 buildings)", "description": "Imported from presets and integrated into internal dataset." },
+  { "date": "2026-01-06", "title": "Integrated production chains, regions, DLCs", "description": "Created typed wrappers and chain integration." },
+  { "date": "2026-01-05", "title": "Genetic solver foundational work", "description": "Population manager and solver hooks established." }
+]
