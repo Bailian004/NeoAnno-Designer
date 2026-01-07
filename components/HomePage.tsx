@@ -71,31 +71,31 @@ export const HomePage: React.FC<HomePageProps> = ({ onSelectGame, onNavigate }) 
       </nav>
 
       {/* Hero Section */}
-      <section id="top" className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
+      <section id="top" className="relative pt-24 md:pt-32 lg:pt-48 pb-16 md:pb-20 lg:pb-32 px-4 md:px-6 overflow-hidden">
           {/* Background FX */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-amber-600/10 blur-[120px] rounded-full pointer-events-none" />
           
           <div className="max-w-7xl mx-auto text-center relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-md mb-6 animate-fade-in-up">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span className="text-amber-500 text-[10px] font-bold tracking-[0.2em] uppercase">The Next-Gen Layout Tool</span>
+                <span className="text-amber-500 text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase">The Next-Gen Layout Tool</span>
               </div>
               
-              <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tight drop-shadow-2xl leading-none">
+              <h1 className="text-3xl md:text-6xl lg:text-8xl font-black text-white mb-4 md:mb-6 tracking-tight drop-shadow-2xl leading-none">
                 BUILD YOUR <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-500 to-amber-700">DYNASTY</span>
               </h1>
               
-              <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed mb-10">
+              <p className="text-sm md:text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed mb-6 md:mb-10">
                 A powerful, mathematically driven city architect for the Anno series. 
                 Featuring genetic algorithms for optimal layout solving and recursive production chain calculation.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <button onClick={scrollTo('games')} className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:scale-105">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
+                  <button onClick={scrollTo('games')} className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:scale-105 text-sm md:text-base">
                       Select Era
                   </button>
-                  <button onClick={scrollTo('features')} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-all">
+                  <button onClick={scrollTo('features')} className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition-all text-sm md:text-base">
                       How It Works
                   </button>
               </div>

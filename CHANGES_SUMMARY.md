@@ -14,6 +14,17 @@ This document tracks the comprehensive review and fixes applied to the NeoAnno-D
 
 ## ✅ Completed Changes (24 items)
 
+#### ✓ Item 37: Mobile Navbar & Designer Controls
+**Files Modified:** `components/Navbar.tsx`, `components/Designer.tsx`
+
+**Changes:**
+- Mobile game/region selectors now inline accordions with fixed overlays, horizontal chips, and a tap-to-close backdrop.
+- Added mobile mode pills (Sandbox/Calculator/Solver) and kept desktop tabs intact.
+- Designer title bar now hosts Blueprint, Buildings, Resources, Cursor, Terrain, and Radius toggles (icon-only, mobile + desktop).
+- Panels default closed on mobile with in-panel close buttons; removed the old floating toggle block.
+
+**Impact:** Mobile users can change game, region, and mode and access all canvas/panel controls without layout breakage; overlays no longer clip or push content, and a backdrop with fade-in supports outside-click closing.
+
 ### **Critical: Game Data Accuracy (Items 9-14)**
 
 #### ✓ Item 9-12: Population Consumption Rates

@@ -368,9 +368,9 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       }
   }, [industryPop, selectedGoods, solverMode, config.buildings]);
 
-  const [resourcePanelOpen, setResourcePanelOpen] = useState(false);
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+    const [resourcePanelOpen, setResourcePanelOpen] = useState(false);
+    const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+    const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [dockPos, setDockPos] = useState({ x: 0, y: 0 });
   const [isDraggingDock, setIsDraggingDock] = useState(false);
   const dockDragOffset = useRef({ x: 0, y: 0 });
@@ -378,6 +378,15 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
   useEffect(() => {
     setDockPos({ x: window.innerWidth / 2 - 140, y: window.innerHeight - 90 });
   }, []);
+
+    // Default-close side panels on mobile to maximize canvas
+    useEffect(() => {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+            setLeftPanelOpen(false);
+            setRightPanelOpen(false);
+        }
+    }, []);
 
     const workforceStatus = useMemo(() => {
             const supply: Record<string, number> = {};
@@ -712,8 +721,8 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           />
       )}
       
-      <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none p-4 flex justify-center">
-        <Panel className="pointer-events-auto w-full flex-row items-center justify-between px-4 py-3 gap-6 shadow-2xl bg-[#0f172a]/95">
+            <div className="absolute left-0 right-0 z-20 pointer-events-none p-4 flex justify-center top-16 md:top-0">
+                <Panel className="pointer-events-auto w-full flex-row items-center justify-between px-2 md:px-4 py-2.5 md:py-3 gap-3 md:gap-6 shadow-2xl bg-[#0f172a]/95">
             <div className="flex items-center gap-5">
                 <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors group">
                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -724,10 +733,54 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                    <div className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:block">LAYOUT ARCHITECT V5.8</div>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto custom-scrollbar flex-nowrap">
                 <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${workforceStatus.hasDeficit ? 'bg-red-500/10 text-red-300 border-red-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40'}`} title={workforceStatus.hasDeficit ? 'Add more residences or reduce workforce demand.' : 'All workforce demands are covered.'}>
                     {workforceStatus.hasDeficit ? `Workforce deficit: ${workforceStatus.deficits.slice(0,2).map(d => `${d.tier} -${Math.ceil(d.deficit)}`).join(' · ')}` : 'Workforce balanced'}
                 </div>
+                {/* Blueprint + Resource toggles integrated into title bar */}
+                <IconButton 
+                    active={leftPanelOpen} 
+                    onClick={() => setLeftPanelOpen(!leftPanelOpen)} 
+                    title="Blueprints" 
+                                        className="flex"
+                    icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} 
+                />
+                                <IconButton 
+                                        active={rightPanelOpen} 
+                                        onClick={() => setRightPanelOpen(!rightPanelOpen)} 
+                                        title="Buildings" 
+                                        className="flex"
+                                        icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" /></svg>} 
+                                />
+                <IconButton 
+                    active={resourcePanelOpen} 
+                    onClick={() => setResourcePanelOpen(!resourcePanelOpen)} 
+                    title="Resource Monitor" 
+                                        className="flex"
+                    icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} 
+                />
+
+                                {/* Canvas interaction controls */}
+                                <div className="flex items-center gap-1 ml-1">
+                                    <IconButton 
+                                        active={activeTool === null && !terrainMode}
+                                        onClick={() => { setActiveTool(null); setTerrainMode(false); }}
+                                        title="Select / Move"
+                                        icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2m0 0l5 5" /></svg>}
+                                    />
+                                    <IconButton 
+                                        active={terrainMode}
+                                        onClick={() => { setTerrainMode(prev => !prev); if (!terrainMode) setActiveTool(null); }}
+                                        title="Terrain Blocker"
+                                        icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+                                    />
+                                    <IconButton 
+                                        active={showAllRadii}
+                                        onClick={() => setShowAllRadii(prev => !prev)}
+                                        title="Show All Service Radii"
+                                        icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+                                    />
+                                </div>
                 <button onClick={handleSaveLayout} title="Save Layout" className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                 </button>
@@ -737,19 +790,22 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                 <button onClick={handleClearLayout} title="Clear Layout" className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
+                                {/* Mobile now uses the same icon buttons; no separate text buttons */}
             </div>
         </Panel>
       </div>
       
-      <div className="absolute top-24 right-4 z-20 flex gap-2">
-         <Panel className="flex-row p-1 gap-1">
-            <IconButton active={leftPanelOpen} onClick={() => setLeftPanelOpen(!leftPanelOpen)} title="Toggle Blueprints" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>} />
-            <IconButton active={resourcePanelOpen} onClick={() => setResourcePanelOpen(!resourcePanelOpen)} title="Resource Monitor" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
-         </Panel>
-      </div>
+        {/* Removed floating toggle panel; switches are in the title bar */}
 
-      <div className={`absolute left-4 top-24 top-24 bottom-4 w-80 z-10 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
+    <div className={`fixed md:absolute left-0 md:left-4 right-0 md:right-auto top-28 md:top-24 bottom-24 md:bottom-4 w-auto md:w-80 mx-2 md:mx-0 z-20 transition-transform duration-300 flex flex-col gap-3 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-[120%]'}`}>
          <Panel className="flex-1 p-0 gap-0">
+             {/* Mobile header with close */}
+             <div className="md:hidden flex items-center justify-between p-2 border-b border-white/10 bg-black/20">
+                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">Blueprints</span>
+                 <button onClick={() => setLeftPanelOpen(false)} className="p-1.5 rounded-lg bg-black/30 border border-white/10 text-slate-400 hover:text-white hover:bg-black/40">
+                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+             </div>
              <div className="flex border-b border-white/10 bg-black/20">
                  <button onClick={() => setActiveLeftTab('specs')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'specs' ? 'text-amber-500 bg-white/5 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300'}`}>Specs</button>
                  <button onClick={() => setActiveLeftTab('generated')} className={`flex-1 py-3 text-[9px] font-black uppercase tracking-wider transition-colors ${activeLeftTab === 'generated' ? 'text-emerald-500 bg-white/5 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-300'}`}>Generated</button>
@@ -864,8 +920,15 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
          </Panel>
       </div>
 
-      <div className={`absolute right-4 top-40 bottom-20 w-72 z-10 transition-transform duration-300 flex flex-col ${rightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'}`}>
+    <div className={`fixed md:absolute right-0 md:right-4 left-0 md:left-auto top-44 md:top-40 bottom-24 md:bottom-20 w-auto md:w-72 mx-2 md:mx-0 z-20 transition-transform duration-300 flex flex-col ${rightPanelOpen ? 'translate-x-0' : 'translate-x-[120%]'}`}> 
          <Panel className="flex-1">
+                {/* Mobile header with close */}
+                <div className="md:hidden flex items-center justify-between p-2 border-b border-white/10 bg-black/20">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">Assets</span>
+                    <button onClick={() => setRightPanelOpen(false)} className="p-1.5 rounded-lg bg-black/30 border border-white/10 text-slate-400 hover:text-white hover:bg-black/40">
+                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
             <div className="flex border-b border-white/10 bg-black/20">
                {['Residence', 'Public', 'Production', 'Decoration'].map(cat => (
                    <CategoryTab key={cat} label={cat === 'Decoration' ? 'Deco' : cat === 'Production' ? 'Prod' : cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppState, RegionKey, AppMode } from '../state/AppState';
 import { AnnoTitle } from '../types';
+import { ANNO_TITLES_META } from '../constants';
 
 const games: { key: AnnoTitle; label: string; sub?: string }[] = [
   { key: AnnoTitle.ANNO_1800, label: 'Anno 1800', sub: 'Industrial Age' },
@@ -20,6 +21,27 @@ const regionsByGame: Record<AnnoTitle, RegionKey[]> = {
 
 export const Navbar: React.FC = () => {
   const { mode, setMode, selectedGame, setSelectedGame, region, setRegion, navCollapsed, setNavCollapsed } = useAppState();
+  const [mobileGamesOpen, setMobileGamesOpen] = useState(false);
+  const [mobileRegionsOpen, setMobileRegionsOpen] = useState(false);
+
+  const gameLogoSlug: Record<AnnoTitle, string> = {
+    [AnnoTitle.ANNO_1800]: 'anno-1800',
+    [AnnoTitle.ANNO_1404]: 'anno-1404',
+    [AnnoTitle.ANNO_2070]: 'anno-2070',
+    [AnnoTitle.ANNO_2205]: 'anno-2205',
+    [AnnoTitle.ANNO_117]: 'anno-117',
+  };
+
+  const regionLogoSlug: Record<RegionKey, string> = {
+    'Old World': 'old-world',
+    'New World': 'new-world',
+    'Arctic': 'arctic',
+    'Enbesa': 'enbesa',
+    'Cape Trelawney': 'cape-trelawney',
+    'Orient': 'orient',
+    'Occident': 'occident',
+    'Global': 'global',
+  };
 
   const modes: { id: AppMode; label: string; icon: string }[] = [
     { id: 'sandbox', label: 'Sandbox', icon: '🏗️' },
@@ -36,92 +58,225 @@ export const Navbar: React.FC = () => {
     { id: 'bug', label: 'Report Bug' },
   ];
 
+  const closeMobileDropdowns = () => {
+    setMobileGamesOpen(false);
+    setMobileRegionsOpen(false);
+  };
+
+  const showOverlay = mobileGamesOpen || mobileRegionsOpen;
+
   return (
-    <nav className={`fixed top-0 w-full z-50 bg-[#0b0f19]/80 backdrop-blur-md border-b border-white/5 transition-all duration-300 ${navCollapsed ? 'h-12' : 'h-16'}`}>
-      <div className="max-w-full mx-auto px-6 h-full flex items-center justify-between gap-6">
+    <>
+      {showOverlay && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-150"
+          onClick={closeMobileDropdowns}
+        />
+      )}
+
+      <nav className={`fixed top-0 w-full z-50 bg-[#0b0f19]/80 backdrop-blur-md border-b border-white/5 transition-all duration-300 ${navCollapsed ? 'h-12' : 'md:h-16 h-14'}`}>
+      <div className="max-w-full mx-auto px-3 md:px-6 h-full flex items-center justify-between gap-2 md:gap-6">
         {/* Left: Logo + Game Chips */}
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setMode('home')} 
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity group"
+            className="flex items-center gap-1 md:gap-2 hover:opacity-80 transition-opacity group"
           >
-            <div className="w-8 h-8 bg-gradient-to-tr from-amber-600 to-amber-400 rounded-lg flex items-center justify-center font-black text-slate-900 text-xs shadow-lg shadow-amber-500/20">
+            <div className="w-6 md:w-8 h-6 md:h-8 bg-gradient-to-tr from-amber-600 to-amber-400 rounded-lg flex items-center justify-center font-black text-slate-900 text-[10px] md:text-xs shadow-lg shadow-amber-500/20">
               NA
             </div>
-            {!navCollapsed && <span className="font-bold tracking-wider text-sm uppercase text-white">NeoAnno</span>}
+            {!navCollapsed && <span className="hidden sm:inline font-bold tracking-wider text-sm uppercase text-white">NeoAnno</span>}
           </button>
           
           {!navCollapsed && (
             <>
-              <div className="h-6 w-px bg-white/10"></div>
-              <div className="flex items-center gap-2 overflow-x-auto max-w-[640px] custom-scrollbar">
-                {games.map(g => (
-                  <button
-                    key={g.key}
-                    onClick={() => {
-                      setSelectedGame(g.key);
-                      const regions = regionsByGame[g.key];
-                      if (regions && regions.length > 0) setRegion(regions[0]);
-                      setMode('sandbox');
-                    }}
-                    className={`relative px-4 py-2 rounded-xl border text-left transition-all duration-200 backdrop-blur-sm min-w-[140px] shadow-lg ${
-                      selectedGame === g.key
-                        ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 border-amber-400 shadow-amber-500/20'
-                        : 'bg-white/5 border-white/10 text-slate-200 hover:border-amber-500/40 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="text-sm font-black leading-tight">{g.label}</div>
-                    {g.sub && <div className="text-[10px] uppercase tracking-widest text-slate-400">{g.sub}</div>}
-                  </button>
-                ))}
-              </div>
-              {selectedGame && regionsByGame[selectedGame] && (
-                <div className="flex items-center gap-2 ml-4 overflow-x-auto max-w-[360px] custom-scrollbar">
-                  {regionsByGame[selectedGame].map(r => (
+              <div className="hidden md:block h-6 w-px bg-white/10"></div>
+
+              {/* Desktop chips */}
+              <div className="hidden md:flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-2 md:gap-3 flex-nowrap overflow-x-auto custom-scrollbar">
+                  {games.map(g => (
                     <button
-                      key={r}
-                      onClick={() => setRegion(r)}
-                      className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest transition-all ${
-                        region === r
-                          ? 'bg-emerald-500 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/20'
-                          : 'bg-white/5 text-slate-200 border-white/10 hover:border-emerald-400/40 hover:bg-white/10'
+                      key={g.key}
+                      onClick={() => {
+                        setSelectedGame(g.key);
+                        const regions = regionsByGame[g.key];
+                        if (regions && regions.length > 0) setRegion(regions[0]);
+                        setMode('sandbox');
+                      }}
+                      className={`relative px-1.5 md:px-2 py-1.5 md:py-2 rounded-xl border transition-all duration-200 backdrop-blur-sm w-16 shadow-lg ${
+                        selectedGame === g.key
+                          ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 border-amber-400 shadow-amber-500/20'
+                          : 'bg-white/5 border-white/10 text-slate-200 hover:border-amber-500/40 hover:bg-white/10'
                       }`}
                     >
-                      {r}
+                      <div className="flex flex-col items-center gap-0.5">
+                        <GameLogoImg 
+                          slug={gameLogoSlug[g.key]}
+                          alt={`${g.label} logo`}
+                          className="w-8 h-8 rounded-md object-contain bg-black/30 border border-white/10"
+                        />
+                        <div className="text-[9px] uppercase tracking-wider leading-none text-slate-300">Anno</div>
+                        <div className="text-xs font-black leading-none text-white">{ANNO_TITLES_META[g.key].year}</div>
+                      </div>
                     </button>
                   ))}
                 </div>
-              )}
+                {selectedGame && regionsByGame[selectedGame] && (
+                  <div className="flex items-center gap-2 ml-4 flex-nowrap overflow-x-auto custom-scrollbar">
+                    {regionsByGame[selectedGame].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setRegion(r)}
+                        className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest transition-all ${
+                          region === r
+                            ? 'bg-emerald-500 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/20'
+                            : 'bg-white/5 text-slate-200 border-white/10 hover:border-emerald-400/40 hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <LogoImg 
+                            slug={regionLogoSlug[r]}
+                            alt={`${r} logo`}
+                            className="w-4 h-4 rounded-sm object-contain bg-black/30 border border-white/10"
+                          />
+                          <span>{r}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile accordions */}
+              <div className="md:hidden flex flex-row flex-nowrap items-center gap-2 max-w-full relative z-40 overflow-x-auto custom-scrollbar">
+                {/* Games accordion */}
+                <div className="rounded-lg border border-white/10 bg-white/5">
+                  <button onClick={() => setMobileGamesOpen(o => !o)} className="w-full flex items-center justify-between px-2 py-1.5">
+                    <span className="flex items-center gap-2">
+                      {selectedGame ? (
+                        <>
+                          <GameLogoImg slug={gameLogoSlug[selectedGame]} alt="selected game" className="w-6 h-6 rounded-md object-contain bg-black/30 border border-white/10" />
+                          <span className="text-xs font-bold text-white">{ANNO_TITLES_META[selectedGame].year}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-300">Select Game</span>
+                      )}
+                    </span>
+                    <svg className={`w-4 h-4 text-slate-300 transition-transform ${mobileGamesOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                  </button>
+                  {mobileGamesOpen && (
+                    <div className="fixed left-2 right-2 top-14 z-50 px-2 animate-[fadeIn_120ms_ease-out]">
+                      <div className="bg-[#0f172a]/95 border border-white/10 rounded-xl shadow-2xl p-2 max-h-[60vh] overflow-x-auto custom-scrollbar flex items-center gap-2">
+                        {games.map(g => (
+                          <button
+                            key={g.key}
+                            onClick={() => {
+                              setSelectedGame(g.key);
+                              const regions = regionsByGame[g.key];
+                              if (regions && regions.length > 0) setRegion(regions[0]);
+                              setMode('sandbox');
+                              setMobileGamesOpen(false);
+                            }}
+                            className={`relative px-2 py-1.5 rounded-xl border transition-all duration-200 backdrop-blur-sm w-16 shadow ${
+                              selectedGame === g.key ? 'bg-amber-500 text-slate-900 border-amber-400' : 'bg-white/5 border-white/10 text-slate-200'
+                            }`}
+                          >
+                            <div className="flex flex-col items-center gap-0.5">
+                              <GameLogoImg slug={gameLogoSlug[g.key]} alt={`${g.label} logo`} className="w-8 h-8 rounded-md object-contain bg-black/30 border border-white/10" />
+                              <div className="text-[9px] uppercase tracking-wider leading-none text-slate-300">{ANNO_TITLES_META[g.key].year}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Regions accordion */}
+                {selectedGame && regionsByGame[selectedGame] && (
+                  <div className="rounded-lg border border-white/10 bg-white/5">
+                    <button onClick={() => setMobileRegionsOpen(o => !o)} className="w-full flex items-center justify-between px-2 py-1.5">
+                      <span className="flex items-center gap-2">
+                        <LogoImg slug={regionLogoSlug[region as RegionKey]} alt="region" className="w-5 h-5 rounded-sm object-contain bg-black/30 border border-white/10" />
+                        <span className="text-xs font-bold text-white">{region}</span>
+                      </span>
+                      <svg className={`w-4 h-4 text-slate-300 transition-transform ${mobileRegionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                    </button>
+                    {mobileRegionsOpen && (
+                      <div className="fixed left-2 right-2 top-14 z-50 px-2 animate-[fadeIn_120ms_ease-out]">
+                        <div className="bg-[#0f172a]/95 border border-white/10 rounded-xl shadow-2xl p-2 max-h-[60vh] overflow-x-auto custom-scrollbar flex items-center gap-2">
+                          {regionsByGame[selectedGame].map(r => (
+                            <button
+                              key={r}
+                              onClick={() => { setRegion(r); setMobileRegionsOpen(false); }}
+                              className={`px-2 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                region === r ? 'bg-emerald-500 text-slate-900 border-emerald-300' : 'bg-white/5 text-slate-200 border-white/10'
+                              }`}
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                <LogoImg slug={regionLogoSlug[r]} alt={`${r} logo`} className="w-4 h-4 rounded-sm object-contain bg-black/30 border border-white/10" />
+                                <span>{r}</span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
 
         {/* Center: Mode Tabs */}
         {!navCollapsed && (
-          <div className="flex items-center gap-2">
-            {modes.map(m => (
-              <button 
-                key={m.id} 
-                onClick={() => setMode(m.id)} 
-                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-200 ${
-                  mode === m.id 
-                    ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 shadow-lg shadow-amber-500/20' 
-                    : 'bg-black/20 text-slate-400 hover:bg-black/30 hover:text-slate-200 border border-white/5'
-                }`}
-              >
-                <span className="mr-1.5">{m.icon}</span>
-                {m.label}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="hidden md:flex items-center gap-2">
+              {modes.map(m => (
+                <button 
+                  key={m.id} 
+                  onClick={() => setMode(m.id)} 
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-200 ${
+                    mode === m.id 
+                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 shadow-lg shadow-amber-500/20' 
+                      : 'bg-black/20 text-slate-400 hover:bg-black/30 hover:text-slate-200 border border-white/5'
+                  }`}
+                >
+                  <span className="mr-1.5">{m.icon}</span>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile mode selector */}
+            <div className="md:hidden flex items-center gap-2 flex-nowrap overflow-x-auto custom-scrollbar">
+              {modes.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setMode(m.id)}
+                  className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                    mode === m.id
+                      ? 'bg-amber-500 text-slate-900 border-amber-300 shadow-amber-500/20'
+                      : 'bg-black/20 text-slate-300 border-white/10 hover:bg-black/30'
+                  }`}
+                  aria-label={m.label}
+                >
+                  <span className="mr-1">{m.icon}</span>
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Right: Utility Menu + Collapse */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-3">
           {!navCollapsed && (
             <div className="relative group">
-              <button className="p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-black/30 transition-all text-slate-400 hover:text-white">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <button className="p-1.5 md:p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-black/30 transition-all text-slate-400 hover:text-white">
+                <svg className="w-4 md:w-5 h-4 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -142,14 +297,57 @@ export const Navbar: React.FC = () => {
           <button 
             onClick={() => setNavCollapsed(!navCollapsed)} 
             title="Toggle Navigation" 
-            className="p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-black/30 transition-all text-slate-400 hover:text-white"
+            className="p-1.5 md:p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-black/30 transition-all text-slate-400 hover:text-white"
           >
-            <svg className={`w-4 h-4 transition-transform duration-300 ${navCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-3 md:w-4 h-3 md:h-4 transition-transform duration-300 ${navCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
             </svg>
           </button>
         </div>
       </div>
     </nav>
+    </>
+  );
+};
+
+// Game logos (PNG only)
+const GameLogoImg: React.FC<{ slug: string; alt: string; className?: string }> = ({ slug, alt, className }) => {
+  const [failed, setFailed] = useState(false);
+  const initial = (alt?.trim()?.charAt(0) || 'A').toUpperCase();
+  if (failed) {
+    return (
+      <div className={`flex items-center justify-center ${className} bg-white/5 text-slate-300 font-black`}> {initial} </div>
+    );
+  }
+  return (
+    <img
+      src={`/logos/${slug}.png`}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+};
+
+// Region logos (WebP preferred, fallback to SVG/PNG)
+const LogoImg: React.FC<{ slug: string; alt: string; className?: string }> = ({ slug, alt, className }) => {
+  const [failed, setFailed] = useState(false);
+  const initial = (alt?.trim()?.charAt(0) || 'A').toUpperCase();
+  if (failed) {
+    return (
+      <div className={`flex items-center justify-center ${className} bg-white/5 text-slate-300 font-black`}> {initial} </div>
+    );
+  }
+  return (
+    <picture>
+      <source srcSet={`/logos/${slug}.webp`} type="image/webp" />
+      <source srcSet={`/logos/${slug}.svg`} type="image/svg+xml" />
+      <img
+        src={`/logos/${slug}.png`}
+        alt={alt}
+        className={className}
+        onError={() => setFailed(true)}
+      />
+    </picture>
   );
 };
