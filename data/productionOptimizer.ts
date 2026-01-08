@@ -1,4 +1,4 @@
-import { productionChains, ProductionChain } from './generatedProductionChains';
+import { PRODUCTION_CHAINS_FULL } from './industryData';
 
 export interface ProductionNode {
   buildingName: string;
@@ -45,34 +45,48 @@ export function buildDependencyGraph(): DependencyGraph {
   const edges = new Map<string, string[]>();
   const consumers = new Map<string, string[]>();
 
-  productionChains.forEach((chain: ProductionChain) => {
-    const inputGoods = chain.inputs?.map(i => i.product) || [];
-    const outputRate = (chain.outputAmount * 60) / chain.cycleTime; // Convert to per minute
+  // Process each production definition from PRODUCTION_CHAINS_FULL
+  Object.entries(PRODUCTION_CHAINS_FULL).forEach(([goodId, definition]) => {
+    const buildingName = definition.buildingId;
+    
+    // Extract input goods from the chain
+    const inputGoods: string[] = [];
+    const flattenChain = (link: any) => {
+      if (link.inputs) {
+        link.inputs.forEach((input: any) => {
+          if (input.buildingId && !inputGoods.includes(input.buildingId)) {
+            inputGoods.push(input.buildingId);
+          }
+          flattenChain(input);
+        });
+      }
+    };
+    
+    definition.chain.forEach(link => flattenChain(link));
     
     const node: ProductionNode = {
-      buildingName: chain.name,
+      buildingName: buildingName,
       inputGoods: inputGoods,
-      outputGood: chain.outputProduct,
-      outputRate: outputRate,
-      workforceNeeded: chain.workforce ? { [chain.workforce.type]: chain.workforce.amount } : {},
-      icon: chain.icon
+      outputGood: goodId, // The good ID itself
+      outputRate: definition.outputPerMinute,
+      workforceNeeded: {}, // Will be populated from building data
+      icon: undefined
     };
 
-    nodes.set(chain.name, node);
+    nodes.set(buildingName, node);
 
-    // Track which buildings produce which goods (multiple keys for fuzzy matching)
+    // Track which buildings produce which goods
     const outputKeys = [
-      chain.outputProduct,
-      chain.name, // Also register by building name
-      chain.icon?.replace('.png', '').replace('A7_', ''), // Icon name without extension
+      goodId,
+      buildingName,
     ].filter(Boolean);
 
     outputKeys.forEach(key => {
-      if (!edges.has(key!)) {
-        edges.set(key!, []);
+      if (!edges.has(key)) {
+        edges.set(key, []);
       }
-      if (!edges.get(key!)!.includes(chain.name)) {
-        edges.get(key!)!.push(chain.name);
+      if (!edges.get(key)!.includes(buildingName)) {
+        edges.get(key)!.push(buildingName);
       }
     });
 
@@ -81,7 +95,7 @@ export function buildDependencyGraph(): DependencyGraph {
       if (!consumers.has(input)) {
         consumers.set(input, []);
       }
-      consumers.get(input)!.push(chain.name);
+      consumers.get(input)!.push(buildingName);
     });
   });
 

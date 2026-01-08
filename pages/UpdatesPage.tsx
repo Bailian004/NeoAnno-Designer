@@ -5,8 +5,15 @@ interface UpdateEntry { date: string; title: string; description?: string; }
 export const UpdatesPage: React.FC = () => {
   const [entries, setEntries] = useState<UpdateEntry[]>([]);
   useEffect(() => {
-    const url = (import.meta as any).env?.VITE_UPDATES_URL || '/updates.json';
-    fetch(url).then(r => r.json()).then(setEntries).catch(() => setEntries([]));
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const url = `${baseUrl}updates.json`;
+    fetch(url)
+      .then(r => r.json())
+      .then(setEntries)
+      .catch(err => {
+        console.error('Failed to load updates:', err);
+        setEntries([]);
+      });
   }, []);
 
   return (
