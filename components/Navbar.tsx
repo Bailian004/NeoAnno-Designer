@@ -20,6 +20,7 @@ const regionsByGame: Record<AnnoTitle, RegionKey[]> = {
 };
 
 export const Navbar: React.FC = () => {
+  const BASE_URL = import.meta.env.BASE_URL;
   const { mode, setMode, selectedGame, setSelectedGame, region, setRegion, navCollapsed, setNavCollapsed } = useAppState();
   const [mobileGamesOpen, setMobileGamesOpen] = useState(false);
   const [mobileRegionsOpen, setMobileRegionsOpen] = useState(false);
@@ -321,7 +322,7 @@ const GameLogoImg: React.FC<{ slug: string; alt: string; className?: string }> =
   }
   return (
     <img
-      src={`/logos/${slug}.png`}
+      src={`${import.meta.env.BASE_URL}logos/${slug}.png`}
       alt={alt}
       className={className}
       onError={() => setFailed(true)}
@@ -340,10 +341,10 @@ const LogoImg: React.FC<{ slug: string; alt: string; className?: string }> = ({ 
   }
   return (
     <picture>
-      <source srcSet={`/logos/${slug}.webp`} type="image/webp" />
-      <source srcSet={`/logos/${slug}.svg`} type="image/svg+xml" />
+      <source srcSet={`${import.meta.env.BASE_URL}logos/${slug}.webp`} type="image/webp" />
+      <source srcSet={`${import.meta.env.BASE_URL}logos/${slug}.svg`} type="image/svg+xml" />
       <img
-        src={`/logos/${slug}.png`}
+        src={`${import.meta.env.BASE_URL}logos/${slug}.png`}
         alt={alt}
         className={className}
         onError={() => setFailed(true)}

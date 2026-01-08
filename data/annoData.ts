@@ -634,7 +634,7 @@ const determineColor = (b: RawBuilding, category: string): string => {
 const mapRawToDefinition = (raw: RawBuilding): BuildingDefinition => {
   const overrides = GAME_LOGIC_OVERRIDES[raw.Identifier] || {};
   const category = overrides.category || determineCategory(raw);
-  const iconPath = raw.IconFileName ? `/icons/${raw.IconFileName}` : undefined;
+  const iconPath = raw.IconFileName ? `${import.meta.env.BASE_URL}icons/${raw.IconFileName}` : undefined;
 
   return {
     id: raw.Identifier,
