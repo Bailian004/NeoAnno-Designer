@@ -25,6 +25,21 @@ export interface ProductionResult {
 // Keys are requested goods (consumption or intermediates),
 // values are alternative names to search for among graph keys.
 const GOOD_ALIASES: Record<string, string[]> = {
+  // Building names -> Good IDs (from consumption data)
+  'Bakery': ['Bread'],
+  'Brewery': ['Beer'],
+  'Cannery': ['Canned Food'],
+  'Dealer': ['Fur Coats'],
+  'Distillery': ['Rum', 'Schnapps'],
+  'Slaughterhouse': ['Sausages'],
+  'Factory': ['Soap', 'Bicycles', 'Sewing Machines', 'Windows'], // Multiple factories
+  'Clockmakers': ['Pocket Watches'],
+  'Roaster': ['Coffee'],
+  'Knitter': ['Work Clothes'],
+  'Fishery': ['Fish'],
+  'Sheep Farm': ['Wool', 'Sails'],
+  'Grain Farm': ['Grain'],
+  'Malthouse': ['Malt'],
   // Old World basics
   'Work Clothes': ['Knit.', 'Framework Knit.', 'Framework Knitters', 'Working Clothes'],
   'Wool': ['Sheep Farm', 'Sheepfold', 'Sheep'],
@@ -50,19 +65,24 @@ export function buildDependencyGraph(): DependencyGraph {
     const buildingName = definition.buildingId;
     
     // Extract input goods from the chain
+    // The chain is an array of ChainLink objects, each with buildingId and optional inputs
     const inputGoods: string[] = [];
-    const flattenChain = (link: any) => {
-      if (link.inputs) {
-        link.inputs.forEach((input: any) => {
-          if (input.buildingId && !inputGoods.includes(input.buildingId)) {
-            inputGoods.push(input.buildingId);
-          }
-          flattenChain(input);
-        });
+    
+    const collectInputs = (link: any) => {
+      // Add this link's building as an input
+      if (link.buildingId && !inputGoods.includes(link.buildingId)) {
+        inputGoods.push(link.buildingId);
+      }
+      // Recursively collect inputs from nested inputs
+      if (link.inputs && Array.isArray(link.inputs)) {
+        link.inputs.forEach((input: any) => collectInputs(input));
       }
     };
     
-    definition.chain.forEach(link => flattenChain(link));
+    // Process each link in the chain
+    if (definition.chain && Array.isArray(definition.chain)) {
+      definition.chain.forEach(link => collectInputs(link));
+    }
     
     const node: ProductionNode = {
       buildingName: buildingName,
@@ -76,6 +96,7 @@ export function buildDependencyGraph(): DependencyGraph {
     nodes.set(buildingName, node);
 
     // Track which buildings produce which goods
+    // Add both the good ID and the building name as keys
     const outputKeys = [
       goodId,
       buildingName,
