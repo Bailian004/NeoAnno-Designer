@@ -1,0 +1,152 @@
+A7 preset building-like icons: 225
+Matched A7 icons in use: 95
+UNUSED A7 preset icons: 149
+A7_cactus_fencepost.png | fence post cactus
+A7_stall_03.png | market cart
+A7_feeding_station.png | feeding station
+A7_hikers_hut.png | hiker's hut
+A7_campfire.png | campfire
+A7_fireworks_podium_1_unicorn.png | fireworks podium
+A7_lamp_post.png | lamp post
+A7_town_gatehouse.png | town gatehouse
+A7_fire_pit.png | fire pit
+A7_3million.png | "three million gears" monument
+A7_oldnate_base.png | old nate's workshop
+A7_twitchdrop_lamp_01.png | "high life" lamp post
+A7_twitchdrop_lamp_03.png | "tourist season" lamp post
+A7_s03_twitchdrops_advertiser_flag_02.png | "docklands" flag banner
+A7_twitchdrop_lamp_02.png | "docklands" lamp post
+A7_celebration_ornament_01.png | "one million pioneers" monument
+A7_docklands_main.png | ornamental main wharf
+A7_docks_lighthouse_01.png | pale lighthouse
+A7_docks_lighthouse_02.png | crimson lighthouse
+A7_docks_ornaments_boats_01_01.png | drydocked skiffs
+A7_docks_ornaments_harbor_crane_01.png | harbour crane
+A7_docks_ornaments_warehouse_01.png | warehouse
+A7_large_ornament_freighter_01.png | docked freighter
+A7_autumn_bonfire.png | bonfire
+A7_guard_house.png | railway guard hut
+A7_sawing_station.png | sawing station
+A7_harbour_kontor.png | harbourmaster's office
+A7_kontor_main.png | small trading post
+A7_oil_habour_01.png | small oil harbour
+A7_electric_works_gas.png | gas-fired power plant
+A7_outhouse.png | outhouse
+A7_signpost.png | signpost
+A7_fireplace_01.png | campfire
+A7_docklands_module_item.png | ornamental office
+A7_docklands_module_speed.png | ornamental wharf
+A7_tourism_ornaments_kiosk_02.png | postcard vendor
+A7_tourism_ornaments_signpost_01.png | signpost
+A7_hacienda_module_farm.png | hacienda farm - (64)
+A7_hacienda_module_distillery.png | hacienda brewery
+A7_tabasco_sauce.png | hacienda hot sauce factory
+A7_hacienda_module_fertiliser.png | hacienda fertiliser works
+A7_electric_works_coal.png | power station
+A7_fertilizer_good.png | outhouse
+A7_toilet_house.png | toilet house
+A7_market_hall_01.png | market hall
+A7_cane_sugar_1.png | sugar cane plantation - (128)
+A7_caoutchouc.png | caoutchouc plantation - (144)
+A7_orchid.png | orchid farm - (128)
+A7_spices.png | spice farm - (128)
+A7_beach_boathouse.png | boathouse
+A7_botanic_garden_module.png | glasshouse
+A7_palm_tree.png | palm tree plantation - (64)
+A7_meat_raw.png | cattle farm - (6)
+A7_wool.png | sheep farm - (3)
+A7_niter.png | saltpetre works
+A7_brass.png | brass smeltery
+A7_coal_2.png | coal mine
+A7_tin_ore.png | zinc mine
+A7_copper.png | copper mine
+A7_dynamite.png | dynamite factory
+A7_inlay.png | marquetry workshop
+A7_sewing_machine.png | sewing machine factory
+A7_hospital.png | hospital
+A7_warehouse.png | small warehouse
+A7_electric_works_oil.png | oil power plant
+A7_christmas_props_lightpost_01.png | decorated light post
+A7_market_01.png | farmer's stall
+A7_food_service_02.png | bakery
+A7_playground_small.png | sandpit and slide
+A7_clock_02.png | steel clockhouse
+A7_alpaca_wool.png | alpaca farm - (4)
+A7_salt.png | sugar refinery
+A7_fire_house.png | fire station
+A7_goose_feathers.png | goose farm - (5)
+A7_bear_fur.png | bear hunting cabin
+A7_husky.png | husky farm - (4)
+A7_seal_skin.png | seal hunting docks
+A7_sled_frame.png | sled frame factory
+A7_ranger_station.png | ranger station
+A7_gasoline.png | oil refinery
+A7_bankerlamp.png | furniture store: banker's lamps
+A7_canopy.png | furniture store: four-poster beds
+A7_airship_platform_post.png | airmail sorting office
+A7_post_office_dlc11.png | post office
+A7_postbox_b.png | post box
+A7_ship_repair_2.png | supply factory
+A7_dropgood_bomb_b.png | bomb factory
+A7_dropgood_seamines.png | sea mine factory
+A7_dropgood_care_packages.png | care package factory
+A7_dropgood_water.png | water drop factory
+A7_airship_platform_workforce.png | commuter station
+A7_industrial_lubricant_a.png | industrial oil press
+A7_bauxit.png | bauxite mine
+A7_post_office.png | post office
+A7_indigo.png | indigo farm - (144)
+A7_teff_grass.png | teff farm - (168)
+A7_linen_farm.png | linseed farm - (96)
+A7_mayan_house.png | mesoan house
+A7_mayan_seaport.png | mesoan harbour
+A7_park_props_1x1_22.png | tall cypress
+A7_watusi.png | sanga farm - (5)
+A7_goat_milk.png | goat farm - (4)
+A7_salt_africa.png | salt works
+A7_seafood.png | lobster fishery
+A7_paper.png | paper mill
+A7_linen_fabric.png | linen mill
+A7_teff_flour.png | teff mill
+A7_dried_meat.png | dry-house
+A7_ceramics.png | ceramics workshop
+A7_mud_bricks.png | brick dry-house
+A7_wat_stew.png | wat kitchen
+A7_scriptures.png | luminer
+A7_lanterns.png | lanternsmith
+A7_bazaar.png | marketplace
+A7_leather_shoes.png | bootmakers
+A7_multifactory_chemistry.png | chemical plant (new world)
+A7_lemonade.png | chemical plant: lemonade
+A7_shampoo.png | chemical plant: shampoo
+A7_souvenir.png | chemical plant: souvenirs
+A7_lacquer.png | chemical plant: lacquer
+A7_highlife_manufactory.png | artisan's workshop
+A7_cognac.png | artisan's workshop: cognac
+A7_violin.png | artisan's workshop: violins
+A7_billard.png | artisan's workshop: billiard tables
+A7_toys.png | artisan's workshop: toys
+A7_bubble_gum.png | chewing gum factory
+A7_ethanol.png | chemical plant: ethanol
+A7_celluloid.png | chemical plant: celluloid
+A7_fertilizer_1.png | coal coking furnace
+A7_ammonia.png | ammonia plant
+A7_kontor.png | old nate's harbour
+A7_nandu_leather.png | nandu farm - (4)
+A7_squid.png | calamari fishery
+A7_electric_cable_3.png | cable factory
+A7_jalea.png | jalea kitchen
+A7_icecream_cone.png | ice cream factory
+A7_scooter.png | scooter factory
+A7_motor.png | motor assembly plant
+A7_ventilator.png | fan factory
+A7_minerals.png | mineral mine
+A7_ballsports.png | ball manufactory
+A7_film_role.png | chemical plant: film reels
+A7_police_equipment.png | arsenal: police equipment
+A7_extinguisher.png | laboratory: fire extinguisher
+A7_samba_school.png | samba school
+A7_park_props_1x1_17.png | cypress
+A7_electric_cable_2.png | electric cable factory
+A7_tools.png | tool factory
+A7_jungle_trees.png | forester's hut

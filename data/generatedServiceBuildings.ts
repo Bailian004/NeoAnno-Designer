@@ -16,7 +16,7 @@ export const serviceBuildings: ServiceBuilding[] = [
   {
     name: "Marketplace",
     identifier: "Service_colony02_01 (Bazaar)",
-    icon: "A7_bazaar.png",
+    icon: "A7_market.png",
     region: "The Old World",
     tier: "Farmers",
     size: {"x":5,"z":6},
@@ -42,6 +42,16 @@ export const serviceBuildings: ServiceBuilding[] = [
     size: {"x":3,"z":5},
     service: "Extinguishes fires.",
     range: {"type":"radius","range":15,"maxRange":null},
+  },
+  {
+    name: "Police Station",
+    identifier: "Institution_02 (Police Station)",
+    icon: "A7_police.png",
+    region: "The Old World",
+    tier: "Workers",
+    size: {"x":4,"z":5},
+    service: "Prevents riots.",
+    range: {"type":"radius","range":20,"maxRange":null},
   },
   {
     name: "Church",

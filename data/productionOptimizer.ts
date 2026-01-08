@@ -6,6 +6,7 @@ export interface ProductionNode {
   outputGood: string;
   outputRate: number; // tons per minute
   workforceNeeded: Record<string, number>;
+  icon?: string; // Icon filename
 }
 
 export interface DependencyGraph {
@@ -13,6 +14,28 @@ export interface DependencyGraph {
   edges: Map<string, string[]>; // good -> buildings that produce it
   consumers: Map<string, string[]>; // good -> buildings that consume it
 }
+
+export interface ProductionResult {
+  buildings: Record<string, number>;
+  workforce: Record<string, number>;
+}
+
+// Canonical good name aliases to improve matching between
+// consumption goods and generated production outputs/building names.
+// Keys are requested goods (consumption or intermediates),
+// values are alternative names to search for among graph keys.
+const GOOD_ALIASES: Record<string, string[]> = {
+  // Old World basics
+  'Work Clothes': ['Knit.', 'Framework Knit.', 'Framework Knitters', 'Working Clothes'],
+  'Wool': ['Sheep Farm', 'Sheepfold', 'Sheep'],
+  'Fish': ['Fishery'],
+  'Grain': ['Grain Farm', 'Wheat'],
+  'Malt': ['Malthouse'],
+  'Schnapps': ['Schnapps Distill.', 'Distillery'],
+  'Timber': ['Sawmill', 'Wooden Planks'],
+  // New World basics
+  'Alpaca Wool': ['Alpaca Farm'],
+};
 
 /**
  * Build a complete dependency graph of all production chains
@@ -31,16 +54,27 @@ export function buildDependencyGraph(): DependencyGraph {
       inputGoods: inputGoods,
       outputGood: chain.outputProduct,
       outputRate: outputRate,
-      workforceNeeded: chain.workforce ? { [chain.workforce.type]: chain.workforce.amount } : {}
+      workforceNeeded: chain.workforce ? { [chain.workforce.type]: chain.workforce.amount } : {},
+      icon: chain.icon
     };
 
     nodes.set(chain.name, node);
 
-    // Track which buildings produce which goods
-    if (!edges.has(chain.outputProduct)) {
-      edges.set(chain.outputProduct, []);
-    }
-    edges.get(chain.outputProduct)!.push(chain.name);
+    // Track which buildings produce which goods (multiple keys for fuzzy matching)
+    const outputKeys = [
+      chain.outputProduct,
+      chain.name, // Also register by building name
+      chain.icon?.replace('.png', '').replace('A7_', ''), // Icon name without extension
+    ].filter(Boolean);
+
+    outputKeys.forEach(key => {
+      if (!edges.has(key!)) {
+        edges.set(key!, []);
+      }
+      if (!edges.get(key!)!.includes(chain.name)) {
+        edges.get(key!)!.push(chain.name);
+      }
+    });
 
     // Track which buildings consume which goods
     inputGoods.forEach(input => {
@@ -78,8 +112,33 @@ export function calculateUpstreamProduction(
       return;
     }
 
-    // Find producers of this good
-    const producers = graph.edges.get(good);
+    // Find producers of this good (try exact match, aliases, then fuzzy)
+    let producers = graph.edges.get(good);
+    
+    // Try aliases if no direct match
+    if ((!producers || producers.length === 0) && GOOD_ALIASES[good]) {
+      for (const alias of GOOD_ALIASES[good]) {
+        const p = graph.edges.get(alias);
+        if (p && p.length > 0) {
+          producers = p;
+          break;
+        }
+      }
+    }
+    
+    // If no exact match, try fuzzy matching
+    if (!producers || producers.length === 0) {
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const nGood = norm(good);
+      for (const [key, prods] of graph.edges.entries()) {
+        const nKey = norm(key);
+        if (nKey.includes(nGood) || nGood.includes(nKey)) {
+          producers = prods;
+          break;
+        }
+      }
+    }
+    
     if (!producers || producers.length === 0) {
       // Base resource (e.g., Fish, Wool) - no upstream dependencies
       return;
@@ -112,13 +171,13 @@ export function calculateUpstreamProduction(
 
     // Recursively process inputs
     node.inputGoods.forEach(input => {
-      const key = `${input}-${producer}`;
-      if (visited.has(key)) return; // Avoid infinite loops
-      visited.add(key);
-
-      // Each building consumes inputs at the same rate as output
-      // (This is a simplification; real rates may vary)
-      const inputRatePerBuilding = effectiveRate;
+      // Find how much of this input is needed per cycle
+      const chain = productionChains.find(c => c.name === producer);
+      const inputDef = chain?.inputs?.find(i => i.product === input);
+      const inputAmountPerCycle = inputDef?.amount || 1;
+      
+      // Calculate input rate needed (input consumption per building * number of buildings)
+      const inputRatePerBuilding = (inputAmountPerCycle * 60) / (chain?.cycleTime || 30);
       const totalInputRate = inputRatePerBuilding * buildingsNeeded;
 
       processGood(input, totalInputRate, depth + 1);
@@ -154,6 +213,62 @@ export function optimizeProductionChain(
   });
 
   return Object.fromEntries(allRequirements);
+}
+
+/**
+ * Like optimizeProductionChain but also aggregates workforce requirements
+ */
+export function optimizeProductionChainWithWorkforce(
+  consumption: Record<string, number>,
+  includeElectricity: boolean = false,
+  tradeGoods: Set<string> = new Set()
+): ProductionResult {
+  const graph = buildDependencyGraph();
+  const allRequirements = new Map<string, number>();
+  const workforce: Record<string, number> = {};
+
+  Object.entries(consumption).forEach(([good, rate]) => {
+    if (tradeGoods.has(good)) return;
+
+    const requirements = calculateUpstreamProduction(good, rate, graph, includeElectricity);
+    requirements.forEach(req => {
+      const current = allRequirements.get(req.buildingName) || 0;
+      const newCount = current + req.count;
+      allRequirements.set(req.buildingName, newCount);
+
+      const node = graph.nodes.get(req.buildingName);
+      if (node && node.workforceNeeded) {
+        Object.entries(node.workforceNeeded).forEach(([tier, amount]) => {
+          workforce[tier] = (workforce[tier] || 0) + amount * req.count;
+        });
+      }
+    });
+  });
+
+  return {
+    buildings: Object.fromEntries(allRequirements),
+    workforce
+  };
+}
+
+/**
+ * Compute workforce needs for an existing building count map
+ */
+export function computeWorkforceRequirements(
+  buildingCounts: Record<string, number>
+): Record<string, number> {
+  const graph = buildDependencyGraph();
+  const workforce: Record<string, number> = {};
+
+  Object.entries(buildingCounts).forEach(([buildingName, count]) => {
+    const node = graph.nodes.get(buildingName);
+    if (!node || !node.workforceNeeded) return;
+    Object.entries(node.workforceNeeded).forEach(([tier, amount]) => {
+      workforce[tier] = (workforce[tier] || 0) + amount * count;
+    });
+  });
+
+  return workforce;
 }
 
 /**

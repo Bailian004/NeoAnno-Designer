@@ -46,7 +46,7 @@ export const productionChains: ProductionChain[] = [
   {
     name: "Fishery",
     identifier: "Water Purifier",
-    icon: "A7_fish.png",
+    icon: "A7_Fish.png",
     region: "The Old World",
     tier: "Farmers",
     size: {"x":5,"z":11},
@@ -72,6 +72,7 @@ export const productionChains: ProductionChain[] = [
   },
   {
     name: "Schnapps Distill.",
+    icon: "A7_schnapps_3.png",
     region: "The Old World",
     tier: "Farmers",
     size: {"x":3,"z":4},
@@ -97,6 +98,7 @@ export const productionChains: ProductionChain[] = [
   },
   {
     name: "Framework Knit.",
+    icon: "A7_working_cloth.png",
     region: "The Old World",
     tier: "Farmers",
     size: {"x":4,"z":4},
@@ -176,7 +178,7 @@ export const productionChains: ProductionChain[] = [
   {
     name: "Flour Mill",
     identifier: "Processing_02 (Flour Processing)",
-    icon: "A7_flour.png",
+    icon: "A7_Flour.png",
     region: "The Old World",
     tier: "Workers",
     size: {"x":3,"z":4},
@@ -189,7 +191,7 @@ export const productionChains: ProductionChain[] = [
   {
     name: "Bakery",
     identifier: "CityOrnament Food_Service_02",
-    icon: "A7_food_service_02.png",
+    icon: "A7_Bread.png",
     region: "The Old World",
     tier: "Workers",
     size: {"x":3,"z":4},

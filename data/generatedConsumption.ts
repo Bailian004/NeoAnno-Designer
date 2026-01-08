@@ -13,79 +13,92 @@ export const TIER_CONSUMPTION: Record<string, ConsumptionRate[]> = {
     {
       good: "Bakery",
       building: "Bakery",
-      tonsPer1000PerMinute: 36.364,
-      tonsPer1000PerMinuteElectric: 18.182,
+      // Bread demand ~1.21 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 1.212,
+      tonsPer1000PerMinuteElectric: 1.212,
     },
     {
       good: "Brewery",
       building: "Brewery",
-      tonsPer1000PerMinute: 30.769,
-      tonsPer1000PerMinuteElectric: 15.385,
+      // Beer demand ~1.03 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 1.026,
+      tonsPer1000PerMinuteElectric: 1.026,
     },
     {
       good: "Cannery",
       building: "Cannery",
-      tonsPer1000PerMinute: 10.256,
-      tonsPer1000PerMinuteElectric: 5.128,
+      // Canned Food ~0.342 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 0.342,
+      tonsPer1000PerMinuteElectric: 0.342,
     },
     {
       good: "Dealer",
       building: "Fur Dealer",
-      tonsPer1000PerMinute: 26.667,
-      tonsPer1000PerMinuteElectric: 13.333,
+      // Fur Coats ~0.889 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 0.889,
+      tonsPer1000PerMinuteElectric: 0.889,
     },
     {
       good: "Distillery",
       building: "Rum Distillery",
-      tonsPer1000PerMinute: 57.143,
+      // Rum ~1.905 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 1.905,
     },
     {
       good: "Slaughterhouse",
       building: "Slaughterhouse",
-      tonsPer1000PerMinute: 40.000,
-      tonsPer1000PerMinuteElectric: 20.000,
+      // Sausages ~1.333 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 1.333,
+      tonsPer1000PerMinuteElectric: 1.333,
     },
     {
       good: "Factory",
       building: "Soap Factory",
-      tonsPer1000PerMinute: 16.667,
-      tonsPer1000PerMinuteElectric: 8.333,
+      // Soap ~0.556 t/min per 1000 Artisans
+      tonsPer1000PerMinute: 0.556,
+      tonsPer1000PerMinuteElectric: 0.556,
     },
   ],
   'Engineers': [
     {
       good: "Factory",
       building: "Bicycle Factory",
-      tonsPer1000PerMinute: 8.333,
-      tonsPer1000PerMinuteElectric: 4.167,
+      // Penny Farthings ~0.625 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 0.625,
+      tonsPer1000PerMinuteElectric: 0.625,
     },
     {
       good: "Cannery",
       building: "Cannery",
-      tonsPer1000PerMinute: 20.513,
-      tonsPer1000PerMinuteElectric: 10.256,
+      // Canned Food ~0.513 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 0.513,
+      tonsPer1000PerMinuteElectric: 0.513,
     },
     {
       good: "Clockmakers",
       building: "Clockmakers",
-      tonsPer1000PerMinute: 7.843,
-      tonsPer1000PerMinuteElectric: 3.922,
+      // Pocket Watches ~0.196 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 0.196,
+      tonsPer1000PerMinuteElectric: 0.196,
     },
     {
       good: "Roaster",
       building: "Coffee Roaster",
-      tonsPer1000PerMinute: 23.529,
+      // Coffee ~1.176 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 1.176,
     },
     {
       good: "Dealer",
       building: "Fur Dealer",
-      tonsPer1000PerMinute: 53.333,
-      tonsPer1000PerMinuteElectric: 26.667,
+      // Fur Coats ~1.333 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 1.333,
+      tonsPer1000PerMinuteElectric: 1.333,
     },
     {
       good: "Distillery",
       building: "Rum Distillery",
-      tonsPer1000PerMinute: 114.286,
+      // Rum ~2.857 t/min per 1000 Engineers
+      tonsPer1000PerMinute: 2.857,
     },
   ],
   'Farmers': [
@@ -96,94 +109,126 @@ export const TIER_CONSUMPTION: Record<string, ConsumptionRate[]> = {
       // (2 t/min output → 4 t/1000/min consumption)
       tonsPer1000PerMinute: 4.000,
     },
+    {
+      good: "Knit.",
+      building: "Framework Knit.",
+      // Work Clothes ~3.077 t/min per 1000 Farmers
+      tonsPer1000PerMinute: 3.077,
+    },
+    {
+      good: "Distill.",
+      building: "Schnapps Distill.",
+      // Schnapps ~3.333 t/min per 1000 Farmers
+      tonsPer1000PerMinute: 3.333,
+    },
   ],
   'Investors': [
     {
       good: "Factory",
       building: "Bicycle Factory",
-      tonsPer1000PerMinute: 16.667,
-      tonsPer1000PerMinuteElectric: 8.333,
+      // Penny Farthings ~1.0 t/min per 1000 Investors
+      tonsPer1000PerMinute: 1.000,
+      tonsPer1000PerMinuteElectric: 1.000,
     },
     {
       good: "Factory",
       building: "Cigar Factory",
-      tonsPer1000PerMinute: 11.111,
+      // Cigars ~0.444 t/min per 1000 Investors
+      tonsPer1000PerMinute: 0.444,
     },
     {
       good: "Clockmakers",
       building: "Clockmakers",
-      tonsPer1000PerMinute: 15.686,
-      tonsPer1000PerMinuteElectric: 7.843,
+      // Pocket Watches ~0.314 t/min per 1000 Investors
+      tonsPer1000PerMinute: 0.314,
+      tonsPer1000PerMinuteElectric: 0.314,
     },
     {
       good: "Roaster",
       building: "Coffee Roaster",
-      tonsPer1000PerMinute: 47.059,
+      // Coffee ~1.882 t/min per 1000 Investors
+      tonsPer1000PerMinute: 1.882,
     },
     {
       good: "Jewellers",
       building: "Jewellers",
-      tonsPer1000PerMinute: 10.526,
-      tonsPer1000PerMinuteElectric: 5.263,
+      // Jewelry ~0.421 t/min per 1000 Investors
+      tonsPer1000PerMinute: 0.421,
+      tonsPer1000PerMinuteElectric: 0.421,
     },
   ],
   'Jornaleros': [
     {
       good: "Darner",
       building: "Poncho Darner",
-      tonsPer1000PerMinute: 25.000,
+      // Ponchos ~2.5 t/min per 1000 Jornaleros
+      tonsPer1000PerMinute: 2.500,
     },
     {
       good: "Distillery",
       building: "Rum Distillery",
-      tonsPer1000PerMinute: 14.286,
+      // Rum ~1.429 t/min per 1000 Jornaleros
+      tonsPer1000PerMinute: 1.429,
+    },
+    {
+      good: "Plantain",
+      building: "Fried Plantain",
+      // Fried Plantains ~2.857 t/min per 1000 Jornaleros
+      tonsPer1000PerMinute: 2.857,
     },
   ],
   'Obreros': [
     {
-      good: "Brewery",
-      building: "Brewery",
-      tonsPer1000PerMinute: 26.667,
-      tonsPer1000PerMinuteElectric: 13.333,
-    },
-    {
       good: "Factory",
       building: "Cigar Factory",
-      tonsPer1000PerMinute: 5.556,
+      // Cigars ~0.4 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 0.400,
     },
     {
       good: "Roaster",
       building: "Coffee Roaster",
-      tonsPer1000PerMinute: 5.882,
+      // Coffee ~0.588 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 0.588,
     },
     {
       good: "Darner",
       building: "Poncho Darner",
-      tonsPer1000PerMinute: 50.000,
-    },
-    {
-      good: "Distillery",
-      building: "Rum Distillery",
-      tonsPer1000PerMinute: 28.571,
+      // Ponchos ~2.5 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 2.500,
     },
     {
       good: "Maker",
       building: "Tortilla Maker",
-      tonsPer1000PerMinute: 14.286,
+      // Tortillas ~1.429 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 1.429,
+    },
+    {
+      good: "Plantain",
+      building: "Fried Plantain",
+      // Fried Plantains ~2.857 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 2.857,
+    },
+    {
+      good: "Mkr.",
+      building: "Bowler Hat Mkr.",
+      // Bowler Hats ~1.333 t/min per 1000 Obreros
+      tonsPer1000PerMinute: 1.333,
     },
   ],
   'Workers': [
     {
       good: "Bakery",
       building: "Bakery",
-      tonsPer1000PerMinute: 18.182,
-      tonsPer1000PerMinuteElectric: 9.091,
+      // Bread demand ~0.909 t/min per 1000 Workers
+      tonsPer1000PerMinute: 0.909,
+      tonsPer1000PerMinuteElectric: 0.909,
     },
     {
       good: "Brewery",
       building: "Brewery",
-      tonsPer1000PerMinute: 15.385,
-      tonsPer1000PerMinuteElectric: 7.692,
+      // Beer demand ~0.769 t/min per 1000 Workers
+      tonsPer1000PerMinute: 0.769,
+      tonsPer1000PerMinuteElectric: 0.769,
     },
     {
       good: "Fishery",
@@ -195,14 +240,30 @@ export const TIER_CONSUMPTION: Record<string, ConsumptionRate[]> = {
     {
       good: "Slaughterhouse",
       building: "Slaughterhouse",
-      tonsPer1000PerMinute: 20.000,
-      tonsPer1000PerMinuteElectric: 10.000,
+      // Sausages ~1.0 t/min per 1000 Workers
+      tonsPer1000PerMinute: 1.000,
+      tonsPer1000PerMinuteElectric: 1.000,
     },
     {
       good: "Factory",
       building: "Soap Factory",
-      tonsPer1000PerMinute: 8.333,
-      tonsPer1000PerMinuteElectric: 4.167,
+      // Soap ~0.417 t/min per 1000 Workers
+      tonsPer1000PerMinute: 0.417,
+      tonsPer1000PerMinuteElectric: 0.417,
+    },
+    {
+      good: "Knit.",
+      building: "Framework Knit.",
+      // Work Clothes ~3.077 t/min per 1000 Workers
+      tonsPer1000PerMinute: 3.077,
+      tonsPer1000PerMinuteElectric: 3.077,
+    },
+    {
+      good: "Distill.",
+      building: "Schnapps Distill.",
+      // Schnapps ~3.333 t/min per 1000 Workers
+      tonsPer1000PerMinute: 3.333,
+      tonsPer1000PerMinuteElectric: 3.333,
     },
   ],
 };

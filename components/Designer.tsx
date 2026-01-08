@@ -8,7 +8,7 @@ import { ResourcePanel } from './ResourcePanel';
 import { PopulationInput } from './PopulationInput';
 import { calculateBuildingsForPopulation, PopulationGoal } from '../utils/productionCalculator';
 import { calculateIndustryNeeds, getAvailableGoods, getCompatibleGoods } from '../utils/chainCalculator';
-import { PRODUCTION_CHAINS } from '../data/industryData';
+import { PRODUCTION_CHAINS_FULL as PRODUCTION_CHAINS } from '../data/industryData';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -371,13 +371,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     const [resourcePanelOpen, setResourcePanelOpen] = useState(false);
     const [leftPanelOpen, setLeftPanelOpen] = useState(true);
     const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [dockPos, setDockPos] = useState({ x: 0, y: 0 });
-  const [isDraggingDock, setIsDraggingDock] = useState(false);
-  const dockDragOffset = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    setDockPos({ x: window.innerWidth / 2 - 140, y: window.innerHeight - 90 });
-  }, []);
 
     // Default-close side panels on mobile to maximize canvas
     useEffect(() => {
@@ -435,28 +428,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           counts
       };
   }, [layout.buildings, layout.width, layout.height, config.buildings]);
-
-  const handleDockMouseDown = (e: React.MouseEvent) => {
-    setIsDraggingDock(true);
-    dockDragOffset.current = { x: e.clientX - dockPos.x, y: e.clientY - dockPos.y };
-  };
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-        if (isDraggingDock) {
-            setDockPos({ x: e.clientX - dockDragOffset.current.x, y: e.clientY - dockDragOffset.current.y });
-        }
-    };
-    const handleUp = () => setIsDraggingDock(false);
-    if (isDraggingDock) {
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleUp);
-    }
-    return () => {
-        window.removeEventListener('mousemove', handleMove);
-        window.removeEventListener('mouseup', handleUp);
-    };
-  }, [isDraggingDock]);
 
   // Handle Keyboard Shortcuts
   useEffect(() => {
@@ -946,36 +917,6 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
          </Panel>
       </div>
 
-      <div style={{ left: dockPos.x, top: dockPos.y }} className="fixed z-50 flex gap-2">
-          <Panel onMouseDown={handleDockMouseDown} className="flex-row p-1.5 gap-1 select-none cursor-move items-stretch">
-             <div className="flex flex-col items-center justify-center px-1.5 gap-0.5 border-r border-white/5 bg-black/10 text-slate-600 cursor-move">
-                <div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div><div className="w-1 h-1 rounded-full bg-slate-600"></div>
-             </div>
-             <IconButton active={activeTool === null && !terrainMode} onClick={() => { setActiveTool(null); setTerrainMode(false); }} title="Select / Move" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>} />
-             <IconButton active={terrainMode} onClick={() => { setTerrainMode(true); setActiveTool(null); }} title="Terrain Blocker" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>} />
-             <IconButton active={showAllRadii} onClick={() => setShowAllRadii(prev => !prev)} title="Show All Service Radii" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>} />
-             <div className="px-4 flex items-center justify-center min-w-[140px] bg-black/40 rounded mx-1 border border-white/5 border-b-white/10 shadow-inner">
-                <span className={`text-[10px] font-mono tracking-widest uppercase ${activeTool ? 'text-amber-400' : terrainMode ? 'text-red-400' : 'text-slate-400'}`}>
-                    {activeTool ? (config.buildings.find(b => b.id === activeTool)?.name.substring(0, 18) || 'Unknown Asset') : terrainMode ? 'TERRAIN EDITOR' : 'CURSOR MODE'}
-                </span>
-             </div>
-             {activeTool && (
-                 <div className="flex items-center gap-1 px-2 border-l border-white/5">
-                     <span className="text-[9px] text-slate-500 uppercase font-bold mr-1">Rotation</span>
-                     <button 
-                         onClick={() => setRotation(prev => (prev + 90) % 360 as any)}
-                         className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 transition-colors border border-white/5"
-                         title="Rotate (R key)"
-                     >
-                         <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ transform: `rotate(${rotation}deg)` }}>
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                         </svg>
-                     </button>
-                     <span className="text-xs font-mono text-amber-400 font-bold min-w-[32px]">{rotation}°</span>
-                 </div>
-             )}
-          </Panel>
-      </div>
       <ResourcePanel isOpen={resourcePanelOpen} onClose={() => setResourcePanelOpen(false)} buildings={layout.buildings} config={config} />
     </div>
   );

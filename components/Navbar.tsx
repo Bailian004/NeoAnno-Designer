@@ -44,10 +44,22 @@ export const Navbar: React.FC = () => {
     'Global': 'global',
   };
 
-  const modes: { id: AppMode; label: string; icon: string }[] = [
-    { id: 'sandbox', label: 'Sandbox', icon: '🏗️' },
-    { id: 'calculator', label: 'Calculator', icon: '📊' },
-    { id: 'solver', label: 'Solver', icon: '🧬' },
+  const modes: { id: AppMode; label: string; icon: React.ReactNode }[] = [
+    { 
+      id: 'sandbox', 
+      label: 'Sandbox', 
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+    },
+    { 
+      id: 'calculator', 
+      label: 'Calculator', 
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+    },
+    { 
+      id: 'solver', 
+      label: 'Solver', 
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+    },
   ];
 
   const utilLinks: { id: AppMode; label: string }[] = [
@@ -128,7 +140,7 @@ export const Navbar: React.FC = () => {
                     {regionsByGame[selectedGame].map(r => (
                       <button
                         key={r}
-                        onClick={() => setRegion(r)}
+                        onClick={() => setRegion(region === r ? null : r)}
                         className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest transition-all ${
                           region === r
                             ? 'bg-emerald-500 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/20'
@@ -139,7 +151,7 @@ export const Navbar: React.FC = () => {
                           <LogoImg 
                             slug={regionLogoSlug[r]}
                             alt={`${r} logo`}
-                            className="w-4 h-4 rounded-sm object-contain bg-black/30 border border-white/10"
+                            className={`w-4 h-4 object-contain transition-all ${region === r ? 'brightness-0' : 'brightness-0 invert'}`}
                           />
                           <span>{r}</span>
                         </span>
@@ -199,7 +211,7 @@ export const Navbar: React.FC = () => {
                   <div className="rounded-lg border border-white/10 bg-white/5">
                     <button onClick={() => setMobileRegionsOpen(o => !o)} className="w-full flex items-center justify-between px-2 py-1.5">
                       <span className="flex items-center gap-2">
-                        <LogoImg slug={regionLogoSlug[region as RegionKey]} alt="region" className="w-5 h-5 rounded-sm object-contain bg-black/30 border border-white/10" />
+                        <LogoImg slug={regionLogoSlug[region as RegionKey]} alt="region" className="w-5 h-5 object-contain brightness-0 invert" />
                         <span className="text-xs font-bold text-white">{region}</span>
                       </span>
                       <svg className={`w-4 h-4 text-slate-300 transition-transform ${mobileRegionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
@@ -210,13 +222,13 @@ export const Navbar: React.FC = () => {
                           {regionsByGame[selectedGame].map(r => (
                             <button
                               key={r}
-                              onClick={() => { setRegion(r); setMobileRegionsOpen(false); }}
+                              onClick={() => { setRegion(region === r ? null : r); setMobileRegionsOpen(false); }}
                               className={`px-2 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all ${
                                 region === r ? 'bg-emerald-500 text-slate-900 border-emerald-300' : 'bg-white/5 text-slate-200 border-white/10'
                               }`}
                             >
                               <span className="inline-flex items-center gap-2">
-                                <LogoImg slug={regionLogoSlug[r]} alt={`${r} logo`} className="w-4 h-4 rounded-sm object-contain bg-black/30 border border-white/10" />
+                                <LogoImg slug={regionLogoSlug[r]} alt={`${r} logo`} className={`w-4 h-4 object-contain transition-all ${region === r ? 'brightness-0' : 'brightness-0 invert'}`} />
                                 <span>{r}</span>
                               </span>
                             </button>
@@ -239,13 +251,13 @@ export const Navbar: React.FC = () => {
                 <button 
                   key={m.id} 
                   onClick={() => setMode(m.id)} 
-                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-200 ${
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 ${
                     mode === m.id 
                       ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 shadow-lg shadow-amber-500/20' 
                       : 'bg-black/20 text-slate-400 hover:bg-black/30 hover:text-slate-200 border border-white/5'
                   }`}
                 >
-                  <span className="mr-1.5">{m.icon}</span>
+                  {m.icon}
                   {m.label}
                 </button>
               ))}
@@ -257,14 +269,14 @@ export const Navbar: React.FC = () => {
                 <button
                   key={m.id}
                   onClick={() => setMode(m.id)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center gap-1 ${
                     mode === m.id
                       ? 'bg-amber-500 text-slate-900 border-amber-300 shadow-amber-500/20'
                       : 'bg-black/20 text-slate-300 border-white/10 hover:bg-black/30'
                   }`}
                   aria-label={m.label}
                 >
-                  <span className="mr-1">{m.icon}</span>
+                  {m.icon}
                   <span>{m.label}</span>
                 </button>
               ))}
@@ -330,25 +342,21 @@ const GameLogoImg: React.FC<{ slug: string; alt: string; className?: string }> =
   );
 };
 
-// Region logos (WebP preferred, fallback to SVG/PNG)
+// Region logos (SVG preferred for better styling)
 const LogoImg: React.FC<{ slug: string; alt: string; className?: string }> = ({ slug, alt, className }) => {
   const [failed, setFailed] = useState(false);
   const initial = (alt?.trim()?.charAt(0) || 'A').toUpperCase();
   if (failed) {
     return (
-      <div className={`flex items-center justify-center ${className} bg-white/5 text-slate-300 font-black`}> {initial} </div>
+      <div className={`flex items-center justify-center ${className}`}> {initial} </div>
     );
   }
   return (
-    <picture>
-      <source srcSet={`${import.meta.env.BASE_URL}logos/${slug}.webp`} type="image/webp" />
-      <source srcSet={`${import.meta.env.BASE_URL}logos/${slug}.svg`} type="image/svg+xml" />
-      <img
-        src={`${import.meta.env.BASE_URL}logos/${slug}.png`}
-        alt={alt}
-        className={className}
-        onError={() => setFailed(true)}
-      />
-    </picture>
+    <img
+      src={`${import.meta.env.BASE_URL}logos/${slug}.svg`}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
   );
 };

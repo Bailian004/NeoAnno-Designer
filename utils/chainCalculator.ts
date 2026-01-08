@@ -9,7 +9,7 @@ export interface IndustryRequest {
  * Get region for a population tier
  */
 function getTierRegion(tier: string): 'Old World' | 'New World' | undefined {
-    if (['Farmer', 'Worker', 'Artisan', 'Engineer', 'Investor'].includes(tier)) {
+    if (['Farmer', 'Worker', 'Artisan', 'Engineer', 'Investor', 'Scholar'].includes(tier)) {
         return 'Old World';
     }
     if (['Jornalero', 'Obrero'].includes(tier)) {
@@ -56,14 +56,18 @@ export const calculateIndustryNeeds = (request: IndustryRequest): Record<string,
 
     // 2. Recursive Building Counter
     const buildingCounts: Record<string, number> = {};
+    const buildingAlternatives: Record<string, string[]> = {}; // Track alternatives for each building
 
-    const addToCounts = (buildingId: string, amount: number) => {
+    const addToCounts = (buildingId: string, amount: number, alternatives?: string[]) => {
         buildingCounts[buildingId] = (buildingCounts[buildingId] || 0) + amount;
+        if (alternatives && alternatives.length > 0) {
+            buildingAlternatives[buildingId] = alternatives;
+        }
     };
 
     const processChain = (link: ChainLink, parentCount: number) => {
         const required = link.count * parentCount;
-        addToCounts(link.buildingId, required);
+        addToCounts(link.buildingId, required, link.alternatives);
         if (link.inputs) {
             link.inputs.forEach(subLink => processChain(subLink, required));
         }
