@@ -1,5 +1,42 @@
 [
-  { "date": "2026-01-07", "title": "Added Anno 117 building data (290 buildings)", "description": "Imported from presets and integrated into internal dataset." },
-  { "date": "2026-01-06", "title": "Integrated production chains, regions, DLCs", "description": "Created typed wrappers and chain integration." },
-  { "date": "2026-01-05", "title": "Genetic solver foundational work", "description": "Population manager and solver hooks established." }
+  {
+    "date": "2026-01-08",
+    "title": "Session 8: Multi-Region Support & Coal Alternatives (78% Complete)",
+    "description": "Added Scholar population tier to Old World + Cape Trelawney. Implemented multi-region production chains with authoritative building region data (75 buildings). Created bidirectional coal alternatives system - Coal Mine ↔ Charcoal Kiln with side-by-side display. Progress: 28/36 items (78%)."
+  },
+  {
+    "date": "2026-01-07",
+    "title": "Session 7: Mobile UI & Core Data Accuracy (67% Complete)",
+    "description": "Mobile navbar with inline game/region selectors. Designer control bar with icon-only toggles. Fixed population consumption rates (Workers, Artisans, Engineers, Investors). Service coverage data with tier-specific rates. Recursive iteration convergence algorithm. Progress: 24/36 items (67%)."
+  },
+  {
+    "date": "2026-01-06",
+    "title": "Session 6: UX Improvements & Quality of Life (53% Complete)",
+    "description": "Warehouse injection ratio controls. Resource balance calculator with production/consumption views. Icon loading error feedback. Save/Load functionality for layouts. Rotation indicator and Fitness Score explanations. Prevent duplicate population goals. Progress: 19/36 items (53%)."
+  },
+  {
+    "date": "2026-01-05",
+    "title": "Session 5: Building Resolution & ID Mapping (39% Complete)",
+    "description": "Building ID mapping table with 200+ entries. Building adapter validation with fuzzy matching. ID vs Name resolution with getBuilding() universal adapter. Region compatibility checks. Progress: 14/36 items (39%)."
+  },
+  {
+    "date": "2026-01-04",
+    "title": "Session 4: Production Chain Integration (28% Complete)",
+    "description": "Integrated production chains with typed wrappers. Region and DLC associations. Chain calculator with recursive dependency resolution. Progress: 10/36 items (28%)."
+  },
+  {
+    "date": "2026-01-03",
+    "title": "Session 3: Genetic Solver Foundation (19% Complete)",
+    "description": "Population manager architecture. Genetic solver hooks and fitness evaluation. Layout mutation strategies. Progress: 7/36 items (19%)."
+  },
+  {
+    "date": "2026-01-02",
+    "title": "Session 2: Anno 117 Building Import (14% Complete)",
+    "description": "Added Anno 117 building data - 290 buildings from presets. Integrated with internal dataset. Building icons and metadata. Progress: 5/36 items (14%)."
+  },
+  {
+    "date": "2026-01-01",
+    "title": "Session 1: Project Setup & Initial Architecture (8% Complete)",
+    "description": "Initial project structure with React + TypeScript + Vite. Core components: Designer, GridCanvas, ResourcePanel. Base data structures and types. Progress: 3/36 items (8%)."
+  }
 ]
