@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAppState, Manifest } from '../state/AppState';
 import { PRODUCTION_CHAINS_FULL as PRODUCTION_CHAINS } from '../data/industryData';
 import { calculateOptimizedRequirementsDetailed, OptimizedRequirementsDetail } from '../data/advancedPopulationCalculator';
@@ -10,6 +10,7 @@ import { serviceBuildings } from '../data/generatedServiceBuildings';
 import { getBuildingIcon, getProductIcon, getIconSrc } from '../utils/iconResolver';
 import { ChainModal } from './ChainModal';
 import { RegionLogo } from './RegionLogo';
+import { validateData } from '../data/validators';
 
 export const CalculatorView: React.FC = () => {
   const { selectedGame, region, setManifest, setMode } = useAppState();
@@ -28,6 +29,16 @@ export const CalculatorView: React.FC = () => {
     Engineers: 0,
     Investors: 0,
   });
+
+  // Dev-only data validation to catch naming/icon/workforce regressions early
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const issues = validateData();
+      if (issues.length) {
+        console.warn('[Data Validation] Issues found:', issues);
+      }
+    }
+  }, []);
 
   // Show available chains from our simplified industry data, filtered by region when applicable
   const chainsForRegion = useMemo(() => {
@@ -309,8 +320,13 @@ export const CalculatorView: React.FC = () => {
                   const entries = Object.entries(requirements.buildings) as [string, number][];
                   // Categorize by source dataset
                   const residences = entries.filter(([name]) => residenceBuildings.some(r => r.name === name));
-                  const productions = entries.filter(([name]) => productionChains.some(p => p.name === name));
                   const services = entries.filter(([name]) => serviceBuildings.some(s => s.name === name));
+                  
+                  // Everything not a residence or service is production
+                  const productions = entries.filter(([name]) => 
+                    !residenceBuildings.some(r => r.name === name) && 
+                    !serviceBuildings.some(s => s.name === name)
+                  );
 
                   // Group productions by product chain using fuzzy matcher
                   const groupedProductions = (() => {

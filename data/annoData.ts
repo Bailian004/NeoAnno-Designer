@@ -1,5 +1,7 @@
 import { AnnoTitle, GameConfig, BuildingDefinition, ResourceRate } from "../types";
 import { ANNO_117_BUILDINGS_RAW } from "./anno117Buildings";
+import { loadBuildingDefinitions } from "./buildingAdapter";
+import { getBuildingIcon, getIconSrc } from "../utils/iconResolver";
 
 // --- Types for Raw JSON Data ---
 interface RawBuilding {
@@ -650,6 +652,48 @@ const mapRawToDefinition = (raw: RawBuilding): BuildingDefinition => {
   };
 };
 
+// Build a richer Anno 1800 building catalog by merging raw definitions with
+// generated production/residence/service data and backfilling icons.
+const buildAnno1800Buildings = (): BuildingDefinition[] => {
+  const rawAndExtras: BuildingDefinition[] = [
+    ...RAW_BUILDINGS
+      .filter(b => b.Header.includes('1800') || b.Identifier === 'Street_1x1' || b.Identifier.includes('Warehouse'))
+      .map(mapRawToDefinition),
+    // Modules that are only present as overrides
+    ...(Object.entries(GAME_LOGIC_OVERRIDES)
+      .filter(([id]) => id.startsWith('Module_'))
+      .map(([id, def]) => ({ id, ...def } as BuildingDefinition))),
+    // Non-raw infrastructure/public/residence entries
+    ...EXTRA_1800_NONRAW
+  ];
+
+  // Fill gaps with generated data (production/residence/service). We only add
+  // entries that are missing to preserve richer logic from the raw set.
+  const mergedById = new Map<string, BuildingDefinition>();
+  rawAndExtras.forEach(def => mergedById.set(def.id, def));
+  loadBuildingDefinitions().forEach(def => {
+    if (!mergedById.has(def.id)) {
+      mergedById.set(def.id, def);
+    }
+  });
+
+  const resolveIcon = (def: BuildingDefinition): string | undefined => {
+    // If an icon already points to /icons/ or an absolute URL, keep it.
+    if (def.icon && (def.icon.includes('/icons/') || def.icon.startsWith('http'))) {
+      return def.icon;
+    }
+    // If the icon is a bare filename, prefix with the public base URL.
+    if (def.icon) {
+      return getIconSrc(def.icon, import.meta.env.BASE_URL);
+    }
+    // Otherwise, try resolving via the central icon resolver.
+    const fromResolver = getBuildingIcon(def.name) || getBuildingIcon(def.id);
+    return fromResolver ? getIconSrc(fromResolver, import.meta.env.BASE_URL) : undefined;
+  };
+
+  return Array.from(mergedById.values()).map(def => ({ ...def, icon: resolveIcon(def) }));
+};
+
 // --- RAW DATA LOADER ---
 const RAW_BUILDINGS: RawBuilding[] = [
   // --- ANNO 1800 RESIDENCES ---
@@ -740,15 +784,7 @@ export const ANNO_GAMES: Record<AnnoTitle, GameConfig> = {
     title: AnnoTitle.ANNO_1800,
     gridColor: '#333',
     backgroundColor: '#1f2937',
-    buildings: [
-        ...RAW_BUILDINGS.filter(b => b.Header.includes('1800') || b.Identifier === 'Street_1x1' || b.Identifier.includes('Warehouse')).map(mapRawToDefinition),
-        // APPEND EXPLICIT MODULE DEFINITIONS
-        ...(Object.entries(GAME_LOGIC_OVERRIDES)
-            .filter(([id]) => id.startsWith('Module_'))
-        .map(([id, def]) => ({ id, ...def } as BuildingDefinition))),
-      // APPEND NON-RAW INFRASTRUCTURE/PUBLIC/RESIDENCE ENTRIES
-      ...EXTRA_1800_NONRAW
-    ],
+    buildings: buildAnno1800Buildings(),
     resources: resources1800
   },
   [AnnoTitle.ANNO_1404]: {

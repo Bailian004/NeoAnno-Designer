@@ -3,6 +3,7 @@ import { PRODUCTION_CHAINS_FULL as CHAINS_FULL } from '../data/industryData';
 import { residenceBuildings } from '../data/generatedResidences';
 import { serviceBuildings } from '../data/generatedServiceBuildings';
 import { getHelpfulBuildingIcon } from '../data/helpfulIconMap';
+import { canonicalizeBuilding, getGeneratedNameForBuilding } from '../data/naming';
 import { BUILDING_ICON_OVERRIDES, PRODUCT_ICON_MAP } from '../data/buildingIcons';
 
 /**
@@ -11,30 +12,41 @@ import { BUILDING_ICON_OVERRIDES, PRODUCT_ICON_MAP } from '../data/buildingIcons
  * Priority order:
  * 1. Manual overrides (buildingIcons.ts) - highest priority for exact matches
  * 2. Helpful_info icons (icons.json + presets.json with synonym matching)
- * 3. Building data files (generatedProductionChains, etc.)
+ * 3. Building data files (generatedProductionChains, etc.) with fuzzy matching
  * 
  * @param buildingName - The name of the building
  * @returns The icon filename or undefined if not found
  */
 export function getBuildingIcon(buildingName: string): string | undefined {
+  // Canonicalize incoming name first
+  const canonical = canonicalizeBuilding(buildingName);
   // Priority 1: Check manual overrides first (exact matches, correct case)
-  const override = BUILDING_ICON_OVERRIDES[buildingName];
+  const override = BUILDING_ICON_OVERRIDES[canonical] || BUILDING_ICON_OVERRIDES[buildingName];
   if (override) return override;
   
   // Priority 2: Check helpful info with smart matching
-  const helpful = getHelpfulBuildingIcon(buildingName);
+  const helpful = getHelpfulBuildingIcon(canonical) || getHelpfulBuildingIcon(buildingName);
   if (helpful) return helpful;
   
-  // Priority 3: Check building data files
-  const prodChain = productionChains.find(c => c.name === buildingName);
+  // Priority 3: Check building data files using canonical mapping only (no fuzzy)
+  const genName = getGeneratedNameForBuilding(canonical) || canonical;
+  const prodChain = productionChains.find(c => c.name === genName) || productionChains.find(c => c.name === canonical);
+  
   if (prodChain?.icon) return prodChain.icon;
   
-  const residence = residenceBuildings.find(r => r.name === buildingName);
+  const residence = residenceBuildings.find(r => r.name === canonical || r.name === buildingName);
   if (residence?.icon) return residence.icon;
   
-  const service = serviceBuildings.find(s => s.name === buildingName);
+  const service = serviceBuildings.find(s => s.name === canonical || s.name === buildingName);
   if (service?.icon) return service.icon;
   
+  // Fallback: derive product icon from comprehensive chains by matching building
+  const defForBuilding = Object.values(CHAINS_FULL).find(d => d.buildingId === canonical || d.buildingId === buildingName);
+  if (defForBuilding) {
+    const productIcon = getProductIcon(defForBuilding.id);
+    if (productIcon) return productIcon;
+  }
+
   return undefined;
 }
 

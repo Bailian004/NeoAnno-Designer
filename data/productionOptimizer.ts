@@ -1,4 +1,6 @@
 import { PRODUCTION_CHAINS_FULL } from './industryData';
+import { productionChains } from './generatedProductionChains';
+import { canonicalizeProduct, canonicalizeBuilding, getGeneratedNameForBuilding } from './naming';
 
 export interface ProductionNode {
   buildingName: string;
@@ -20,37 +22,7 @@ export interface ProductionResult {
   workforce: Record<string, number>;
 }
 
-// Canonical good name aliases to improve matching between
-// consumption goods and generated production outputs/building names.
-// Keys are requested goods (consumption or intermediates),
-// values are alternative names to search for among graph keys.
-const GOOD_ALIASES: Record<string, string[]> = {
-  // Building names -> Good IDs (from consumption data)
-  'Bakery': ['Bread'],
-  'Brewery': ['Beer'],
-  'Cannery': ['Canned Food'],
-  'Dealer': ['Fur Coats'],
-  'Distillery': ['Rum', 'Schnapps'],
-  'Slaughterhouse': ['Sausages'],
-  'Factory': ['Soap', 'Bicycles', 'Sewing Machines', 'Windows'], // Multiple factories
-  'Clockmakers': ['Pocket Watches'],
-  'Roaster': ['Coffee'],
-  'Knitter': ['Work Clothes'],
-  'Fishery': ['Fish'],
-  'Sheep Farm': ['Wool', 'Sails'],
-  'Grain Farm': ['Grain'],
-  'Malthouse': ['Malt'],
-  // Old World basics
-  'Work Clothes': ['Knit.', 'Framework Knit.', 'Framework Knitters', 'Working Clothes'],
-  'Wool': ['Sheep Farm', 'Sheepfold', 'Sheep'],
-  'Fish': ['Fishery'],
-  'Grain': ['Grain Farm', 'Wheat'],
-  'Malt': ['Malthouse'],
-  'Schnapps': ['Schnapps Distill.', 'Distillery'],
-  'Timber': ['Sawmill', 'Wooden Planks'],
-  // New World basics
-  'Alpaca Wool': ['Alpaca Farm'],
-};
+// All matching now uses canonical names. No fuzzy or alias fallbacks.
 
 /**
  * Build a complete dependency graph of all production chains
@@ -60,48 +32,91 @@ export function buildDependencyGraph(): DependencyGraph {
   const edges = new Map<string, string[]>();
   const consumers = new Map<string, string[]>();
 
+  // Build a quick lookup map for workforce from generatedProductionChains using canonical mapping
+  const workforceMap = new Map<string, Record<string, number>>();
+  productionChains.forEach(chain => {
+    if (!chain.workforce) return;
+    const canonical = canonicalizeBuilding(chain.name);
+    const wf = { [chain.workforce.type]: chain.workforce.amount } as Record<string, number>;
+    workforceMap.set(chain.name, wf);
+    workforceMap.set(canonical, wf);
+    const mappedGen = getGeneratedNameForBuilding(canonical);
+    if (mappedGen) workforceMap.set(mappedGen, wf);
+  });
+  const getWorkforce = (buildingName: string): Record<string, number> => {
+    const canonical = canonicalizeBuilding(buildingName);
+    return workforceMap.get(canonical) || workforceMap.get(buildingName) || {};
+  };
+
   // Process each production definition from PRODUCTION_CHAINS_FULL
   Object.entries(PRODUCTION_CHAINS_FULL).forEach(([goodId, definition]) => {
     const buildingName = definition.buildingId;
     
-    // Extract input goods from the chain
-    // The chain is an array of ChainLink objects, each with buildingId and optional inputs
-    const inputGoods: string[] = [];
+    // Create node for the main building
+    const mainInputs: string[] = [];
     
-    const collectInputs = (link: any) => {
-      // Add this link's building as an input
-      if (link.buildingId && !inputGoods.includes(link.buildingId)) {
-        inputGoods.push(link.buildingId);
-      }
-      // Recursively collect inputs from nested inputs
+    // Recursively process chain to create nodes for ALL buildings
+    const processChainLink = (link: any, parentGood?: string) => {
+      const building = link.buildingId;
+      if (!building) return;
+      
+      // Collect inputs for this building
+      const inputs: string[] = [];
       if (link.inputs && Array.isArray(link.inputs)) {
-        link.inputs.forEach((input: any) => collectInputs(input));
+        link.inputs.forEach((input: any) => {
+          if (input.buildingId) {
+            inputs.push(input.buildingId);
+            // Recursively process nested inputs
+            processChainLink(input, building);
+          }
+        });
+      }
+      
+      // Create node for this building if it doesn't exist
+      if (!nodes.has(building)) {
+        // For intermediate buildings, the outputGood is the building name itself
+        // (since we don't have explicit intermediate good names)
+        nodes.set(building, {
+          buildingName: building,
+          inputGoods: inputs,
+          outputGood: building, // Use building name as the good for chain buildings
+          outputRate: 1, // Default rate
+          workforceNeeded: getWorkforce(building),
+          icon: undefined
+        });
+        
+        // Register this building as producing itself (for chain lookups)
+        if (!edges.has(building)) {
+          edges.set(building, []);
+        }
+        if (!edges.get(building)!.includes(building)) {
+          edges.get(building)!.push(building);
+        }
+      }
+      
+      // Track that this building is an input to parent
+      if (parentGood) {
+        mainInputs.push(building);
       }
     };
     
-    // Process each link in the chain
+    // Process chain links
     if (definition.chain && Array.isArray(definition.chain)) {
-      definition.chain.forEach(link => collectInputs(link));
+      definition.chain.forEach(link => processChainLink(link, goodId));
     }
     
-    const node: ProductionNode = {
+    // Create/update main building node
+    nodes.set(buildingName, {
       buildingName: buildingName,
-      inputGoods: inputGoods,
-      outputGood: goodId, // The good ID itself
+      inputGoods: mainInputs,
+      outputGood: goodId,
       outputRate: definition.outputPerMinute,
-      workforceNeeded: {}, // Will be populated from building data
+      workforceNeeded: getWorkforce(buildingName),
       icon: undefined
-    };
-
-    nodes.set(buildingName, node);
+    });
 
     // Track which buildings produce which goods
-    // Add both the good ID and the building name as keys
-    const outputKeys = [
-      goodId,
-      buildingName,
-    ].filter(Boolean);
-
+    const outputKeys = [goodId, buildingName].filter(Boolean);
     outputKeys.forEach(key => {
       if (!edges.has(key)) {
         edges.set(key, []);
@@ -112,7 +127,7 @@ export function buildDependencyGraph(): DependencyGraph {
     });
 
     // Track which buildings consume which goods
-    inputGoods.forEach(input => {
+    mainInputs.forEach(input => {
       if (!consumers.has(input)) {
         consumers.set(input, []);
       }
@@ -147,31 +162,12 @@ export function calculateUpstreamProduction(
       return;
     }
 
-    // Find producers of this good (try exact match, aliases, then fuzzy)
-    let producers = graph.edges.get(good);
-    
-    // Try aliases if no direct match
-    if ((!producers || producers.length === 0) && GOOD_ALIASES[good]) {
-      for (const alias of GOOD_ALIASES[good]) {
-        const p = graph.edges.get(alias);
-        if (p && p.length > 0) {
-          producers = p;
-          break;
-        }
-      }
-    }
-    
-    // If no exact match, try fuzzy matching
-    if (!producers || producers.length === 0) {
-      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const nGood = norm(good);
-      for (const [key, prods] of graph.edges.entries()) {
-        const nKey = norm(key);
-        if (nKey.includes(nGood) || nGood.includes(nKey)) {
-          producers = prods;
-          break;
-        }
-      }
+    // Resolve producers strictly using canonical names
+    const candidates = [canonicalizeProduct(good), canonicalizeBuilding(good), good];
+    let producers: string[] | undefined;
+    for (const k of candidates) {
+      const p = graph.edges.get(k);
+      if (p && p.length > 0) { producers = p; break; }
     }
     
     if (!producers || producers.length === 0) {
@@ -205,17 +201,11 @@ export function calculateUpstreamProduction(
     }
 
     // Recursively process inputs
-    node.inputGoods.forEach(input => {
-      // Find how much of this input is needed per cycle
-      const chain = productionChains.find(c => c.name === producer);
-      const inputDef = chain?.inputs?.find(i => i.product === input);
-      const inputAmountPerCycle = inputDef?.amount || 1;
-      
-      // Calculate input rate needed (input consumption per building * number of buildings)
-      const inputRatePerBuilding = (inputAmountPerCycle * 60) / (chain?.cycleTime || 30);
-      const totalInputRate = inputRatePerBuilding * buildingsNeeded;
-
-      processGood(input, totalInputRate, depth + 1);
+    node.inputGoods.forEach(inputBuilding => {
+      const inputNode = graph.nodes.get(inputBuilding);
+      if (inputNode) {
+        processGood(inputNode.outputGood, rateNeeded, depth + 1);
+      }
     });
   }
 

@@ -3,7 +3,7 @@
  * Uses dependency graph to calculate upstream production automatically
  */
 
-import { TIER_CONSUMPTION } from './generatedConsumption';
+import { CONSUMPTION_RATES } from './industryData';
 import {
   optimizeProductionChain,
   optimizeProductionChainWithWorkforce,
@@ -31,20 +31,15 @@ export function calculateOptimizedRequirements(
     includeResidences = true
   } = options;
 
-  // 1. Calculate consumption rates
+  // 1. Calculate consumption rates (canonical goods)
   const consumption: Record<string, number> = {};
-  
   population.forEach(({ tier, count }) => {
-    const consumptionRates = TIER_CONSUMPTION[tier];
+    const consumptionRates = CONSUMPTION_RATES[tier];
     if (!consumptionRates) return;
 
     consumptionRates.forEach(rate => {
-      const rateValue = includeElectricity && rate.tonsPer1000PerMinuteElectric
-        ? rate.tonsPer1000PerMinuteElectric
-        : rate.tonsPer1000PerMinute;
-
-      const totalConsumption = (count / 1000) * rateValue;
-      consumption[rate.good] = (consumption[rate.good] || 0) + totalConsumption;
+      const totalConsumption = (count / 1000) * rate.amountPer1000;
+      consumption[rate.goodId] = (consumption[rate.goodId] || 0) + totalConsumption;
     });
   });
 
@@ -193,16 +188,12 @@ export function calculateOptimizedRequirementsDetailed(
     // Calculate consumption for current total population
     const consumption: Record<string, number> = {};
     Object.entries(totalPopulation).forEach(([tier, count]) => {
-      const consumptionRates = TIER_CONSUMPTION[tier];
+      const consumptionRates = CONSUMPTION_RATES[tier];
       if (!consumptionRates) return;
 
       consumptionRates.forEach(rate => {
-        const rateValue = includeElectricity && rate.tonsPer1000PerMinuteElectric
-          ? rate.tonsPer1000PerMinuteElectric
-          : rate.tonsPer1000PerMinute;
-
-        const totalConsumption = (count / 1000) * rateValue;
-        consumption[rate.good] = (consumption[rate.good] || 0) + totalConsumption;
+        const totalConsumption = (count / 1000) * rate.amountPer1000;
+        consumption[rate.goodId] = (consumption[rate.goodId] || 0) + totalConsumption;
       });
     });
 
@@ -291,11 +282,11 @@ export function getTradeableGoods(population: PopulationTarget[]): string[] {
   const consumption: Set<string> = new Set();
   
   population.forEach(({ tier }) => {
-    const consumptionRates = TIER_CONSUMPTION[tier];
+    const consumptionRates = CONSUMPTION_RATES[tier];
     if (!consumptionRates) return;
     
     consumptionRates.forEach(rate => {
-      consumption.add(rate.good);
+      consumption.add(rate.goodId);
     });
   });
 
