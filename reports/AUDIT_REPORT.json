@@ -1,0 +1,476 @@
+{
+  "timestamp": "2026-01-09T11:23:04.608Z",
+  "totalChains": 87,
+  "summary": {
+    "regions": 4,
+    "tiers": 8,
+    "workforceTypes": 0,
+    "qualityScore": 52
+  },
+  "coverage": {
+    "workforce": 0,
+    "icons": 53,
+    "identifiers": 51,
+    "sizes": 87,
+    "modules": 0
+  },
+  "gaps": {
+    "workforceMissing": [
+      {
+        "name": "Lumberjack's Hut",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Sawmill",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Fishery",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Potato Farm",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Schnapps Distill.",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Sheep Farm",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Framework Knit.",
+        "region": "The Old World",
+        "tier": "Farmers"
+      },
+      {
+        "name": "Clay Pit",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Brick Factory",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Pig Farm",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Slaughterhouse",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Grain Farm",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Flour Mill",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Bakery",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Sailmakers",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Iron Mine",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Charcoal Kiln",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Furnace",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Steelworks",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Rendering Works",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Soap Factory",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Weapon Factory",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Malthouse",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Hop Farm",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Brewery",
+        "region": "The Old World",
+        "tier": "Workers"
+      },
+      {
+        "name": "Sand Mine",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Glassmakers",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Window Makers",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Cattle Farm",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Red Pepper Farm",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Artisanal Kit.",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Cannery",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Sewing M. Fac.",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Hunting Cabin",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Fur Dealer",
+        "region": "The Old World",
+        "tier": "Artisans"
+      },
+      {
+        "name": "Limestone Quarry",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Concrete Factory",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Spectacle Fac.",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Bicycle Factory",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Heavy Weapons",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Motor Assembly",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Clockmakers",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Light Bulb Fac.",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Filament Fac.",
+        "region": "The Old World",
+        "tier": "Engineers"
+      },
+      {
+        "name": "Vineyard",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Champagne Cel.",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Gold Mine",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Goldsmiths",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Jewellers",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Gramophone Fac.",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Coachmakers",
+        "region": "The Old World",
+        "tier": "Investors"
+      },
+      {
+        "name": "Plantain Plant.",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Fried Plantain",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Fish Oil Factory",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Sugar Cane Plt.",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Rum Distillery",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Alpaca Farm",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Poncho Darner",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Cotton Plant.",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Cotton Mill",
+        "region": "The New World",
+        "tier": "Jornaleros"
+      },
+      {
+        "name": "Corn Farm",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Tortilla Maker",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Coffee Plant.",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Coffee Roaster",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Felt Producer",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Bowler Hat Mkr.",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Tobacco Plant.",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Cigar Factory",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Cocoa Plant.",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Chocolate Fac.",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Pearl Farm",
+        "region": "The New World",
+        "tier": "Obreros"
+      },
+      {
+        "name": "Whaling Station",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Caribou Hunting",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Pemmican Cook.",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Sleeping Bag",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Oil Lamp Fac.",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Parka Factory",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Husky Sled Fac.",
+        "region": "The Arctic",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Dried Meat Fac.",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Finery",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Hibiscus Farm",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Tea Spice Blend",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Mud Brick Fac.",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Tapestry Loom",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Ceramics Wkshp",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Illuminated Scr.",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      },
+      {
+        "name": "Lanternmaker",
+        "region": "Enbesa",
+        "tier": "Unknown"
+      }
+    ],
+    "iconsMissing": 34,
+    "identifiersMissing": 36,
+    "sizesMissing": 0
+  },
+  "regionalBreakdown": {
+    "The Old World": 51,
+    "The New World": 20,
+    "The Arctic": 7,
+    "Enbesa": 9
+  },
+  "tierBreakdown": {
+    "Farmers": 7,
+    "Workers": 18,
+    "Artisans": 10,
+    "Engineers": 9,
+    "Investors": 7,
+    "Jornaleros": 9,
+    "Obreros": 11,
+    "Unknown": 16
+  },
+  "workforceStats": {}
+}

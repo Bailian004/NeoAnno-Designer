@@ -1,0 +1,298 @@
+{
+  "population": [
+    {
+      "tier": "Farmers",
+      "count": 500
+    },
+    {
+      "tier": "Workers",
+      "count": 1000
+    }
+  ],
+  "targetCounts": {
+    "Fishery": 32,
+    "Bakery": 19,
+    "Brewery": 16,
+    "Slaughterhouse": 20,
+    "Soap Factory": 5,
+    "Marketplace": 3,
+    "Fire Station": 2,
+    "Church": 1,
+    "School": 1,
+    "Farmer Residence": 50,
+    "Worker Residence": 50
+  },
+  "definitions": [
+    {
+      "id": "Farmer Residence",
+      "name": "Farmer Residence",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Residence_tier02",
+      "name": "Worker Residence",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "icon": "A7_resident_worker.png",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Artisan Res.",
+      "name": "Artisan Res.",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Engineer Res.",
+      "name": "Engineer Res.",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Investor Res.",
+      "name": "Investor Res.",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Jornalero Res.",
+      "name": "Jornalero Res.",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Obrero Res.",
+      "name": "Obrero Res.",
+      "width": 3,
+      "height": 3,
+      "color": "#4CAF50",
+      "category": "Residence",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Agriculture_arctic_01 (Timber Yard)",
+      "name": "Lumberjack's Hut",
+      "width": 4,
+      "height": 4,
+      "color": "#FF9800",
+      "icon": "A7_wood_log.png",
+      "category": "Production",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Factory_arctic_01 (Timber Factory)",
+      "name": "Sawmill",
+      "width": 3,
+      "height": 4,
+      "color": "#FF9800",
+      "icon": "A7_wooden_planks.png",
+      "category": "Production",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    },
+    {
+      "id": "Water Purifier",
+      "name": "Fishery",
+      "width": 5,
+      "height": 11,
+      "color": "#FF9800",
+      "icon": "A7_fish.png",
+      "category": "Production",
+      "influenceRadius": 0,
+      "influenceRange": 0
+    }
+  ],
+  "result": [
+    {
+      "uid": "gqge81y",
+      "definitionId": "Street_1x1",
+      "x": 50,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "jjstumq",
+      "definitionId": "Street_1x1",
+      "x": 50,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "ira7z5l",
+      "definitionId": "Street_1x1",
+      "x": 51,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "wjjv2m0",
+      "definitionId": "Street_1x1",
+      "x": 51,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "sgt04ab",
+      "definitionId": "Street_1x1",
+      "x": 52,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "xzxemf1",
+      "definitionId": "Street_1x1",
+      "x": 52,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "u4nc1ot",
+      "definitionId": "Street_1x1",
+      "x": 53,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "k9g5edb",
+      "definitionId": "Street_1x1",
+      "x": 53,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "1xi5utf",
+      "definitionId": "Street_1x1",
+      "x": 54,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "hq3bhty",
+      "definitionId": "Street_1x1",
+      "x": 54,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "iel7ihz",
+      "definitionId": "Street_1x1",
+      "x": 55,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "sqa59z6",
+      "definitionId": "Street_1x1",
+      "x": 55,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "7z8vyw1",
+      "definitionId": "Street_1x1",
+      "x": 56,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "e8sa9md",
+      "definitionId": "Street_1x1",
+      "x": 56,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "dum5w1u",
+      "definitionId": "Street_1x1",
+      "x": 57,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "xcmokt2",
+      "definitionId": "Street_1x1",
+      "x": 57,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "i8opwqa",
+      "definitionId": "Street_1x1",
+      "x": 58,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "pzr4zf0",
+      "definitionId": "Street_1x1",
+      "x": 58,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "ez8shsd",
+      "definitionId": "Street_1x1",
+      "x": 59,
+      "y": 46,
+      "rotation": 0,
+      "isModule": false
+    },
+    {
+      "uid": "nnqpplp",
+      "definitionId": "Street_1x1",
+      "x": 59,
+      "y": 54,
+      "rotation": 0,
+      "isModule": false
+    }
+  ],
+  "byType": {
+    "Infrastructure": 2904,
+    "Residence": 100
+  },
+  "errors": []
+}

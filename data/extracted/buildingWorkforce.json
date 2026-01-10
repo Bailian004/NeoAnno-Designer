@@ -1,0 +1,1222 @@
+{
+  "Hacienda Sugar Cane Farm": {
+    "amount": 10,
+    "guid": 24798,
+    "region": 5000001
+  },
+  "Hacienda Corn Farm": {
+    "amount": 10,
+    "guid": 25003,
+    "region": 5000001
+  },
+  "Hacienda Coffee Farm": {
+    "amount": 10,
+    "guid": 25005,
+    "region": 5000001
+  },
+  "Hacienda Caoutchouc Plantation": {
+    "amount": 10,
+    "guid": 25006,
+    "region": 5000001
+  },
+  "Hacienda Cocoa Farm": {
+    "amount": 10,
+    "guid": 25009,
+    "region": 5000001
+  },
+  "Hacienda Potato Farm": {
+    "amount": 10,
+    "guid": 25019,
+    "region": 5000001
+  },
+  "Hacienda Spice Farm": {
+    "amount": 10,
+    "guid": 25020,
+    "region": 5000001
+  },
+  "Hacienda Grain Farm": {
+    "amount": 10,
+    "guid": 25128,
+    "region": 5000001
+  },
+  "Hacienda Rum Distillery": {
+    "amount": 30,
+    "guid": 24801,
+    "region": 5000001
+  },
+  "Hacienda Beer Brewery": {
+    "amount": 30,
+    "guid": 25064,
+    "region": 5000001
+  },
+  "Hacienda Atole Maker": {
+    "amount": 30,
+    "guid": 25126,
+    "region": 5000001
+  },
+  "Hacienda Schnapps Distillery": {
+    "amount": 30,
+    "guid": 25350,
+    "region": 5000001
+  },
+  "Hacienda Hot Sauce Brewery": {
+    "amount": 30,
+    "guid": 25508,
+    "region": 5000001
+  },
+  "Hacienda": {
+    "amount": 30,
+    "guid": 24805,
+    "region": 5000001
+  },
+  "Grain Farm": {
+    "amount": 20,
+    "guid": 1010262,
+    "region": 5000000
+  },
+  "Cattle Farm": {
+    "amount": 20,
+    "guid": 101269,
+    "region": 5000001
+  },
+  "Hop Farm": {
+    "amount": 20,
+    "guid": 1010264,
+    "region": 5000000
+  },
+  "Potato Farm": {
+    "amount": 20,
+    "guid": 1010265,
+    "region": 5000000
+  },
+  "Lumberjack's Hut": {
+    "amount": 10,
+    "guid": 114703,
+    "region": 160001
+  },
+  "Sheep Farm": {
+    "amount": 10,
+    "guid": 1010267,
+    "region": 5000000
+  },
+  "Pig Farm": {
+    "amount": 30,
+    "guid": 1010269,
+    "region": 5000000
+  },
+  "Hunting Cabin": {
+    "amount": 10,
+    "guid": 1010558,
+    "region": 5000000
+  },
+  "Red Pepper Farm": {
+    "amount": 10,
+    "guid": 100654,
+    "region": 5000000
+  },
+  "Vineyard": {
+    "amount": 10,
+    "guid": 100655,
+    "region": 5000000
+  },
+  "Fishery": {
+    "amount": 25,
+    "guid": 1010278,
+    "region": 5000000
+  },
+  "Saltpeter Works": {
+    "amount": 25,
+    "guid": 1010310,
+    "region": 5000000
+  },
+  "Sand Mine": {
+    "amount": 25,
+    "guid": 1010560,
+    "region": 5000000
+  },
+  "Concrete Factory": {
+    "amount": 75,
+    "guid": 1010280,
+    "region": 5000000
+  },
+  "Soap Factory": {
+    "amount": 50,
+    "guid": 1010281,
+    "region": 5000000
+  },
+  "Brick Factory": {
+    "amount": 25,
+    "guid": 1010283,
+    "region": 5000000
+  },
+  "Sawmill": {
+    "amount": 10,
+    "guid": 114704,
+    "region": 160001
+  },
+  "Fur Dealer": {
+    "amount": 200,
+    "guid": 1010325,
+    "region": 5000000
+  },
+  "Light Bulb Factory": {
+    "amount": 150,
+    "guid": 1010286,
+    "region": 5000000
+  },
+  "Window-Makers": {
+    "amount": 100,
+    "guid": 1010285,
+    "region": 5000000
+  },
+  "Sailmakers": {
+    "amount": 50,
+    "guid": 1010288,
+    "region": 5000000
+  },
+  "Clay Pit": {
+    "amount": 50,
+    "guid": 100416,
+    "region": 5000000
+  },
+  "Coachmakers": {
+    "amount": 150,
+    "guid": 1010289,
+    "region": 5000000
+  },
+  "Bakery": {
+    "amount": 50,
+    "guid": 1010291,
+    "region": 5000000
+  },
+  "Brewery": {
+    "amount": 75,
+    "guid": 1010292,
+    "region": 5000000
+  },
+  "Artisanal Kitchen": {
+    "amount": 75,
+    "guid": 1010293,
+    "region": 5000000
+  },
+  "Cannery": {
+    "amount": 75,
+    "guid": 1010295,
+    "region": 5000000
+  },
+  "Schnapps Distillery": {
+    "amount": 50,
+    "guid": 1010294,
+    "region": 5000000
+  },
+  "Butcher's": {
+    "amount": 50,
+    "guid": 1010316,
+    "region": 5000000
+  },
+  "Champagne Cellar": {
+    "amount": 150,
+    "guid": 100659,
+    "region": 5000000
+  },
+  "Steelworks": {
+    "amount": 200,
+    "guid": 1010296,
+    "region": 5000000
+  },
+  "Furnace": {
+    "amount": 100,
+    "guid": 6080,
+    "region": 5000001
+  },
+  "Charcoal Kiln": {
+    "amount": 15,
+    "guid": 1345,
+    "region": 5000001
+  },
+  "Weapon Factory": {
+    "amount": 50,
+    "guid": 1010299,
+    "region": 5000000
+  },
+  "Heavy Weapons Factory": {
+    "amount": 250,
+    "guid": 1010301,
+    "region": 5000000
+  },
+  "Motor Assembly Line": {
+    "amount": 250,
+    "guid": 1010302,
+    "region": 5000000
+  },
+  "Cab Assembly Line": {
+    "amount": 500,
+    "guid": 1010303,
+    "region": 5000000
+  },
+  "Brass Smeltery": {
+    "amount": 25,
+    "guid": 1010282,
+    "region": 5000000
+  },
+  "Oil Refinery": {
+    "amount": 100,
+    "guid": 101331,
+    "region": 5000000
+  },
+  "Coal Mine": {
+    "amount": 50,
+    "guid": 1010304,
+    "region": 5000000
+  },
+  "Iron Mine": {
+    "amount": 50,
+    "guid": 1010305,
+    "region": 5000000
+  },
+  "Zinc Mine": {
+    "amount": 25,
+    "guid": 1010307,
+    "region": 5000000
+  },
+  "Copper Mine": {
+    "amount": 25,
+    "guid": 1010308,
+    "region": 5000000
+  },
+  "Limestone Quarry": {
+    "amount": 25,
+    "guid": 1010309,
+    "region": 5000000
+  },
+  "Rendering Works": {
+    "amount": 40,
+    "guid": 1010312,
+    "region": 5000000
+  },
+  "Flour Mill": {
+    "amount": 10,
+    "guid": 1010313,
+    "region": 5000000
+  },
+  "Malthouse": {
+    "amount": 25,
+    "guid": 1010314,
+    "region": 5000000
+  },
+  "Framework Knitters": {
+    "amount": 50,
+    "guid": 1010315,
+    "region": 5000000
+  },
+  "Dynamite Factory": {
+    "amount": 250,
+    "guid": 1010300,
+    "region": 5000000
+  },
+  "Glassmakers": {
+    "amount": 100,
+    "guid": 1010319,
+    "region": 5000000
+  },
+  "Marquetry Workshop": {
+    "amount": 150,
+    "guid": 1010320,
+    "region": 5000000
+  },
+  "Filament Factory": {
+    "amount": 150,
+    "guid": 1010321,
+    "region": 5000000
+  },
+  "Bicycle Factory": {
+    "amount": 150,
+    "guid": 1010323,
+    "region": 5000000
+  },
+  "Clockmakers": {
+    "amount": 150,
+    "guid": 1010324,
+    "region": 5000000
+  },
+  "Sewing Machine Factory": {
+    "amount": 100,
+    "guid": 6083,
+    "region": 5000001
+  },
+  "Gramophone Factory": {
+    "amount": 150,
+    "guid": 1010326,
+    "region": 5000000
+  },
+  "Goldsmiths": {
+    "amount": 125,
+    "guid": 1010327,
+    "region": 5000000
+  },
+  "Jewellers": {
+    "amount": 150,
+    "guid": 1010328,
+    "region": 5000000
+  },
+  "Spectacle Factory": {
+    "amount": 100,
+    "guid": 101250,
+    "region": 5000000
+  },
+  "Sugar Cane Plantation": {
+    "amount": 10,
+    "guid": 1010329,
+    "region": 5000001
+  },
+  "Tobacco Plantation": {
+    "amount": 10,
+    "guid": 1010330,
+    "region": 5000001
+  },
+  "Cotton Plantation": {
+    "amount": 10,
+    "guid": 1010331,
+    "region": 5000001
+  },
+  "Cocoa Plantation": {
+    "amount": 10,
+    "guid": 1010332,
+    "region": 5000001
+  },
+  "Caoutchouc Plantation": {
+    "amount": 10,
+    "guid": 1010333,
+    "region": 5000001
+  },
+  "agriculture_colony01_06 (Timber Yard)": {
+    "amount": 10,
+    "guid": 101260,
+    "region": 5000001
+  },
+  "Coffee Plantation": {
+    "amount": 10,
+    "guid": 101251,
+    "region": 5000001
+  },
+  "Plantain Plantation": {
+    "amount": 10,
+    "guid": 101263,
+    "region": 5000001
+  },
+  "Corn Farm": {
+    "amount": 10,
+    "guid": 101270,
+    "region": 5000001
+  },
+  "Alpaca Farm": {
+    "amount": 10,
+    "guid": 101272,
+    "region": 5000001
+  },
+  "Pearl Farm": {
+    "amount": 50,
+    "guid": 1010339,
+    "region": 5000001
+  },
+  "Fish Oil Factory": {
+    "amount": 15,
+    "guid": 101262,
+    "region": 5000001
+  },
+  "factory_colony01_01 (Timber Factory)": {
+    "amount": 20,
+    "guid": 101261,
+    "region": 5000001
+  },
+  "factory_colony01_02 (Sailcloth Factory)": {
+    "amount": 20,
+    "guid": 101265,
+    "region": 5000001
+  },
+  "Cotton Mill": {
+    "amount": 10,
+    "guid": 1010318,
+    "region": 5000001
+  },
+  "factory_colony01_04 (Clay Pit)": {
+    "amount": 100,
+    "guid": 101267,
+    "region": 5000001
+  },
+  "factory_colony01_05 (Brick Factory)": {
+    "amount": 50,
+    "guid": 101268,
+    "region": 5000001
+  },
+  "Felt Producer": {
+    "amount": 10,
+    "guid": 101415,
+    "region": 5000001
+  },
+  "Bombín Weaver": {
+    "amount": 20,
+    "guid": 101273,
+    "region": 5000001
+  },
+  "Rum Distillery": {
+    "amount": 30,
+    "guid": 1010340,
+    "region": 5000001
+  },
+  "Chocolate Factory": {
+    "amount": 100,
+    "guid": 1010341,
+    "region": 5000001
+  },
+  "Coffee Roaster": {
+    "amount": 150,
+    "guid": 101252,
+    "region": 5000001
+  },
+  "Fried Plantain Kitchen": {
+    "amount": 25,
+    "guid": 101264,
+    "region": 5000001
+  },
+  "Tortilla Maker": {
+    "amount": 100,
+    "guid": 101271,
+    "region": 5000001
+  },
+  "heavy_colony01_01 (Oil Heavy Industry)": {
+    "amount": 75,
+    "guid": 1010561,
+    "region": 5000001
+  },
+  "mining_colony01_01 (Gold Ore Mine)": {
+    "amount": 100,
+    "guid": 101311,
+    "region": 5000001
+  },
+  "Sugar Refinery": {
+    "amount": 50,
+    "guid": 1010317,
+    "region": 5000001
+  },
+  "Poncho Darner": {
+    "amount": 30,
+    "guid": 101266,
+    "region": 5000001
+  },
+  "processing_colony01_03 (Inlay Processing)": {
+    "amount": 100,
+    "guid": 101296,
+    "region": 5000001
+  },
+  "Cigar Factory": {
+    "amount": 175,
+    "guid": 1010342,
+    "region": 5000001
+  },
+  "Caribou Hunter": {
+    "amount": 25,
+    "guid": 112667,
+    "region": 160001
+  },
+  "Goose Farm": {
+    "amount": 35,
+    "guid": 112676,
+    "region": 160001
+  },
+  "Bear Hunter": {
+    "amount": 40,
+    "guid": 112673,
+    "region": 160001
+  },
+  "Husky Farm": {
+    "amount": 80,
+    "guid": 112682,
+    "region": 160001
+  },
+  "Prime Hunting Cabin": {
+    "amount": 40,
+    "guid": 116034,
+    "region": 160001
+  },
+  "Whale Hunter": {
+    "amount": 30,
+    "guid": 112666,
+    "region": 160001
+  },
+  "Seal Hunter": {
+    "amount": 20,
+    "guid": 112674,
+    "region": 160001
+  },
+  "Sleeping Bag Factory": {
+    "amount": 50,
+    "guid": 112675,
+    "region": 160001
+  },
+  "Oil Lamp Factory": {
+    "amount": 70,
+    "guid": 112679,
+    "region": 160001
+  },
+  "Parka Factory": {
+    "amount": 80,
+    "guid": 112672,
+    "region": 160001
+  },
+  "Sled Frame Factory": {
+    "amount": 80,
+    "guid": 112681,
+    "region": 160001
+  },
+  "Husky Sled Factory": {
+    "amount": 100,
+    "guid": 112680,
+    "region": 160001
+  },
+  "Pemmican Factory": {
+    "amount": 30,
+    "guid": 112668,
+    "region": 160001
+  },
+  "Arctic Gas Mine": {
+    "amount": 250,
+    "guid": 112690,
+    "region": 160001
+  },
+  "Deep Gold Mine": {
+    "amount": 100,
+    "guid": 116029,
+    "region": 160001
+  },
+  "Fuel Station": {
+    "amount": 75,
+    "guid": 119028,
+    "region": 114327
+  },
+  "Orchard: Coconut Oil": {
+    "amount": 35,
+    "guid": 133004,
+    "region": 5000001
+  },
+  "Orchard: Cinnamon": {
+    "amount": 35,
+    "guid": 133030,
+    "region": 5000001
+  },
+  "Orchard: Citrus": {
+    "amount": 35,
+    "guid": 133031,
+    "region": 5000001
+  },
+  "Orchard: Camphor Wax": {
+    "amount": 35,
+    "guid": 134614,
+    "region": 5000001
+  },
+  "Bomb Factory": {
+    "amount": 300,
+    "guid": 906,
+    "region": 5000001
+  },
+  "Sea Mine Factory": {
+    "amount": 300,
+    "guid": 907,
+    "region": 5000001
+  },
+  "Pamphlet Printer": {
+    "amount": 300,
+    "guid": 908,
+    "region": 5000001
+  },
+  "Care Package Factory": {
+    "amount": 300,
+    "guid": 916,
+    "region": 5000001
+  },
+  "Industrial Oil Press": {
+    "amount": 65,
+    "guid": 1418,
+    "region": 5000001
+  },
+  "Aluminium Smelter": {
+    "amount": 40,
+    "guid": 835,
+    "region": 5000001
+  },
+  "Water Drop Factory": {
+    "amount": 300,
+    "guid": 915,
+    "region": 5000001
+  },
+  "Bauxite Mine": {
+    "amount": 220,
+    "guid": 1308,
+    "region": 5000001
+  },
+  "Helium Extractor": {
+    "amount": 120,
+    "guid": 1353,
+    "region": 5000001
+  },
+  "Wanza Woodcutter": {
+    "amount": 15,
+    "guid": 122963,
+    "region": 114327
+  },
+  "Linseed Farm": {
+    "amount": 5,
+    "guid": 114448,
+    "region": 114327
+  },
+  "Hibiscus Farm": {
+    "amount": 15,
+    "guid": 114447,
+    "region": 114327
+  },
+  "Teff Farm": {
+    "amount": 20,
+    "guid": 114450,
+    "region": 114327
+  },
+  "Indigo Farm": {
+    "amount": 20,
+    "guid": 114451,
+    "region": 114327
+  },
+  "Spice Farm": {
+    "amount": 15,
+    "guid": 114452,
+    "region": 114327
+  },
+  "Apiary": {
+    "amount": 30,
+    "guid": 114453,
+    "region": 114327
+  },
+  "Sanga Farm": {
+    "amount": 20,
+    "guid": 114439,
+    "region": 114327
+  },
+  "Goat Farm": {
+    "amount": 30,
+    "guid": 114456,
+    "region": 114327
+  },
+  "Salt Works": {
+    "amount": 15,
+    "guid": 114440,
+    "region": 114327
+  },
+  "Lobster Fishery": {
+    "amount": 35,
+    "guid": 118729,
+    "region": 114327
+  },
+  "Clay Collector": {
+    "amount": 35,
+    "guid": 117743,
+    "region": 114327
+  },
+  "Paper Mill": {
+    "amount": 85,
+    "guid": 117744,
+    "region": 114327
+  },
+  "Linen Mill": {
+    "amount": 25,
+    "guid": 114441,
+    "region": 114327
+  },
+  "Teff Mill": {
+    "amount": 50,
+    "guid": 114459,
+    "region": 114327
+  },
+  "Chandler": {
+    "amount": 30,
+    "guid": 114461,
+    "region": 114327
+  },
+  "Dry-House": {
+    "amount": 50,
+    "guid": 114444,
+    "region": 114327
+  },
+  "Embroiderer": {
+    "amount": 40,
+    "guid": 114466,
+    "region": 114327
+  },
+  "Tea Spicer": {
+    "amount": 35,
+    "guid": 114468,
+    "region": 114327
+  },
+  "Ceramics Workshop": {
+    "amount": 100,
+    "guid": 118725,
+    "region": 114327
+  },
+  "Tapestry Looms": {
+    "amount": 90,
+    "guid": 114469,
+    "region": 114327
+  },
+  "Brick Dry-House": {
+    "amount": 100,
+    "guid": 114467,
+    "region": 114327
+  },
+  "Wat Kitchen": {
+    "amount": 70,
+    "guid": 114471,
+    "region": 114327
+  },
+  "Pipe Maker": {
+    "amount": 75,
+    "guid": 114472,
+    "region": 114327
+  },
+  "Luminer": {
+    "amount": 100,
+    "guid": 114470,
+    "region": 114327
+  },
+  "Lanternsmith": {
+    "amount": 75,
+    "guid": 114464,
+    "region": 114327
+  },
+  "Bootmakers": {
+    "amount": 150,
+    "guid": 118733,
+    "region": 5000000
+  },
+  "Tailor's Shop": {
+    "amount": 200,
+    "guid": 118734,
+    "region": 5000000
+  },
+  "Telephone Manufacturer": {
+    "amount": 150,
+    "guid": 118735,
+    "region": 5000000
+  },
+  "Advanced Coffee Roaster": {
+    "amount": 150,
+    "guid": 124738,
+    "region": 5000000
+  },
+  "Advanced Rum Distillery": {
+    "amount": 130,
+    "guid": 124737,
+    "region": 5000000
+  },
+  "Advanced Cotton Mill": {
+    "amount": 140,
+    "guid": 124739,
+    "region": 5000000
+  },
+  "Chemical Plant: Lemonade": {
+    "amount": 100,
+    "guid": 132777,
+    "region": 5000000
+  },
+  "Chemical Plant: Shampoo": {
+    "amount": 100,
+    "guid": 132786,
+    "region": 5000000
+  },
+  "Chemical Plant: Souvenirs": {
+    "amount": 100,
+    "guid": 133533,
+    "region": 5000000
+  },
+  "Orchard: Jam": {
+    "amount": 35,
+    "guid": 133496,
+    "region": 5000000
+  },
+  "Orchard: Cherry Wood": {
+    "amount": 35,
+    "guid": 135088,
+    "region": 5000000
+  },
+  "Orchard: Resin": {
+    "amount": 35,
+    "guid": 135085,
+    "region": 5000000
+  },
+  "Assembly Line: Elevators": {
+    "amount": 500,
+    "guid": 134622,
+    "region": 5000000
+  },
+  "Assembly Line: Biscuits": {
+    "amount": 500,
+    "guid": 135361,
+    "region": 5000000
+  },
+  "Assembly Line: Typewriters": {
+    "amount": 500,
+    "guid": 135148,
+    "region": 5000000
+  },
+  "Chemical Plant: Lacquer": {
+    "amount": 100,
+    "guid": 135133,
+    "region": 5000000
+  },
+  "Artisan's Workshop: Cognac": {
+    "amount": 350,
+    "guid": 135418,
+    "region": 5000000
+  },
+  "Artisan's Workshop: Violins": {
+    "amount": 350,
+    "guid": 135397,
+    "region": 5000000
+  },
+  "Artisan's Workshop: Billiard Tables": {
+    "amount": 350,
+    "guid": 135407,
+    "region": 5000000
+  },
+  "Artisan's Workshop: Toys": {
+    "amount": 350,
+    "guid": 135669,
+    "region": 5000000
+  },
+  "Chemical Plant: Chewing Gum": {
+    "amount": 125,
+    "guid": 135185,
+    "region": 5000001
+  },
+  "Chemical Plant: Ethanol": {
+    "amount": 125,
+    "guid": 135134,
+    "region": 5000001
+  },
+  "Chemical Plant: Celluloid": {
+    "amount": 125,
+    "guid": 135224,
+    "region": 5000001
+  },
+  "Nandu Farm": {
+    "amount": 10,
+    "guid": 5457,
+    "region": 5000001
+  },
+  "Herb Garden": {
+    "amount": 10,
+    "guid": 5463,
+    "region": 5000001
+  },
+  "Orchid Farm": {
+    "amount": 10,
+    "guid": 5814,
+    "region": 5000001
+  },
+  "Calamari Fishery": {
+    "amount": 25,
+    "guid": 7919,
+    "region": 5000001
+  },
+  "Cable Factory": {
+    "amount": 150,
+    "guid": 6279,
+    "region": 5000001
+  },
+  "Jalea Kitchen": {
+    "amount": 25,
+    "guid": 5458,
+    "region": 5000001
+  },
+  "Ice Cream Factory": {
+    "amount": 100,
+    "guid": 5459,
+    "region": 5000001
+  },
+  "Mezcal Bar": {
+    "amount": 25,
+    "guid": 6594,
+    "region": 5000001
+  },
+  "Scooter Factory": {
+    "amount": 200,
+    "guid": 5658,
+    "region": 5000001
+  },
+  "Motor Assembly Plant": {
+    "amount": 150,
+    "guid": 5659,
+    "region": 5000001
+  },
+  "Fan Factory": {
+    "amount": 150,
+    "guid": 5862,
+    "region": 5000001
+  },
+  "Mineral Mine": {
+    "amount": 120,
+    "guid": 1390,
+    "region": 5000001
+  },
+  "Perfume Mixer": {
+    "amount": 150,
+    "guid": 5657,
+    "region": 5000001
+  },
+  "Ball Manufactory": {
+    "amount": 30,
+    "guid": 5879,
+    "region": 5000001
+  },
+  "Costume Shop": {
+    "amount": 50,
+    "guid": 5933,
+    "region": 5000001
+  },
+  "Chemical Plant: Film Reels": {
+    "amount": 125,
+    "guid": 5828,
+    "region": 5000001
+  },
+  "Arsenal: Police Equipment": {
+    "amount": 300,
+    "guid": 6630,
+    "region": 5000001
+  },
+  "Laboratory: Fire Extinguisher": {
+    "amount": 300,
+    "guid": 6629,
+    "region": 5000001
+  },
+  "Laboratory: Medicine": {
+    "amount": 300,
+    "guid": 6631,
+    "region": 5000001
+  },
+  "Laboratory: Pigments": {
+    "amount": 150,
+    "guid": 5462,
+    "region": 5000001
+  },
+  "Gas-Fired Power Plant": {
+    "amount": 250,
+    "guid": 117547,
+    "region": 5000000
+  },
+  "Oil Power Plant": {
+    "amount": 150,
+    "guid": 100780,
+    "region": 5000000
+  },
+  "Power Station": {
+    "amount": 150,
+    "guid": 5164,
+    "region": 5000001
+  },
+  "Restaurant: Archduke's Schnitzel": {
+    "amount": 120,
+    "guid": 132747,
+    "region": 5000000
+  },
+  "Restaurant: Stroggof Goulash": {
+    "amount": 120,
+    "guid": 132750,
+    "region": 5000000
+  },
+  "Restaurant: Fish and Frites": {
+    "amount": 120,
+    "guid": 133339,
+    "region": 5000000
+  },
+  "Restaurant: Venison en Croûte": {
+    "amount": 120,
+    "guid": 133340,
+    "region": 5000000
+  },
+  "Restaurant: Lobster Cheminée": {
+    "amount": 120,
+    "guid": 133341,
+    "region": 5000000
+  },
+  "Restaurant: Empanadas": {
+    "amount": 120,
+    "guid": 6136,
+    "region": 5000000
+  },
+  "Cafe: Donut Fourré": {
+    "amount": 120,
+    "guid": 132753,
+    "region": 5000000
+  },
+  "Cafe: Eclair": {
+    "amount": 120,
+    "guid": 133347,
+    "region": 5000000
+  },
+  "Cafe: Palmier Biscuit": {
+    "amount": 120,
+    "guid": 133348,
+    "region": 5000000
+  },
+  "Cafe: Venison Tartare": {
+    "amount": 120,
+    "guid": 133349,
+    "region": 5000000
+  },
+  "Cafe: Banana Surprise": {
+    "amount": 120,
+    "guid": 133350,
+    "region": 5000000
+  },
+  "Cafe: Cone O'Copia ": {
+    "amount": 120,
+    "guid": 6138,
+    "region": 5000000
+  },
+  "Bar: Daiquiri Tropic": {
+    "amount": 120,
+    "guid": 132752,
+    "region": 5000000
+  },
+  "Bar: Black Muscovy": {
+    "amount": 120,
+    "guid": 133342,
+    "region": 5000000
+  },
+  "Bar: Montmartre '75'": {
+    "amount": 120,
+    "guid": 133343,
+    "region": 5000000
+  },
+  "Bar: Arctic Glogg": {
+    "amount": 120,
+    "guid": 133345,
+    "region": 5000000
+  },
+  "Bar: Enbesa Sunrise": {
+    "amount": 120,
+    "guid": 133346,
+    "region": 5000000
+  },
+  "Bar: Absynthe": {
+    "amount": 120,
+    "guid": 6137,
+    "region": 5000000
+  },
+  "Department Store: Toasters": {
+    "amount": 240,
+    "guid": 135103,
+    "region": 5000000
+  },
+  "Department Store: Vacuum Cleaners": {
+    "amount": 240,
+    "guid": 135188,
+    "region": 5000000
+  },
+  "Department Store: Crockery": {
+    "amount": 240,
+    "guid": 135187,
+    "region": 5000000
+  },
+  "Department Store: Refrigerators": {
+    "amount": 240,
+    "guid": 135189,
+    "region": 5000000
+  },
+  "Department Store: Briefcases": {
+    "amount": 240,
+    "guid": 135190,
+    "region": 5000000
+  },
+  "Furniture Store: Banker's Lamps": {
+    "amount": 240,
+    "guid": 135105,
+    "region": 5000000
+  },
+  "Furniture Store: Vanity Screens": {
+    "amount": 240,
+    "guid": 135121,
+    "region": 5000000
+  },
+  "Furniture Store: Writing Desks": {
+    "amount": 240,
+    "guid": 135120,
+    "region": 5000000
+  },
+  "Furniture Store: Four-Poster Beds": {
+    "amount": 240,
+    "guid": 135122,
+    "region": 5000000
+  },
+  "Furniture Store: Lounge Seating": {
+    "amount": 240,
+    "guid": 135123,
+    "region": 5000000
+  },
+  "Drug Store: Toothpaste": {
+    "amount": 240,
+    "guid": 134631,
+    "region": 5000000
+  },
+  "Drug Store: Detergent": {
+    "amount": 240,
+    "guid": 135191,
+    "region": 5000000
+  },
+  "Drug Store: Lipstick": {
+    "amount": 240,
+    "guid": 135192,
+    "region": 5000000
+  },
+  "Drug Store: Face Cream": {
+    "amount": 240,
+    "guid": 135193,
+    "region": 5000000
+  },
+  "Drug Store: Pomade": {
+    "amount": 240,
+    "guid": 135194,
+    "region": 5000000
+  },
+  "The Iron Tower: Brioche Royale ": {
+    "amount": 200,
+    "guid": 133928,
+    "region": 5000000
+  },
+  "The Iron Tower: Trifle Tower": {
+    "amount": 200,
+    "guid": 133930,
+    "region": 5000000
+  },
+  "The Iron Tower: Lady Marmelade": {
+    "amount": 200,
+    "guid": 133931,
+    "region": 5000000
+  },
+  "The Iron Tower: Age of Exploration": {
+    "amount": 200,
+    "guid": 133932,
+    "region": 5000000
+  },
+  "The Iron Tower: Homard sur Lit de Terroir": {
+    "amount": 200,
+    "guid": 133933,
+    "region": 5000000
+  },
+  "Samba School": {
+    "amount": 15,
+    "guid": 5840,
+    "region": 5000001
+  },
+  "Cinema": {
+    "amount": 30,
+    "guid": 6018,
+    "region": 5000001
+  }
+}

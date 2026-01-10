@@ -1,0 +1,132 @@
+{
+  "Hotel": {
+    "capacity": 500,
+    "guid": 601445,
+    "region": 5000000
+  },
+  "Hacienda Jornalero Quarters": {
+    "capacity": 20,
+    "guid": 24792,
+    "region": 5000001
+  },
+  "Hacienda Obrera Quarters": {
+    "capacity": 40,
+    "guid": 24793,
+    "region": 5000001
+  },
+  "Farmer Residence": {
+    "capacity": 10,
+    "guid": 1010343,
+    "region": 5000000
+  },
+  "Worker Residence": {
+    "capacity": 20,
+    "guid": 1010344,
+    "region": 5000000
+  },
+  "Artisan Residence": {
+    "capacity": 30,
+    "guid": 1010345,
+    "region": 5000000
+  },
+  "Engineer Residence": {
+    "capacity": 40,
+    "guid": 1010346,
+    "region": 5000000
+  },
+  "Investor Residence": {
+    "capacity": 50,
+    "guid": 1010347,
+    "region": 5000000
+  },
+  "Jornalero Residence": {
+    "capacity": 10,
+    "guid": 101254,
+    "region": 5000001
+  },
+  "Obrero Residence": {
+    "capacity": 20,
+    "guid": 101255,
+    "region": 5000001
+  },
+  "Explorer Shelter": {
+    "capacity": 10,
+    "guid": 112091,
+    "region": 160001
+  },
+  "Technician Shelter": {
+    "capacity": 20,
+    "guid": 112652,
+    "region": 160001
+  },
+  "Skyline Tower": {
+    "capacity": 2500,
+    "guid": 406,
+    "region": 5000000
+  },
+  "Shepherd Residence": {
+    "capacity": 10,
+    "guid": 114436,
+    "region": 114327
+  },
+  "Elder Residence": {
+    "capacity": 20,
+    "guid": 114437,
+    "region": 114327
+  },
+  "Scholar Residence": {
+    "capacity": 120,
+    "guid": 114445,
+    "region": 5000000
+  },
+  "Engineer Skyscraper: Level 1": {
+    "capacity": 60,
+    "guid": 601888,
+    "region": null
+  },
+  "Engineer Skyscraper: Level 2": {
+    "capacity": 80,
+    "guid": 601889,
+    "region": null
+  },
+  "Engineer Skyscraper: Level 3": {
+    "capacity": 100,
+    "guid": 601890,
+    "region": null
+  },
+  "Investor Skyscraper: Level 1": {
+    "capacity": 75,
+    "guid": 601882,
+    "region": null
+  },
+  "Investor Skyscraper: Level 2": {
+    "capacity": 100,
+    "guid": 601883,
+    "region": null
+  },
+  "Investor Skyscraper: Level 3": {
+    "capacity": 125,
+    "guid": 601884,
+    "region": null
+  },
+  "Investor Skyscraper: Level 4": {
+    "capacity": 150,
+    "guid": 601886,
+    "region": null
+  },
+  "Investor Skyscraper: Level 5": {
+    "capacity": 175,
+    "guid": 601891,
+    "region": null
+  },
+  "Artista Residence": {
+    "capacity": 40,
+    "guid": 5405,
+    "region": 5000001
+  },
+  "Hacienda Artista Quarters": {
+    "capacity": 90,
+    "guid": 6086,
+    "region": 5000001
+  }
+}
