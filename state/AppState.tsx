@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AnnoTitle } from '../types';
+// NOTE: Data loading is now handled by DataContext (see src/context/DataContext.tsx)
+// AppState retained for UI state management (mode, region, etc.) only
+// Previous: import { loadAnnoData, Anno1800Data } from '../src/lib/neoanno-data';
 
 export type AppMode = 'sandbox' | 'calculator' | 'solver' | 'home' | 'settings' | 'updates' | 'about' | 'tutorial' | 'bug';
 export type RegionKey = 'Old World' | 'New World' | 'Arctic' | 'Enbesa' | 'Cape Trelawney' | 'Orient' | 'Occident' | 'Global';
@@ -24,6 +27,7 @@ interface AppStateShape {
   setManifest: (m: Manifest | null) => void;
   navCollapsed: boolean;
   setNavCollapsed: (c: boolean) => void;
+  // Data loading moved to DataContext (use useData() hook instead)
 }
 
 const AppStateContext = createContext<AppStateShape | null>(null);
@@ -37,6 +41,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [navCollapsed, setNavCollapsed] = useState(false);
 
+  // Load app state from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -51,6 +56,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch {}
   }, []);
 
+  // Persist app state to localStorage
   useEffect(() => {
     const snapshot = { mode, selectedGame, region, manifest, navCollapsed };
     try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot)); } catch {}

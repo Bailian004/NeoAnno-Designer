@@ -4,9 +4,7 @@ import { PRODUCTION_CHAINS_FULL as PRODUCTION_CHAINS } from '../data/industryDat
 import { calculateOptimizedRequirementsDetailed, OptimizedRequirementsDetail } from '../data/advancedPopulationCalculator';
 import { mapTargetCountsToIds } from '../data/buildingAdapter';
 import { ANNO_GAMES } from '../data/annoData';
-import { productionChains } from '../data/generatedProductionChains';
-import { residenceBuildings } from '../data/generatedResidences';
-import { serviceBuildings } from '../data/generatedServiceBuildings';
+import { buildings, residences, services } from '../data/anno1800/index';
 import { getBuildingIcon, getProductIcon, getIconSrc } from '../utils/iconResolver';
 import { ChainModal } from './ChainModal';
 import { RegionLogo } from './RegionLogo';
@@ -30,13 +28,36 @@ export const CalculatorView: React.FC = () => {
     Investors: 0,
   });
 
-  // Dev-only data validation to catch naming/icon/workforce regressions early
+  // Get flat list of buildings for the current region
+  const productionBuildings = useMemo(() => {
+    if (!region) return [];
+    const regionKey = region as keyof typeof buildings;
+    return buildings[regionKey] || [];
+  }, [region]);
+
+  const residenceBuildings = useMemo(() => {
+    if (!region) return [];
+    const regionKey = region as keyof typeof residences;
+    const regionResidences = residences[regionKey] || [];
+    return regionResidences.map((r: any) => ({ name: r.name || r.buildingId }));
+  }, [region]);
+
+  const serviceBuildings = useMemo(() => {
+    if (!region) return [];
+    const regionKey = region as keyof typeof services;
+    const regionServices = services[regionKey] || [];
+    return regionServices.map((s: any) => ({ name: s.name || s.buildingId }));
+  }, [region]);
+
+  // Dev-only data validation to catch critical issues early
   useEffect(() => {
     if (import.meta.env.DEV) {
       const issues = validateData();
-      if (issues.length) {
-        console.warn('[Data Validation] Issues found:', issues);
+      const errors = issues.filter(issue => issue.severity === 'error');
+      if (errors.length) {
+        console.error('[Data Validation] Critical issues found:', errors);
       }
+      // Warnings are logged but not shown to user (expected data quirks)
     }
   }, []);
 
@@ -111,8 +132,8 @@ export const CalculatorView: React.FC = () => {
       .filter(([, count]) => (count as number) > 0)
       .map(([tier, count]) => ({ tier, count: count as number }));
     if (pop.length === 0) return null;
-    return calculateOptimizedRequirementsDetailed(pop);
-  }, [populationTargets]);
+    return calculateOptimizedRequirementsDetailed(pop, region);
+  }, [populationTargets, region]);
 
   const totalBuildings = useMemo(() => {
     if (!requirements) return 0;

@@ -9,7 +9,7 @@ import {
   optimizeProductionChainWithWorkforce,
   computeWorkforceRequirements
 } from './productionOptimizer';
-import { serviceBuildings } from './generatedServiceBuildings';
+import { residences, services } from './anno1800/index';
 import { PopulationTarget } from './populationCalculator';
 
 /**
@@ -136,6 +136,7 @@ export interface OptimizedRequirementsDetail {
  */
 export function calculateOptimizedRequirementsDetailed(
   population: PopulationTarget[],
+  region: string = 'Old World',
   options: {
     includeElectricity?: boolean;
     tradeGoods?: Set<string>;
@@ -157,17 +158,44 @@ export function calculateOptimizedRequirementsDetailed(
     'Engineers': 40,
     'Investors': 50,
     'Jornaleros': 10,
-    'Obreros': 20
+    'Obreros': 20,
+    'Explorers': 10,
+    'Technicians': 15,
+    'Shepherds': 10,
+    'Elders': 20,
+    'Scholars': 25,
   };
 
-  const residenceNames: Record<string, string> = {
-    'Farmers': 'Farmer Residence',
-    'Workers': 'Worker Residence',
-    'Artisans': 'Artisan Res.',
-    'Engineers': 'Engineer Res.',
-    'Investors': 'Investor Res.',
-    'Jornaleros': 'Jornalero Residence',
-    'Obreros': 'Obrero Residence'
+  // Get residence building names by tier from our data
+  const getResidenceBuildingName = (tier: string, region: string = 'Old World'): string => {
+    const regionKey = region as keyof typeof residences;
+    const regionResidences = residences[regionKey] || [];
+    
+    // Try to find a residence for this tier
+    const tiered = regionResidences.find((r: any) => 
+      r.tier?.toLowerCase().includes(tier.toLowerCase()) ||
+      r.name?.toLowerCase().includes(tier.toLowerCase())
+    );
+    
+    if (tiered?.name) return tiered.name;
+    
+    // Fallback to tier-based names if not found in data
+    const fallbackNames: Record<string, string> = {
+      'Farmers': 'Farmer Residence',
+      'Workers': 'Worker Residence',
+      'Artisans': 'Artisan Residence',
+      'Engineers': 'Engineer Residence',
+      'Investors': 'Investor Residence',
+      'Jornaleros': 'Jornalero Residence',
+      'Obreros': 'Obrero Residence',
+      'Explorers': 'Explorer Shelter',
+      'Technicians': 'Technician Shelter',
+      'Shepherds': 'Shepherd Hut',
+      'Elders': 'Elder Dwelling',
+      'Scholars': 'Scholar House',
+    };
+    
+    return fallbackNames[tier] || `${tier} Residence`;
   };
 
   // Track total population (target + workforce) across iterations
@@ -230,41 +258,55 @@ export function calculateOptimizedRequirementsDetailed(
       if (count <= 0) return;
       const capacity = residenceCapacity[tier] || 10;
       const housesNeeded = Math.ceil(count / capacity);
-      const residenceName = residenceNames[tier] || `${tier} Residence`;
-      residences[residenceName] = housesNeeded;
+      const residenceName = getResidenceBuildingName(tier, region);
       allBuildings[residenceName] = housesNeeded;
     });
   }
 
   // Add services for ALL population
-  if (includeServices) {
+  if (includeServices && region) {
+    const regionKey = region as keyof typeof services;
+    const regionServices = services[regionKey] || [];
     const totalPop = Object.values(totalPopulation).reduce((sum, count) => sum + count, 0);
     
-    if (totalPop > 0) {
-      allBuildings['Marketplace'] = Math.ceil(totalPop / 600);
-      allBuildings['Fire Station'] = Math.ceil(totalPop / 800);
-      allBuildings['Police Station'] = Math.ceil(totalPop / 1000);
-    }
-
-    // Tier-specific services
-    const tier2Pop = ['Workers', 'Artisans', 'Engineers', 'Investors', 'Obreros']
-      .reduce((sum, tier) => sum + (totalPopulation[tier] || 0), 0);
-    if (tier2Pop > 0) {
-      allBuildings['Church'] = Math.ceil(tier2Pop / 1000);
-      allBuildings['School'] = Math.ceil(tier2Pop / 1200);
-    }
-
-    const tier3Pop = ['Artisans', 'Engineers', 'Investors']
-      .reduce((sum, tier) => sum + (totalPopulation[tier] || 0), 0);
-    if (tier3Pop > 0) {
-      allBuildings['Variety Theatre'] = Math.ceil(tier3Pop / 1200);
-      allBuildings['University'] = Math.ceil(tier3Pop / 1500);
-    }
-
-    const tier4Pop = ['Engineers', 'Investors']
-      .reduce((sum, tier) => sum + (totalPopulation[tier] || 0), 0);
-    if (tier4Pop > 0) {
-      allBuildings['Bank'] = Math.ceil(tier4Pop / 1500);
+    if (totalPop > 0 && regionServices.length > 0) {
+      // Create a map of service building names to calculate quantities
+      regionServices.forEach((service: any) => {
+        if (!service.name) return;
+        
+        // Only calculate for services that should be based on population
+        const serviceName = service.name.toLowerCase();
+        let quantity = 0;
+        
+        if (serviceName.includes('market')) {
+          quantity = Math.ceil(totalPop / 600);
+        } else if (serviceName.includes('fire')) {
+          quantity = Math.ceil(totalPop / 800);
+        } else if (serviceName.includes('police')) {
+          quantity = Math.ceil(totalPop / 1000);
+        } else if (serviceName.includes('doctor') || serviceName.includes('hospital')) {
+          quantity = Math.ceil(totalPop / 1200);
+        } else if (serviceName.includes('school') || serviceName.includes('university')) {
+          quantity = Math.ceil(totalPop / 1500);
+        } else if (serviceName.includes('church') || serviceName.includes('chapel') || serviceName.includes('mosque')) {
+          quantity = Math.ceil(totalPop / 1000);
+        } else if (serviceName.includes('tavern') || serviceName.includes('saloon') || serviceName.includes('bar')) {
+          quantity = Math.ceil(totalPop / 1800);
+        } else if (serviceName.includes('theatre') || serviceName.includes('theater')) {
+          quantity = Math.ceil(totalPop / 1200);
+        } else if (serviceName.includes('bank')) {
+          quantity = Math.ceil(totalPop / 1500);
+        } else if (serviceName.includes('library')) {
+          quantity = Math.ceil(totalPop / 2500);
+        } else {
+          // Default coverage ratio for unknown service types
+          quantity = Math.ceil(totalPop / 2000);
+        }
+        
+        if (quantity > 0) {
+          allBuildings[service.name] = quantity;
+        }
+      });
     }
   }
 

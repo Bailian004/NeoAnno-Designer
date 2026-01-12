@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AnnoTitle, Layout, PlacedBuilding, GameConfig } from '../types';
 import { ANNO_GAMES } from '../data/annoData';
+import { useData } from '../src/context/DataContext';
+import { useAppState } from '../state/AppState';
 import { GridCanvas } from './GridCanvas';
 import { PopulationManager, GenerationResult } from '../services/PopulationManager';
 import { SolverMode } from '../services/geneticSolver';
@@ -127,6 +129,19 @@ const BuildingIcon: React.FC<{icon?: string, color: string, name: string}> = ({ 
 
 // --- MODALS ---
 
+const getAlgorithmIcon = (id: string, isRec: boolean) => {
+    const baseClass = `w-6 h-6 ${isRec ? 'text-black' : 'text-slate-400'}`;
+    
+    if (id === 'sketch') {
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+    } else if (id === 'standard') {
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+    } else {
+        // elite
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0m3.364 5.636l-.707-.707M9.663 7h4.673" /></svg>;
+    }
+};
+
 const GenerationOptionsModal: React.FC<{recommendedId: string, onSelect: (c: GenerationConfig) => void, onCancel: () => void}> = ({ recommendedId, onSelect, onCancel }) => (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <Panel className="w-full max-w-lg p-6 space-y-6 animate-in fade-in zoom-in-95 duration-200">
@@ -139,8 +154,8 @@ const GenerationOptionsModal: React.FC<{recommendedId: string, onSelect: (c: Gen
                     const isRec = opt.id === recommendedId;
                     return (
                         <button key={opt.id} onClick={() => onSelect(opt)} className={`relative flex items-center p-4 rounded-xl border transition-all text-left group ${isRec ? 'bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50' : 'bg-slate-800/50 border-white/5 hover:bg-slate-800 hover:border-white/20'}`}>
-                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 text-xl ${isRec ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-slate-700 text-slate-400'}`}>
-                                {opt.id === 'sketch' ? '⚡' : opt.id === 'standard' ? '⚙️' : '🧠'}
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${isRec ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-slate-700 text-slate-400'}`}>
+                                {getAlgorithmIcon(opt.id, isRec)}
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1">
@@ -257,7 +272,32 @@ const AnalysisView: React.FC<{title: string, score?: number, metrics: {efficienc
 // --- MAIN DESIGNER COMPONENT ---
 
 export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
+    const { model, loading: dataLoading } = useData();
+    const { region: selectedRegion } = useAppState();
     const config = ANNO_GAMES[gameTitle];
+    
+    // Use UI projection from compiled model (derived from remote canonical data)
+    const buildings = useMemo(() => {
+        if (model?.ui?.buildingsList && model.ui.buildingsList.length > 0) {
+            return model.ui.buildingsList;
+        }
+        // No fallback - we're moving to 100% remote data
+        if (model && (!model.ui || !model.ui.buildingsList || model.ui.buildingsList.length === 0)) {
+            console.warn('[Designer] Model loaded but no UI buildings available. Check compile-model UI projection.');
+        }
+        return [];
+    }, [model]);
+    
+    if (dataLoading) {
+        return (
+            <div className="h-screen w-screen bg-[#0b0f19] text-slate-100 flex items-center justify-center">
+                <div className="bg-[#0f172a] border border-white/10 rounded p-4">
+                    <p className="text-sm">Loading game data...</p>
+                </div>
+            </div>
+        );
+    }
+    
     if (!config) {
         return (
             <div className="h-screen w-screen bg-[#0b0f19] text-slate-100 flex items-center justify-center">
@@ -286,7 +326,9 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
     const [terrainMode, setTerrainMode] = useState(false);
     const [showAllRadii, setShowAllRadii] = useState(false);
   const [solverMode, setSolverMode] = useState<SolverMode>('city');
-  const [activeCategory, setActiveCategory] = useState('Residence');
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set(['Old World'])); // Default expand first region
+  const [expandedSubCategories, setExpandedSubCategories] = useState<Set<string>>(new Set()); // For region mode
+  const [activeUiGroup, setActiveUiGroup] = useState<string>('residences'); // Current tab
   const [activeLeftTab, setActiveLeftTab] = useState<'specs' | 'generated' | 'live'>('specs');
 
   const [selectedBuildingUid, setSelectedBuildingUid] = useState<string | null>(null);
@@ -323,6 +365,87 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
       return getCompatibleGoods(Array.from(selectedGoods), availableIndustryGoods, popTiers);
   }, [selectedGoods, availableIndustryGoods, industryPop]);
 
+  // Group buildings by region for the assets panel
+  const buildingsByRegion = useMemo(() => {
+    const grouped = new Map<string, typeof buildings>();
+    const regionOrder = ['Old World', 'New World', 'Arctic', 'Enbesa', 'Cape Trelawney', 'Orient', 'Occident', 'Global'];
+    
+    // Initialize all regions
+    for (const region of regionOrder) {
+      grouped.set(region, []);
+    }
+    
+    // Group buildings by region
+    for (const building of buildings) {
+      const region = building.region || 'Global';
+      if (!grouped.has(region)) {
+        grouped.set(region, []);
+      }
+      grouped.get(region)!.push(building);
+    }
+    
+    // Remove empty regions and maintain order
+    const result = new Map<string, typeof buildings>();
+    for (const region of regionOrder) {
+      const buildingsInRegion = grouped.get(region) || [];
+      if (buildingsInRegion.length > 0) {
+        result.set(region, buildingsInRegion);
+      }
+    }
+    
+    return result;
+  }, [buildings]);
+
+  // Group buildings by ui_group for tabs
+  const buildingsByUiGroup = useMemo(() => {
+    const grouped = new Map<string, typeof buildings>();
+    const uiGroupOrder = ['residences', 'production', 'logistics', 'public', 'decorative'];
+    
+    // Group buildings by ui_group
+    for (const building of buildings) {
+      const uiGroup = building.ui_group || 'decorative';
+      if (!grouped.has(uiGroup)) {
+        grouped.set(uiGroup, []);
+      }
+      grouped.get(uiGroup)!.push(building);
+    }
+    
+    // Maintain order and remove empty groups
+    const result = new Map<string, typeof buildings>();
+    for (const group of uiGroupOrder) {
+      const buildingsInGroup = grouped.get(group) || [];
+      if (buildingsInGroup.length > 0) {
+        result.set(group, buildingsInGroup);
+      }
+    }
+    
+    return result;
+  }, [buildings]);
+
+  // Group buildings by sub_category for each ui_group when in region mode
+  const buildingsBySubCategory = useMemo(() => {
+    const grouped = new Map<string, Map<string, typeof buildings>>();
+    
+    // Group by ui_group first, then sub_category
+    for (const building of buildings) {
+      const uiGroup = building.ui_group || 'decorative';
+      const subCat = building.sub_category || 'General';
+      
+      if (!grouped.has(uiGroup)) {
+        grouped.set(uiGroup, new Map());
+      }
+      
+      const subCategories = grouped.get(uiGroup)!;
+      if (!subCategories.has(subCat)) {
+        subCategories.set(subCat, []);
+      }
+      
+      subCategories.get(subCat)!.push(building);
+    }
+    
+    return grouped;
+  }, [buildings]);
+
   // --- LIVE INDUSTRY CALCULATION ---
   useEffect(() => {
       if (solverMode === 'industry') {
@@ -338,9 +461,9 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           
           Object.entries(rawNeeds).forEach(([genericName, count]) => {
              // Try strict then fuzzy match against Anno Data
-             let match = config.buildings.find(b => b.name === genericName);
-             if (!match) {
-                 match = config.buildings.find(b => b.name.toLowerCase().includes(genericName.toLowerCase()));
+             let match = buildings.find(b => b.name === genericName);
+                if (!match) {
+                 match = buildings.find(b => b.name.toLowerCase().includes(genericName.toLowerCase()));
              }
              
              if (match) {
@@ -358,7 +481,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           // - Rule: 1 warehouse per 50 tiles of built area (approx 5-8 production buildings)
           const warehousesNeeded = Math.max(1, Math.ceil(totalProdBuildings / 6));
           if (warehousesNeeded > 0) {
-              const wh = config.buildings.find(b => b.name === 'Warehouse' || b.name.includes('Warehouse'));
+              const wh = buildings.find(b => b.name === 'Warehouse' || b.name.includes('Warehouse'));
               if (wh) {
                   realNeeds[wh.id] = warehousesNeeded;
               }
@@ -366,7 +489,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
 
           setSolverCounts(realNeeds);
       }
-  }, [industryPop, selectedGoods, solverMode, config.buildings]);
+  }, [industryPop, selectedGoods, solverMode, buildings]);
 
     const [resourcePanelOpen, setResourcePanelOpen] = useState(false);
     const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -406,7 +529,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                 .sort((a, b) => b.deficit - a.deficit);
 
             return { deficits, hasDeficit: deficits.length > 0 };
-    }, [layout.buildings, config.buildings]);
+    }, [layout.buildings, buildings]);
 
   const liveAnalysis = useMemo(() => {
       const buildings = layout.buildings;
@@ -427,7 +550,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           },
           counts
       };
-  }, [layout.buildings, layout.width, layout.height, config.buildings]);
+  }, [layout.buildings, layout.width, layout.height, buildings]);
 
   // Handle Keyboard Shortcuts
   useEffect(() => {
@@ -444,7 +567,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
 
   // Init Pop Goal
   useEffect(() => {
-    const residences = config.buildings.filter(b => b.category === 'Residence');
+    const residences = buildings.filter(b => b.category === 'Residence');
     if (residences.length > 0) {
         setNewGoalTier(residences[0].residence?.populationType || '');
     }
@@ -612,7 +735,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
           generations: genConfig.generations,
           targetCounts: solverCounts, 
           blockedCells: new Set(layout.blockedCells)
-      }, config.buildings, solverMode);
+      }, buildings, solverMode);
       
       manager.initPopulation();
       managerRef.current = manager;
@@ -801,7 +924,7 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                              </div>
                              <div className="flex gap-2">
                                 <select className="flex-1 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-bold text-slate-200 outline-none focus:border-amber-500" value={newGoalTier} onChange={e => setNewGoalTier(e.target.value)}>
-                                   {config.buildings.filter(b => b.category === 'Residence').map(b => <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>)}
+                                   {buildings.filter(b => b.category === 'Residence').map(b => <option key={b.id} value={b.residence?.populationType}>{b.residence?.populationType}</option>)}
                                 </select>
                                 <input type="number" className="w-20 bg-black/30 border border-white/10 rounded-md p-2 text-xs font-mono text-center outline-none focus:border-amber-500" value={newGoalCount} onChange={e => setNewGoalCount(parseInt(e.target.value) || 0)} />
                              </div>
@@ -901,18 +1024,143 @@ export const Designer: React.FC<DesignerProps> = ({ gameTitle, onBack }) => {
                     </button>
                 </div>
             <div className="flex border-b border-white/10 bg-black/20">
-               {['Residence', 'Public', 'Production', 'Decoration'].map(cat => (
-                   <CategoryTab key={cat} label={cat === 'Decoration' ? 'Deco' : cat === 'Production' ? 'Prod' : cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
-               ))}
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
-               <div className="grid grid-cols-4 gap-2">
-                   {config.buildings.filter(b => b.category === activeCategory).map(b => (
-                       <button key={b.id} onClick={() => { setActiveTool(b.id); setTerrainMode(false); }} title={b.name} className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all relative group ${activeTool === b.id ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg scale-105 z-10' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:bg-slate-700 hover:border-slate-500 hover:text-white'}`}>
-                           <BuildingIcon icon={b.icon} color={b.color} name={b.name} />
+               {Array.from(buildingsByUiGroup.keys()).map(group => {
+                   const displayLabel = group === 'residences' ? 'Res' : group === 'production' ? 'Prod' : group === 'logistics' ? 'Log' : group === 'public' ? 'Pub' : 'Deco';
+                   return (
+                       <button
+                           key={group}
+                           onClick={() => setActiveUiGroup(group)}
+                           className={`flex-1 py-3 text-[10px] uppercase font-black tracking-wider transition-all border-b-2 ${
+                               activeUiGroup === group
+                                   ? 'border-amber-500 text-amber-500 bg-amber-500/5'
+                                   : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                           }`}
+                       >
+                           {displayLabel}
                        </button>
-                   ))}
-               </div>
+                   );
+               })}
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 p-3">
+               {buildingsByUiGroup.size > 0 && activeUiGroup && buildingsByUiGroup.has(activeUiGroup) ? (
+                   (() => {
+                       const groupBuildings = buildingsByUiGroup.get(activeUiGroup) || [];
+                       
+                       // Check if we should show by region (global view) or sub_category (region-specific view)
+                       const isGlobalView = selectedRegion === 'Global';
+                       const showByRegion = isGlobalView;
+                       
+                       if (showByRegion) {
+                           // Group by region
+                           const byRegion = new Map<string, typeof groupBuildings>();
+                           const regionOrder = ['Old World', 'New World', 'Arctic', 'Enbesa', 'Cape Trelawney', 'Orient', 'Occident', 'Global'];
+                           
+                           for (const building of groupBuildings) {
+                               const region = building.region || 'Global';
+                               if (!byRegion.has(region)) {
+                                   byRegion.set(region, []);
+                               }
+                               byRegion.get(region)!.push(building);
+                           }
+                           
+                           return regionOrder
+                               .filter(region => byRegion.has(region) && byRegion.get(region)!.length > 0)
+                               .map(region => {
+                                   const regionBuildings = byRegion.get(region) || [];
+                                   return (
+                                       <div key={region} className="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/30">
+                                           <button
+                                               onClick={() => {
+                                                   const key = `${activeUiGroup}-${region}`;
+                                                   const newExpanded = new Set(expandedRegions);
+                                                   if (newExpanded.has(key)) {
+                                                       newExpanded.delete(key);
+                                                   } else {
+                                                       newExpanded.add(key);
+                                                   }
+                                                   setExpandedRegions(newExpanded);
+                                               }}
+                                               className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-700 transition-colors border-b border-slate-700"
+                                           >
+                                               <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">{region}</span>
+                                               <span className="text-[10px] text-slate-500 font-bold">
+                                                   {expandedRegions.has(`${activeUiGroup}-${region}`) ? '▼' : '▶'} {regionBuildings.length}
+                                               </span>
+                                           </button>
+
+                                           {expandedRegions.has(`${activeUiGroup}-${region}`) && (
+                                               <div className="p-3 bg-black/20">
+                                                   <div className="grid grid-cols-4 gap-2">
+                                                       {regionBuildings.map(b => (
+                                                           <button key={b.id} onClick={() => { setActiveTool(b.id); setTerrainMode(false); }} title={b.name} className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all relative group ${activeTool === b.id ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg scale-105 z-10' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:bg-slate-700 hover:border-slate-500 hover:text-white'}`}>
+                                                               <BuildingIcon icon={b.icon} color={b.color} name={b.name} />
+                                                           </button>
+                                                       ))}
+                                                   </div>
+                                               </div>
+                                           )}
+                                       </div>
+                                   );
+                               });
+                       } else {
+                           // Group by sub_category (for region-specific view) - filter to selected region + Global buildings
+                           const regionFiltered = groupBuildings.filter(b => {
+                               const buildingRegion = b.region || 'Global';
+                               return buildingRegion === selectedRegion || buildingRegion === 'Global';
+                           });
+                           
+                           const bySubCat = new Map<string, typeof groupBuildings>();
+                           for (const building of regionFiltered) {
+                               const subCat = building.sub_category || 'General';
+                               if (!bySubCat.has(subCat)) {
+                                   bySubCat.set(subCat, []);
+                               }
+                               bySubCat.get(subCat)!.push(building);
+                           }
+                           
+                           if (bySubCat.size === 0) {
+                               return <div className="text-slate-500 text-xs">No buildings in {selectedRegion} for {activeUiGroup}</div>;
+                           }
+                           
+                           return Array.from(bySubCat.entries()).map(([subCat, subCatBuildings]) => (
+                               <div key={subCat} className="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/30">
+                                   <button
+                                       onClick={() => {
+                                           const key = `${activeUiGroup}-${subCat}`;
+                                           const newExpanded = new Set(expandedSubCategories);
+                                           if (newExpanded.has(key)) {
+                                               newExpanded.delete(key);
+                                           } else {
+                                               newExpanded.add(key);
+                                           }
+                                           setExpandedSubCategories(newExpanded);
+                                       }}
+                                       className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-700 transition-colors border-b border-slate-700"
+                                   >
+                                       <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">{subCat}</span>
+                                       <span className="text-[10px] text-slate-500 font-bold">
+                                           {expandedSubCategories.has(`${activeUiGroup}-${subCat}`) ? '▼' : '▶'} {subCatBuildings.length}
+                                       </span>
+                                   </button>
+
+                                   {expandedSubCategories.has(`${activeUiGroup}-${subCat}`) && (
+                                       <div className="p-3 bg-black/20">
+                                           <div className="grid grid-cols-4 gap-2">
+                                               {subCatBuildings.map(b => (
+                                                   <button key={b.id} onClick={() => { setActiveTool(b.id); setTerrainMode(false); }} title={b.name} className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all relative group ${activeTool === b.id ? 'bg-amber-500 border-amber-400 text-slate-900 shadow-lg scale-105 z-10' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:bg-slate-700 hover:border-slate-500 hover:text-white'}`}>
+                                                       <BuildingIcon icon={b.icon} color={b.color} name={b.name} />
+                                                   </button>
+                                               ))}
+                                           </div>
+                                       </div>
+                                   )}
+                               </div>
+                           ));
+                       }
+                   })()
+               ) : (
+                   <div className="text-slate-500 text-xs">Loading buildings...</div>
+               )}
             </div>
          </Panel>
       </div>

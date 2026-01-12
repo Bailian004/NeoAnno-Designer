@@ -5,6 +5,7 @@ import { CalculatorView } from './components/CalculatorView';
 import { SolverView } from './components/SolverView';
 import { Navbar } from './components/Navbar';
 import { useAppState, AppStateProvider } from './state/AppState';
+import { DataProvider } from './src/context/DataContext';
 import { SettingsPage } from './pages/SettingsPage';
 import { UpdatesPage } from './pages/UpdatesPage';
 import { AboutPage } from './pages/AboutPage';
@@ -38,9 +39,11 @@ const RoutedApp: React.FC = () => {
 
 function App() {
   return (
-    <AppStateProvider>
-      <RoutedApp />
-    </AppStateProvider>
+    <DataProvider>
+      <AppStateProvider>
+        <RoutedApp />
+      </AppStateProvider>
+    </DataProvider>
   );
 }
 

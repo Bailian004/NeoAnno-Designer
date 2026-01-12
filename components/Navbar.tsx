@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppState, RegionKey, AppMode } from '../state/AppState';
 import { AnnoTitle } from '../types';
 import { ANNO_TITLES_META } from '../constants';
+import { DataStatus } from './DataStatus';
 
 const games: { key: AnnoTitle; label: string; sub?: string }[] = [
   { key: AnnoTitle.ANNO_1800, label: 'Anno 1800', sub: 'Industrial Age' },
@@ -34,9 +35,9 @@ export const Navbar: React.FC = () => {
   };
 
   const regionLogoSlug: Record<RegionKey, string> = {
-    'Old World': 'old-world',
-    'New World': 'new-world',
-    'Arctic': 'arctic',
+    'Old World': 'the-old-world',
+    'New World': 'the-new-world',
+    'Arctic': 'the-arctic',
     'Enbesa': 'enbesa',
     'Cape Trelawney': 'cape-trelawney',
     'Orient': 'orient',
@@ -44,23 +45,57 @@ export const Navbar: React.FC = () => {
     'Global': 'global',
   };
 
-  const modes: { id: AppMode; label: string; icon: React.ReactNode }[] = [
-    { 
-      id: 'sandbox', 
-      label: 'Sandbox', 
-      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-    },
-    { 
-      id: 'calculator', 
-      label: 'Calculator', 
-      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-    },
-    { 
-      id: 'solver', 
-      label: 'Solver', 
-      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-    },
+  const modes: { id: AppMode; label: string }[] = [
+    { id: 'sandbox', label: 'Sandbox' },
+    { id: 'calculator', label: 'Calculator' },
+    { id: 'solver', label: 'Solver' },
   ];
+
+  const getModeIcon = (modeId: AppMode) => {
+    const iconClass = 'w-4 h-4';
+    switch (modeId) {
+      case 'sandbox':
+        return <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>;
+      case 'calculator':
+        return <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+      case 'solver':
+        return <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+      default:
+        return null;
+    }
+  };
+
+  const getRegionIconSlug = (regionKey: RegionKey): string => {
+    const slugMap: Record<RegionKey, string> = {
+      'Old World': 'the-old-world',
+      'New World': 'the-new-world',
+      'Arctic': 'the-arctic',
+      'Enbesa': 'enbesa',
+      'Cape Trelawney': 'cape-trelawney',
+      'Orient': 'orient',
+      'Occident': 'occident',
+      'Global': 'global',
+    };
+    return slugMap[regionKey] || 'global';
+  };
+
+  const RegionIcon: React.FC<{ region: RegionKey }> = ({ region }) => {
+    const slug = getRegionIconSlug(region);
+    const svgUrl = `${import.meta.env.BASE_URL}logos/${slug}.svg`;
+
+    return (
+      <div 
+        className="w-4 h-4 flex-shrink-0 [mask-image:url()] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]"
+        style={{
+          maskImage: `url('${svgUrl}')`,
+          maskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          backgroundColor: 'currentColor'
+        }}
+      />
+    );
+  };
 
   const utilLinks: { id: AppMode; label: string }[] = [
     { id: 'home', label: 'Home' },
@@ -140,21 +175,15 @@ export const Navbar: React.FC = () => {
                     {regionsByGame[selectedGame].map(r => (
                       <button
                         key={r}
-                        onClick={() => setRegion(region === r ? null : r)}
-                        className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest transition-all ${
+                        onClick={() => setRegion(r)}
+                        className={`px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
                           region === r
                             ? 'bg-emerald-500 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/20'
                             : 'bg-white/5 text-slate-200 border-white/10 hover:border-emerald-400/40 hover:bg-white/10'
                         }`}
                       >
-                        <span className="inline-flex items-center gap-2">
-                          <LogoImg 
-                            slug={regionLogoSlug[r]}
-                            alt={`${r} logo`}
-                            className={`w-4 h-4 object-contain transition-all ${region === r ? 'brightness-0' : 'brightness-0 invert'}`}
-                          />
-                          <span>{r}</span>
-                        </span>
+                        <RegionIcon region={r} />
+                        <span>{r}</span>
                       </button>
                     ))}
                   </div>
@@ -211,7 +240,7 @@ export const Navbar: React.FC = () => {
                   <div className="rounded-lg border border-white/10 bg-white/5">
                     <button onClick={() => setMobileRegionsOpen(o => !o)} className="w-full flex items-center justify-between px-2 py-1.5">
                       <span className="flex items-center gap-2">
-                        <LogoImg slug={regionLogoSlug[region as RegionKey]} alt="region" className="w-5 h-5 object-contain brightness-0 invert" />
+                        <LogoImg slug={regionLogoSlug[region as RegionKey]} alt="region" className="w-5 h-5 rounded-sm object-contain bg-black/30 border border-white/10" />
                         <span className="text-xs font-bold text-white">{region}</span>
                       </span>
                       <svg className={`w-4 h-4 text-slate-300 transition-transform ${mobileRegionsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
@@ -222,15 +251,13 @@ export const Navbar: React.FC = () => {
                           {regionsByGame[selectedGame].map(r => (
                             <button
                               key={r}
-                              onClick={() => { setRegion(region === r ? null : r); setMobileRegionsOpen(false); }}
-                              className={`px-2 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                              onClick={() => { setRegion(r); setMobileRegionsOpen(false); }}
+                              className={`px-2 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
                                 region === r ? 'bg-emerald-500 text-slate-900 border-emerald-300' : 'bg-white/5 text-slate-200 border-white/10'
                               }`}
                             >
-                              <span className="inline-flex items-center gap-2">
-                                <LogoImg slug={regionLogoSlug[r]} alt={`${r} logo`} className={`w-4 h-4 object-contain transition-all ${region === r ? 'brightness-0' : 'brightness-0 invert'}`} />
-                                <span>{r}</span>
-                              </span>
+                              <RegionIcon region={r} />
+                              <span>{r}</span>
                             </button>
                           ))}
                         </div>
@@ -251,13 +278,13 @@ export const Navbar: React.FC = () => {
                 <button 
                   key={m.id} 
                   onClick={() => setMode(m.id)} 
-                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 ${
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-2 ${
                     mode === m.id 
                       ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-900 shadow-lg shadow-amber-500/20' 
                       : 'bg-black/20 text-slate-400 hover:bg-black/30 hover:text-slate-200 border border-white/5'
                   }`}
                 >
-                  {m.icon}
+                  {getModeIcon(m.id)}
                   {m.label}
                 </button>
               ))}
@@ -269,14 +296,14 @@ export const Navbar: React.FC = () => {
                 <button
                   key={m.id}
                   onClick={() => setMode(m.id)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center gap-1.5 ${
                     mode === m.id
                       ? 'bg-amber-500 text-slate-900 border-amber-300 shadow-amber-500/20'
                       : 'bg-black/20 text-slate-300 border-white/10 hover:bg-black/30'
                   }`}
                   aria-label={m.label}
                 >
-                  {m.icon}
+                  {getModeIcon(m.id)}
                   <span>{m.label}</span>
                 </button>
               ))}
@@ -304,6 +331,12 @@ export const Navbar: React.FC = () => {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          
+          {!navCollapsed && (
+            <div className="hidden sm:block">
+              <DataStatus />
             </div>
           )}
           
@@ -342,21 +375,43 @@ const GameLogoImg: React.FC<{ slug: string; alt: string; className?: string }> =
   );
 };
 
-// Region logos (SVG preferred for better styling)
+// Region logos (WebP preferred, fallback to SVG/PNG)
 const LogoImg: React.FC<{ slug: string; alt: string; className?: string }> = ({ slug, alt, className }) => {
   const [failed, setFailed] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const initial = (alt?.trim()?.charAt(0) || 'A').toUpperCase();
-  if (failed) {
+  
+  // Try SVG first for region logos (they all have .svg extension)
+  const isSvgLogo = slug.includes('-') && !slug.includes('anno');
+  
+  if (failed || imgError) {
     return (
-      <div className={`flex items-center justify-center ${className}`}> {initial} </div>
+      <div className={`flex items-center justify-center ${className} bg-white/5 text-slate-300 font-black`}> {initial} </div>
     );
   }
+  
+  // For region logos, try to load SVG directly
+  if (isSvgLogo) {
+    return (
+      <img
+        src={`${import.meta.env.BASE_URL}logos/${slug}.svg`}
+        alt={alt}
+        className={className}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  
+  // For game logos, use picture element with fallbacks
   return (
-    <img
-      src={`${import.meta.env.BASE_URL}logos/${slug}.svg`}
-      alt={alt}
-      className={className}
-      onError={() => setFailed(true)}
-    />
+    <picture>
+      <source srcSet={`${import.meta.env.BASE_URL}logos/${slug}.webp`} type="image/webp" />
+      <img
+        src={`${import.meta.env.BASE_URL}logos/${slug}.png`}
+        alt={alt}
+        className={className}
+        onError={() => setFailed(true)}
+      />
+    </picture>
   );
 };
